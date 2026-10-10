@@ -137,16 +137,20 @@ for spec in sys.argv[2:]:
 
 import re as _re
 only = os.environ.get('ONLY')
+# SPLIT=dev / SPLIT=test scores one half of the queries (a stable hash of the verse key): choose
+# weights on dev, report them on test, so a tuned fusion is not measured on what tuned it.
+split = os.environ.get('SPLIT')
+subset = dev if split == 'dev' else (set(Q1) - dev) if split == 'test' else None
 rows = []
 for name, fn in methods.items():
     if only and not _re.search(only, name):
         continue
-    a = metrics(fn, Q1)
-    s = metrics(fn, Q2)
+    a = metrics(fn, Q1, subset)
+    s = metrics(fn, Q2, subset)
     rows.append((name, a, s))
 
 rows.sort(key=lambda r: -r[1][0])
-print(f'queries: related(>=1) {len(Q1)}  strong(2) {len(Q2)}  candidates {N - 1}  '
+print(f'split: {split or "all"}  queries: related(>=1) {rows[0][1][3]}  strong(2) {rows[0][2][3]}  candidates {N - 1}  '
       f'related pairs sharing a lemma {rows[0][1][6]} / sharing none {rows[0][1][7]}')
 print('| method | R@10 | R@20 | MRR | strong R@10 | strong MRR | R@20 shared-lemma pairs | R@20 no-shared-lemma pairs |')
 print('|---|---|---|---|---|---|---|---|')
