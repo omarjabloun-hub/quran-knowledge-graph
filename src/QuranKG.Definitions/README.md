@@ -1,10 +1,10 @@
 # QuranKG.Definitions — the workspace as source
 
-Everything configured in the Curiosity workspace, as files. `just upload-endpoints` zips
-`code/` and `config/` and imports them (`POST /api/graph/import-definitions`); the import is
-idempotent. **Ingest first** (`just ingest`): the workspace injects `N`/`E` constants generated
-from the graph schema above every endpoint, so an endpoint naming a type the connector has not
-created does not compile.
+Everything configured in the Curiosity workspace, as files. `just upload-endpoints` stages
+`code/` and `config/` (with the embeddings file `EMBEDDING_PROVIDER` names) and imports them with
+`curiosity-cli import-workspace-definitions`; the import is idempotent. **Ingest first**
+(`just ingest`): the workspace injects `N`/`E` constants generated from the graph schema above
+every endpoint, so an endpoint naming a type the connector has not created does not compile.
 
 ```
 config/
@@ -14,7 +14,7 @@ config/
 ├── schemas/                  generated from the connector (re-export after a schema change); styles/ = icon, colour, label
 └── indexes/others/           26 indexes — see below
 code/endpoints/qkg/
-├── _lib/dto.cs               shared DTOs (AdminOnly library) — mirrored in src/QuranKG.FrontEnd/src/Api/Dto.cs
+├── _lib/dto.cs               shared DTOs (AdminOnly library) — `just sync-dto` generates src/QuranKG.FrontEnd/src/Api/Dto.cs
 ├── dashboard/corpus.cs       the pattern dashboard: totals, per-surah stats, root heat maps, Meccan vs Medinan
 ├── root/profile.cs           one root: spread over surahs, lemmas, forms, verses
 ├── surah/profile.cs          one surah: verse lengths, top and DISTINCTIVE roots, lemmas
@@ -50,7 +50,12 @@ rather than adds, and `EMBEDDING_PROVIDER=ollama` in `.env` makes later uploads 
 
 All `ReadOnly`, `AllUsers`, cached for an hour (`CacheFor(3600)`; an import clears the cache).
 Every metric is counted live from the graph; every count ships the UID of what it counted.
-Call one from the shell: `bash scripts/call-endpoint.sh qkg/dashboard/corpus`.
+Call one from the shell: `just call qkg/dashboard/corpus`, or with a body:
+`just call qkg/verse/similar '{"Uid":"…","Count":10}'`.
+
+The answers are cached **per user**, keyed on each endpoint's own code: a change to
+`_lib/dto.cs` alone leaves its dependents serving the old answer for up to an hour — restart the
+workspace. After changing a DTO, `just sync-dto` regenerates the front end's copy.
 
 **QurSim is the answer key.** `verse/words` returns Ibn Kathir's related verses for people to
 read. No similarity signal reads it, and no AI tool may call that endpoint or expose those

@@ -1,0 +1,8 @@
+# The embedding benchmark (python3 -m venv .venv && .venv/bin/pip install -r requirements.txt).
+# torch picks the Apple GPU (MPS) on a Mac, CUDA on an NVIDIA box, the CPU otherwise.
+sentence-transformers>=5.1
+torch>=2.8
+transformers>=4.56
+numpy>=2.0
+scipy>=1.14
+scikit-learn>=1.6

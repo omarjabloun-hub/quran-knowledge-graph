@@ -1,0 +1,41 @@
+# Use case
+
+**Study the Quran as a knowledge graph — Arabic first — and let anyone see its patterns.**
+
+The meaning of the Quran is in its Arabic. The graph is built from the original text and its
+morphology: every one of the 77,429 words carries its root and lemma (Quranic Arabic Corpus), so
+the questions below are answered from the Arabic, with translations as reading aids.
+
+## Questions it answers
+
+| Question | Where |
+|---|---|
+| What is the text made of — how many surahs, verses, words, distinct forms, lemmas, roots; nouns, verbs, particles? | the dashboard's totals |
+| How do the Meccan and Medinan surahs differ — in length, in vocabulary? | dashboard: Meccan and Medinan, most Meccan / Medinan roots |
+| How does the verse length move through the book, and through the order of revelation? | dashboard: verse length (two charts) |
+| Which roots and words carry the text? Where in the Quran does each root live? | dashboard: vocabulary, the root map (a cell opens its verses) |
+| What is one surah about — which roots does it use far more than the rest? | the surah page, Profile tab |
+| How is one verse built, word by word? | the verse page, Verse tab |
+| Where else does the Quran say this? | the verse page: Similar verses (Arabic meaning + shared lemmas + roots), Tafsir links (Ibn Kathir) |
+| Where does a root occur, in which forms, under which lemmas? | the root page |
+| What are the Quran's stories, and the passages of each surah? | Clusters — next ([TODO](../TODO.md)) |
+
+## Principles
+
+1. **Arabic first.** Search, similarity and clustering read the Arabic; the translations are
+   glosses for readers.
+2. **Every number is counted live from the graph**, and every count opens the nodes it counted.
+3. **Measured, not asserted.** Similarity is scored against QurSim (Ibn Kathir's related verses),
+   clusters will be against the QUL topics — and both references stay out of what they measure and
+   out of the AI's reach.
+4. **The workspace lives in git.** Anything changed in the admin UI is exported and committed;
+   a new machine is rebuilt from this repository with `just bootstrap`.
+5. **Local by default.** The models run on the Mac (Ollama); nothing has to leave it.
+
+## Users
+
+- **Readers** — anyone curious: the dashboard, a surah read in order, a verse word by word.
+- **Students of Arabic and of the Quran** — roots, lemmas, forms and where they occur.
+- **Researchers** — the patterns, the similarity ranking and how it is measured; the benchmark.
+- **Builders** — extending the graph, with Sudo (the workspace's admin assistant) or by hand, with
+  the skills in `.claude/skills/`.

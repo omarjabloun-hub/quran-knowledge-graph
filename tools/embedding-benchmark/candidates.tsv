@@ -1,0 +1,26 @@
+# kind	model	field	tag	prefix	notes
+# One embedding job per line (TAB-separated). `run.py` skips a job whose output exists.
+# field: arabic_plain (what the workspace embeds) | arabic_uthmani | english_saheeh
+# prefix: prepended to every verse; \n is a newline. Ollama jobs take NO prefix, because the
+#         workspace sends the bare verse to Ollama too — the benchmark measures what you would get.
+#
+# --- the workspace's built-in models: the baseline any local model has to beat ---
+hf	microsoft/harrier-oss-v1-270m	arabic_plain	doc		built into the workspace (the default Verse.TextSimple index)
+# --- multilingual, through Ollama on the Mac's GPU (pull first: ollama pull <model>) ---
+ollama	qwen3-embedding:8b	arabic_plain	ollama		MTEB-multilingual leader; 4.7 GB; the recommended local model
+ollama	qwen3-embedding:4b	arabic_plain	ollama		2.5 GB
+ollama	bge-m3	arabic_plain	ollama		1.2 GB; strong on Arabic retrieval
+ollama	embeddinggemma	arabic_plain	ollama		0.6 GB; the same family as the workspace's EmbeddingGemma2
+# --- multilingual, through sentence-transformers (MPS) ---
+hf	Qwen/Qwen3-Embedding-0.6B	arabic_plain	sts	Instruct: Retrieve semantically similar text\nQuery:	small Qwen3; with the STS instruction on both sides
+hf	Qwen/Qwen3-Embedding-4B	arabic_plain	sts	Instruct: Retrieve semantically similar text\nQuery:	fp32 needs ~16 GB of the Mac's memory
+hf	BAAI/bge-m3	arabic_plain	plain		XLM-R large, 8k context
+hf	intfloat/multilingual-e5-large-instruct	arabic_plain	sts	Instruct: Retrieve semantically similar text\nQuery: 	
+hf	microsoft/harrier-oss-v1-0.6b	arabic_plain	doc		the larger Harrier
+# --- Arabic-specialised (modern standard Arabic; none is trained on Quranic text) ---
+hf	NAMAA-Space/AraModernBert-Base-STS	arabic_plain	plain		
+hf	Omartificial-Intelligence-Space/Arabic-Triplet-Matryoshka-V2	arabic_plain	plain		
+hf	Omartificial-Intelligence-Space/GATE-AraBert-v1	arabic_plain	plain		
+hf	silma-ai/silma-embedding-matryoshka-v0.1	arabic_plain	plain		
+# --- NOT benchmarked on purpose ---
+# Mathani-Ayat/rattil-ayah-embed is fine-tuned on QurSim itself: scoring it against QurSim is circular.
