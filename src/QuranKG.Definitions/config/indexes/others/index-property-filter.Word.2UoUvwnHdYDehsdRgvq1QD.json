@@ -1,0 +1,34 @@
+﻿{
+  "Settings": [
+    {
+      "Name": "Disable",
+      "Type": "bool",
+      "Value": "False",
+      "Values": null
+    },
+    {
+      "Name": "FieldName",
+      "Type": "string",
+      "Value": null,
+      "Values": null
+    },
+    {
+      "Name": "NodeType",
+      "Type": "string",
+      "Value": null,
+      "Values": null
+    },
+    {
+      "Name": "ProducesFacets",
+      "Type": "bool",
+      "Value": "True",
+      "Values": null
+    }
+  ],
+  "NodeType": "Word",
+  "FieldName": "PosTag",
+  "IndexType": "SimpleTextIndex",
+  "Tag": "MosaikGraph-Word-PosTag",
+  "Language": "Any",
+  "UniqueExportID": "2UoUvwnHdYDehsdRgvq1QD"
+}

@@ -1,0 +1,13 @@
+﻿{
+  "UID": "BFHdDnqwQBzarjdUkMHHvQ",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Lemma",
+  "DisplayName": "Lemma",
+  "Description": "A dictionary form; key = lemma|root|part of speech.",
+  "Color": "#7c3aed",
+  "Icon": "fi-rr-letter-case",
+  "LabelField": "LemmaText",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

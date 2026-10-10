@@ -1,0 +1,13 @@
+﻿{
+  "UID": "isnKXAEZQ7ZS81pCBMaKws",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Revelation",
+  "DisplayName": "Revelation",
+  "Description": "Meccan or Medinan.",
+  "Color": "#a16207",
+  "Icon": "fi-rr-mosque-moon",
+  "LabelField": "PlaceName",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

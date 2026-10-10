@@ -1,0 +1,13 @@
+﻿{
+  "UID": "LkV7utMRD8SbXb1XbtjXr6",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Cluster",
+  "DisplayName": "Cluster",
+  "Description": "A group of verses found by clustering.",
+  "Color": "#15803d",
+  "Icon": "fi-rr-circle-nodes",
+  "LabelField": "Label",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

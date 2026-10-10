@@ -1,0 +1,34 @@
+﻿{
+  "Settings": [
+    {
+      "Name": "Disable",
+      "Type": "bool",
+      "Value": "False",
+      "Values": null
+    },
+    {
+      "Name": "FieldName",
+      "Type": "string",
+      "Value": null,
+      "Values": null
+    },
+    {
+      "Name": "NodeType",
+      "Type": "string",
+      "Value": null,
+      "Values": null
+    },
+    {
+      "Name": "ProducesFacets",
+      "Type": "bool",
+      "Value": "True",
+      "Values": null
+    }
+  ],
+  "NodeType": "Verse",
+  "FieldName": "SajdaType",
+  "IndexType": "SimpleTextIndex",
+  "Tag": "MosaikGraph-Verse-SajdaType",
+  "Language": "Any",
+  "UniqueExportID": "MfoPzXaDqj9h5iHj1QAmWX"
+}

@@ -1,0 +1,13 @@
+﻿{
+  "UID": "DkCTrYJaZeKApsMbFUPJEf",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Surah",
+  "DisplayName": "Surah",
+  "Description": "A chapter of the Quran (1–114).",
+  "Color": "#0f766e",
+  "Icon": "fi-rr-book-quran",
+  "LabelField": "NameScholarly",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

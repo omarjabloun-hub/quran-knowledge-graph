@@ -1,0 +1,13 @@
+﻿{
+  "UID": "ZEXzfzSrPZgAPABZdSiRrz",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Root",
+  "DisplayName": "Root",
+  "Description": "A root (e.g. ر ح م): every word built on it is linked to it.",
+  "Color": "#b45309",
+  "Icon": "fi-rr-seedling",
+  "LabelField": "Spaced",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

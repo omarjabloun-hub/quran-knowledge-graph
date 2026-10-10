@@ -1,0 +1,13 @@
+﻿{
+  "UID": "hCttrrScCShJ9ERUmrU5oV",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "QurSimPair",
+  "DisplayName": "Tafsir link",
+  "Description": "Two verses Ibn Kathir relates (QurSim) — the similarity answer key.",
+  "Color": "#64748b",
+  "Icon": "fi-rr-link",
+  "LabelField": "PairKey",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

@@ -1,0 +1,21 @@
+﻿{
+  "WorkspaceName": "Quran Knowledge Graph",
+  "ExtraCSS": "",
+  "ExtraHTML": "",
+  "DisableDesktopAppIntegration": false,
+  "DisableMemoryMappedCache": false,
+  "EnforceSingleCommitQueue": false,
+  "HashDifficulty": 18,
+  "IsPublicNodeType": [
+    "Cluster",
+    "Juz",
+    "Lemma",
+    "QurSimPair",
+    "Revelation",
+    "Root",
+    "Surah",
+    "Topic",
+    "Verse",
+    "Word"
+  ]
+}

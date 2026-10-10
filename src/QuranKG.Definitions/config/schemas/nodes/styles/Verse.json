@@ -1,0 +1,13 @@
+﻿{
+  "UID": "E2yesepQtmb9oWujNzdZkD",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Verse",
+  "DisplayName": "Verse",
+  "Description": "A verse (ayah), keyed surah:ayah. The Arabic is the text; translations are reading aids.",
+  "Color": "#1d4ed8",
+  "Icon": "fi-rr-book-open-reader",
+  "LabelField": "VerseKey",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

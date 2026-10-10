@@ -1,0 +1,13 @@
+﻿{
+  "UID": "6k8yRzn7e3898k861DRDaa",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Word",
+  "DisplayName": "Word",
+  "Description": "One word occurrence, keyed surah:ayah:position (Quranic Arabic Corpus).",
+  "Color": "#475569",
+  "Icon": "fi-rr-text",
+  "LabelField": "TextArabic",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

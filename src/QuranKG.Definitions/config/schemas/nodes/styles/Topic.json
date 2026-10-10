@@ -1,0 +1,13 @@
+﻿{
+  "UID": "6tdBGSwC3pXeeYNKXUaAMV",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Topic",
+  "DisplayName": "Topic",
+  "Description": "A QUL topic (content for reading and filtering, never a similarity signal).",
+  "Color": "#be185d",
+  "Icon": "fi-rr-hashtag",
+  "LabelField": "TopicName",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

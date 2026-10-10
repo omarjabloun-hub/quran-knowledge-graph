@@ -1,0 +1,13 @@
+﻿{
+  "UID": "G4GEUB7FwZbUb2NGWhrf3o",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Juz",
+  "DisplayName": "Juz",
+  "Description": "One of the 30 parts.",
+  "Color": "#0369a1",
+  "Icon": "fi-rr-layers",
+  "LabelField": "JuzId",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

@@ -1,0 +1,34 @@
+﻿{
+  "Settings": [
+    {
+      "Name": "Disable",
+      "Type": "bool",
+      "Value": "False",
+      "Values": null
+    },
+    {
+      "Name": "FieldName",
+      "Type": "string",
+      "Value": null,
+      "Values": null
+    },
+    {
+      "Name": "NodeType",
+      "Type": "string",
+      "Value": null,
+      "Values": null
+    },
+    {
+      "Name": "ProducesFacets",
+      "Type": "bool",
+      "Value": "True",
+      "Values": null
+    }
+  ],
+  "NodeType": "Word",
+  "FieldName": "PartOfSpeech",
+  "IndexType": "SimpleTextIndex",
+  "Tag": "MosaikGraph-Word-PartOfSpeech",
+  "Language": "Any",
+  "UniqueExportID": "bGq5o43Ace9BX7xXjicfQ5"
+}
