@@ -5,27 +5,32 @@
 
 //ImportEndpoint("qkg/_lib/dto")
 
-// Verses similar to one verse — ARABIC FIRST. A first version of the Similarity work: three
-// signals, all read from the Arabic, each standardised over every verse (a z-score, so a seed whose
-// raw cosines sit in a narrow band ranks as fairly as any other) and summed:
+// Verses similar to one verse — ARABIC FIRST. Three signals, all read from the Arabic, each
+// standardised (a z-score, so a seed whose raw scores sit in a narrow band ranks as fairly as any
+// other) and summed with a weight:
 //
-//   semantic  1.0  cosine of the plain-Arabic embeddings (Verse.TextSimple index), searched
-//                  EXACTLY: the index only scores every vector when it is handed fewer than 1,000
-//                  candidates, so the 6,236 verses go in batches (the HNSW walk misses neighbours —
-//                  see curiosity-similarity-scenarios);
-//   lemmas    1.0  shared lemmas, each worth log(n/df)/log(n), saturated (1 - e^(-1.5x));
-//   roots     0.5  shared roots, the same way.
+//   semantic  W_SEM     cosine of the plain-Arabic embeddings (Verse.TextSimple index), searched
+//                       EXACTLY: the index only scores every vector when it is handed fewer than
+//                       1,000 candidates, so the 6,236 verses go in batches (the HNSW walk misses
+//                       neighbours — see curiosity-similarity-scenarios). Standardised over the
+//                       verses that HAVE a vector: while the index is still filling, the others
+//                       are neutral (0) instead of making the embedded few look alike;
+//   lemmas    W_LEMMAS  shared lemmas, each worth log(n/df)/log(n), saturated (1 - e^(-1.5x));
+//   roots     W_ROOTS   shared roots, the same way.
 //
 // The translations are not a signal: the meaning is in the Arabic. QurSim (Ibn Kathir's related
-// verses) is the answer key these weights are measured against, so it is NOT read here, and the
+// verses) is the answer key the weights are measured against, so it is NOT read here, and the
 // QUL topics are not read either (the Clusters work is scored against them).
 //
-// Measured on QurSim with the benchmark in tools/embedding-benchmark: lemmas alone put 17.0 % of
-// the related verses in the top 10. Run the benchmark on your machine to compare embedding models
-// and to tune these weights before trusting them.
+// THE WEIGHTS ARE MEASURED, per embedding model, with tools/embedding-benchmark (fusion specs,
+// chosen on the dev half of QurSim's queries, reported on the test half):
+//   Harrier 270M (built in, the default)  W_SEM 0.25 — at 1.0 it made the ranking WORSE than
+//                                          lemmas alone (top-10 recall 16.0 vs 17.0)
+//   AraModernBert-STS, for comparison     W_SEM 1.0 — top-10 recall 19.7, strong pairs 33.3
+// After `just embeddings-ollama`, benchmark the new model and set W_SEM from its own grid.
 
 const int    BATCH    = 900;
-const double W_SEM    = 1.0;
+const double W_SEM    = 0.25;
 const double W_LEMMAS = 1.0;
 const double W_ROOTS  = 0.5;
 
@@ -70,6 +75,7 @@ var rootsRaw = Shared(N.Root.Type,  E.VerseHasRoot,  E.RootInVerse,  whyRoots);
 
 // --- semantic: the Arabic text's embedding, exact search in batches ----------------------------------
 var semantic          = new double[all.Count];
+var hasVector         = new bool[all.Count];
 var semanticAvailable = false;
 var embeddings        = Graph.Embeddings.GetIndex(N.Verse.Type, N.Verse.TextSimple);
 
@@ -82,22 +88,27 @@ if (embeddings is not null && embeddings.TryGetVector(seed, out var vector))
         foreach (var hit in embeddings.FindSimilar(default(UID128), vector, batch.Count, null, batch))
         {
             UID128 uid = hit.UID;
-            if (index.TryGetValue(uid, out var i)) semantic[i] = hit.Score;
+            if (index.TryGetValue(uid, out var i)) { semantic[i] = hit.Score; hasVector[i] = true; }
         }
     }
 }
 
-// --- standardise each signal over all verses, then sum --------------------------------------------------
-double[] Z(double[] x)
+var embedded = hasVector.Where((h, i) => h && all[i] != seed).Count();     // candidates with a vector
+
+// --- standardise each signal, then sum ----------------------------------------------------------------
+// Over every verse but the seed, or — for the semantic signal — over those that have a vector; a
+// verse outside the mask scores 0, the mean.
+double[] Z(double[] x, bool[] mask = null)
 {
     var seedIndex = index[seed];
-    var values    = x.Where((v, i) => i != seedIndex).ToArray();
+    var values    = x.Where((v, i) => i != seedIndex && (mask is null || mask[i])).ToArray();
+    if (values.Length == 0) return new double[x.Length];
     var mean      = values.Average();
     var sd        = Math.Sqrt(values.Sum(v => (v - mean) * (v - mean)) / Math.Max(1, values.Length));
-    return x.Select(v => sd > 0 ? (v - mean) / sd : 0).ToArray();
+    return x.Select((v, i) => sd > 0 && (mask is null || mask[i]) ? (v - mean) / sd : 0).ToArray();
 }
 
-var zSem   = semanticAvailable ? Z(semantic) : new double[all.Count];
+var zSem   = semanticAvailable ? Z(semantic, hasVector) : new double[all.Count];
 var zLem   = Z(lemmas);
 var zRoots = Z(rootsRaw);
 var total  = Enumerable.Range(0, all.Count).Select(i => W_SEM * zSem[i] + W_LEMMAS * zLem[i] + W_ROOTS * zRoots[i]).ToArray();
@@ -125,6 +136,8 @@ return new QK.SimilarDto
 {
     Uid               = seed,
     SemanticAvailable = semanticAvailable,
-    Method            = semanticAvailable ? "Arabic meaning (embedding) + shared lemmas + shared roots" : "shared lemmas + shared roots (the Arabic embeddings index has no vector for this verse yet)",
+    Method            = !semanticAvailable ? "shared lemmas + shared roots (the Arabic embeddings index has no vector for this verse yet)"
+                      : embedded < all.Count - 1 ? $"Arabic meaning (embedding) + shared lemmas + shared roots — the embeddings cover {embedded + 1:N0} of {all.Count:N0} verses so far"
+                      : "Arabic meaning (embedding) + shared lemmas + shared roots",
     Verses            = top.Select(Row).ToArray(),
 };
