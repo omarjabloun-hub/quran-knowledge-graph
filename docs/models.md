@@ -38,9 +38,22 @@ The workspace calls Ollama's OpenAI-compatible API (`OLLAMA_URL` + `/v1/embeddin
 verse — no instruction prefix — so the benchmark measures Ollama models the same way.
 
 **Measure before switching.** `just benchmark` scores every candidate against QurSim (Ibn
-Kathir's related verses). So far no model beats the morphology signals (shared lemmas and roots),
-and none finds the pairs that share no lemma — that is what a big multilingual model has to
-show. Results and method: [`tools/embedding-benchmark`](../tools/embedding-benchmark/README.md).
+Kathir's related verses). The numbers so far ([details](../tools/embedding-benchmark/README.md)):
+
+| Ranking (top-10 recall of related verses, held-out queries) | R@10 | strong pairs |
+|---|---|---|
+| shared lemmas alone | 17.7 | 28.2 |
+| Harrier (built in) × 0.25 + lemmas + roots — **the endpoint today** | 17.5 | 29.4 |
+| AraModernBert-STS × 1.0 + lemmas + roots | **20.2** | **34.5** |
+
+The built-in model adds little to the Quranic Arabic Corpus morphology; a good Arabic embedding
+adds a lot. Benchmark the Ollama models on the Mac (`just benchmark --skip-hf`), switch to the
+best, and set its weight (`W_SEM` in `qkg/verse/similar`) from its own dev-half grid.
+
+The workspace's external embeddings index speaks the OpenAI API (`<OLLAMA_URL>/v1/embeddings`),
+so any compatible server can stand in for Ollama — for a sentence-transformers model such as
+AraModernBert-STS, serve it with an OpenAI-compatible embeddings server and point `OLLAMA_URL` at
+it.
 
 Not used: `Mathani-Ayat/rattil-ayah-embed`, a Quran-specific model fine-tuned **on QurSim** — the
 very reference the similarity work is measured against.

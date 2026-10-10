@@ -18,16 +18,19 @@ closes it.
       (`src/QuranKG.FrontEnd`)
 - [x] Local runbook for a Mac: compose, `.env`, Justfile, bash + PowerShell scripts, the
       workspace tool, the embeddings switch to Ollama (`docs/local-setup.md`)
-- [x] Embedding benchmark against QurSim, with the first results (`tools/embedding-benchmark`)
+- [x] Embedding benchmark against QurSim, dev/test protocol, first results — and the similarity
+      weights set from it (`tools/embedding-benchmark`, `qkg/verse/similar`)
 
 ## Next — on the Mac
 
 - [ ] **Run the benchmark with the large models** (`just models-pull`, `just benchmark`):
       `qwen3-embedding:8b` / `:4b` and `bge-m3` through Ollama, `Qwen3-Embedding-4B` through MPS.
-      Decide the embedding model on the *no-shared-lemma* column; if one beats Harrier there,
-      `just embeddings-ollama`. Then tune `W_SEM` / `W_LEMMAS` / `W_ROOTS` in
-      `qkg/verse/similar` with fusion specs on the benchmark's dev split, and record the numbers in
-      `tools/embedding-benchmark/README.md` and in the endpoint's header comment.
+      The bar: AraModernBert-STS fused with the morphology reaches top-10 recall 20.2 (strong
+      pairs 34.5) on the held-out half, against 17.5 for the built-in Harrier at weight 0.25. Choose
+      the model and its `W_SEM` on the dev half, report on the test half, switch with
+      `just embeddings-ollama`, record the numbers in `tools/embedding-benchmark/README.md` and in
+      the endpoint's header comment. Watch the *no-shared-lemma* column: nothing finds those
+      pairs yet.
 - [ ] **QUL topics**: download `topics.db` (manual, free account — see `data/manifest.json`), then
       `just check-data && just ingest`. `TopicIngest` and the `Topic` renderer exist; nothing has
       been ingested yet. Check the hierarchy (`ParentTopic`) and the Stories branch.

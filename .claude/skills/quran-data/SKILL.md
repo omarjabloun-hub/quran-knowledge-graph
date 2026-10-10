@@ -88,10 +88,13 @@ The morphology never counts it (its word numbering starts after it), so word cou
 | most frequent roots | أ ل ه 2,851 · ق و ل 1,722 · ك و ن 1,390 · ر ب ب 980 · أ م ن 879 |
 | graph | ~97,533 nodes, ~428,400 edges |
 
-Similarity on QurSim (top-10 recall of related verses): shared lemmas 17.0, shared roots 17.0,
-the best Arabic sentence model 16.5 (AraModernBert-STS), EmbeddingGemma2 10.4. 9,976 related
-pairs share a lemma, 2,888 share none — and every method so far finds under 8 % of the second
-kind in its top 20. That column is what a new signal has to move.
+Similarity on QurSim (top-10 recall of related verses; fused rows on the held-out half):
+shared lemmas 17.0–17.7, shared roots 17.0, the best Arabic sentence model alone 16.5
+(AraModernBert-STS), the built-in Harrier alone **9.2** (last). Fused as `qkg/verse/similar`
+fuses: Harrier × 0.25 + lemmas + 0.5 roots 17.5 (strong pairs 29.4); AraModernBert-STS × 1.0 +
+lemmas + roots **20.2** (strong 34.5). 9,976 related pairs share a lemma and 2,888 share none —
+and every method so far finds under 8 % of the second kind in its top 20. That column is what a
+new signal has to move. Tune any weight on `SPLIT=dev`, report on `SPLIT=test`.
 
 ## 8. Adding a source
 
