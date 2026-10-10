@@ -55,7 +55,7 @@ just bootstrap      # everything below, in order
 
 | Step | What happens | Time |
 |---|---|---|
-| `just up` | starts the workspace (first run pulls the image, ~3 GB) and waits for it | 2–5 min |
+| `just up` | starts the workspace (the first run pulls the image: ~1.9 GB on Apple silicon) and waits for it | 2–5 min |
 | `just tokens` | signs in as the admin in `.env`, mints a Library and an Interface Upload token into `.env` | seconds |
 | `just fetch` | downloads the 8 sources in `data/manifest.json` into `data/raw/`, checks their SHA-256 | 1 min |
 | `just check-data` | loads, joins and validates the corpus — 114 surahs, 6,236 verses, 77,429 words | 5 s |

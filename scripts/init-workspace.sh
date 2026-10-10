@@ -18,7 +18,7 @@ step "Starting the workspace (curiosityai/curiosity:${CURIOSITY_VERSION:-72111})
 cd "$ROOT_DIR"
 docker compose up -d workspace
 
-info "waiting for $CURIOSITY_URL (up to ${TIMEOUT}s — the first run pulls a ~3 GB image)"
+info "waiting for $CURIOSITY_URL (up to ${TIMEOUT}s — the first run pulls a ~2 GB image)"
 elapsed=0
 until curl -sS -o /dev/null "$CURIOSITY_URL" 2>/dev/null; do
   if [ "$elapsed" -ge "$TIMEOUT" ]; then

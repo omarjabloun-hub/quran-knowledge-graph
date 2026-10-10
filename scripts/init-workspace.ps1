@@ -13,7 +13,7 @@ Write-Step "Starting the workspace (curiosityai/curiosity:$version)"
 Push-Location $script:RootDir
 try { Invoke-Checked "docker compose up" { docker compose up -d workspace } } finally { Pop-Location }
 
-Write-Info "waiting for $env:CURIOSITY_URL (up to ${timeout}s - the first run pulls a ~3 GB image)"
+Write-Info "waiting for $env:CURIOSITY_URL (up to ${timeout}s - the first run pulls a ~2 GB image)"
 $elapsed = 0
 while (-not (Test-WorkspaceReachable)) {
     if ($elapsed -ge $timeout) {
