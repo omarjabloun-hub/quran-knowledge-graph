@@ -1,0 +1,38 @@
+# The local Curiosity workspace. `just up` starts it and waits until it answers; `just down`
+# stops it. Its data lives in .workspace/<instance>/ and survives both.
+#
+# The image is multi-arch (linux/amd64 and linux/arm64), so on an Apple-silicon Mac it runs
+# natively — no Rosetta. Models do NOT run in here: Docker on macOS has no access to the GPU,
+# so Ollama runs on the Mac itself and the workspace reaches it at host.docker.internal.
+services:
+  workspace:
+    image: curiosityai/curiosity:${CURIOSITY_VERSION:-72111}
+    container_name: qkg-workspace-${WORKSPACE_INSTANCE:-local}
+    ports:
+      - "${WORKSPACE_PORT:-8080}:8080"
+    environment:
+      storage: /data/curiosity
+      # The administrator a fresh workspace is created with. Change both before exposing the
+      # workspace to anyone; `just tokens` signs in with them.
+      MSK_ADMIN_USER: ${WORKSPACE_ADMIN_USER:-admin}
+      MSK_ADMIN_PASSWORD: ${WORKSPACE_ADMIN_PASSWORD:-admin}
+      MSK_ADMIN_EMAIL: ${WORKSPACE_ADMIN_EMAIL:-admin@localhost.local}
+      MSK_DISABLE_TELEMETRY: "true"
+      MSK_DISABLE_CLOUD_ERROR_REPORT: "true"
+      # .NET resource monitoring reads cgroup v1 paths a cgroup v2 host (Docker Desktop on
+      # macOS) does not have, and crashes the container.
+      MSK_DISABLE_RESOURCE_MONITORING: "true"
+      # Do NOT set MSK_LOW_MEMORY: it keeps nodes off-heap and made the dashboard endpoint
+      # six times slower (loading a Word node: ~160 µs instead of ~25 µs).
+    extra_hosts:
+      # Docker Desktop resolves host.docker.internal on its own; this line makes Linux do the same.
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./.workspace/${WORKSPACE_INSTANCE:-local}:/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8080' 2>/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+    restart: unless-stopped

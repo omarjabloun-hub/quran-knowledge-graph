@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/data/">
+    <Project Path="src/QuranKG.Dataset/QuranKG.Dataset.csproj" />
+    <Project Path="src/QuranKG.Dataset.Tests/QuranKG.Dataset.Tests.csproj" />
+    <Project Path="src/QuranKG.Tools/QuranKG.Tools.csproj" />
+  </Folder>
+  <Folder Name="/workspace/">
+    <Project Path="src/QuranKG.Connector/QuranKG.Connector.csproj" />
+    <Project Path="src/QuranKG.FrontEnd/QuranKG.FrontEnd.csproj" />
+    <Project Path="src/QuranKG.Workspace/QuranKG.Workspace.csproj" />
+  </Folder>
+</Solution>
