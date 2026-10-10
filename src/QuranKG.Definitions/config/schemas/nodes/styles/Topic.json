@@ -6,7 +6,7 @@
   "Description": "A QUL topic (content for reading and filtering, never a similarity signal).",
   "Color": "#be185d",
   "Icon": "fi-rr-hashtag",
-  "LabelField": "TopicName",
+  "LabelField": "TopicName|TopicNameArabic|TopicId",
   "Metadata": {},
   "Shortcuts": [],
   "ChatFields": []

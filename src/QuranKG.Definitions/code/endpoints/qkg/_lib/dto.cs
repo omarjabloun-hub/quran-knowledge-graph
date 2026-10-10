@@ -7,8 +7,9 @@
 // file: the import directive is matched anywhere in the code, and the library would import itself.
 //
 // Every class here is declared a SECOND time, identically, in
-// src/QuranKG.FrontEnd/src/Api/Dto.cs. Both ends serialise with the same default resolver, so
-// the two declarations are the wire format: add a field to one, add it to the other.
+// src/QuranKG.FrontEnd/src/Api/Dto.cs, which `just sync-dto` GENERATES from this file (up to the
+// "shared reads" helpers). Both ends serialise with the same default resolver, so the two
+// declarations are the wire format: change this file, then re-run `just sync-dto`.
 //
 // DTOs are flat (Transpose has no runtime reflection): primitives, UID128 and arrays only.
 // Every count ships the UID of what it counted, so a chart bar opens the node it measured.
@@ -144,36 +145,71 @@ public static class QK
 
     public class SurahProfileDto
     {
-        public UID128    Uid              { get; set; }
-        public int       Verses           { get; set; }
-        public int       Words            { get; set; }
-        public int       DistinctRoots    { get; set; }
-        public int       DistinctLemmas   { get; set; }
-        public int       Nouns            { get; set; }
-        public int       Verbs            { get; set; }
-        public int       Particles        { get; set; }
+        public UID128    Uid               { get; set; }
+        public int       Verses            { get; set; }
+        public int       Words             { get; set; }
+        public int       DistinctRoots     { get; set; }
+        public int       DistinctLemmas    { get; set; }
+        public int       Nouns             { get; set; }
+        public int       Verbs             { get; set; }
+        public int       Particles         { get; set; }
         /// <summary>Words per verse, in ayah order.</summary>
-        public int[]     VerseLengths     { get; set; }
-        public UID128[]  VerseUIDs        { get; set; }
-        public Counted[] TopRoots         { get; set; }
+        public int[]     VerseLengths      { get; set; }
+        public UID128[]  VerseUIDs         { get; set; }
+        /// <summary>The Uthmani text of each verse, in ayah order — the surah as it is read.</summary>
+        public string[]  VerseTexts        { get; set; }
+        /// <summary>Saheeh International, in ayah order, for readers who need a gloss.</summary>
+        public string[]  VerseTranslations { get; set; }
+        public Counted[] TopRoots          { get; set; }
         /// <summary>Roots this surah uses far more than the rest of the Quran (tf-idf over surahs).</summary>
-        public Counted[] DistinctiveRoots { get; set; }
-        public Counted[] TopLemmas        { get; set; }
+        public Counted[] DistinctiveRoots  { get; set; }
+        public Counted[] TopLemmas         { get; set; }
+    }
+
+    /// <summary>One word of a verse, with the morphology the Quranic Arabic Corpus gives it.</summary>
+    public class WordRow
+    {
+        public UID128 Uid          { get; set; }
+        public int    Position     { get; set; }
+        /// <summary>The word as written in the Uthmani text, with its diacritics.</summary>
+        public string Text         { get; set; }
+        /// <summary>The morphological segments, "ٱلْ + حَمْدُ".</summary>
+        public string Segments     { get; set; }
+        /// <summary>The root's letters, spaced ("ح م د"); empty for words without one.</summary>
+        public string Root         { get; set; }
+        public UID128 RootUid      { get; set; }
+        public string Lemma        { get; set; }
+        public UID128 LemmaUid     { get; set; }
+        public string PartOfSpeech { get; set; }
+        /// <summary>The stem's features, "M|NOM" (masculine, nominative).</summary>
+        public string Features     { get; set; }
+    }
+
+    /// <summary>A verse Ibn Kathir's tafsir relates to another (QurSim), with the grade it was given.</summary>
+    public class RelatedVerse
+    {
+        public UID128 Uid         { get; set; }
+        public string VerseKey    { get; set; }
+        /// <summary>2 = strongly related, 1 = related, 0 = the relation is not obvious.</summary>
+        public int    Degree      { get; set; }
+        public string Grade       { get; set; }
+        public string Text        { get; set; }
+        public string Translation { get; set; }
     }
 
     public class VerseWordsDto
     {
-        public UID128    Uid           { get; set; }
-        public UID128    SurahUID      { get; set; }
+        public UID128         Uid           { get; set; }
+        public UID128         SurahUID      { get; set; }
         /// <summary>The verse's words in reading order.</summary>
-        public UID128[]  WordUIDs      { get; set; }
-        public UID128[]  RootUIDs      { get; set; }
-        public UID128[]  LemmaUIDs     { get; set; }
+        public WordRow[]      Words         { get; set; }
+        public UID128[]       RootUIDs      { get; set; }
+        public UID128[]       LemmaUIDs     { get; set; }
         /// <summary>
-        /// Verses Ibn Kathir relates to this one (QurSim), with the grade in Detail. The ANSWER KEY:
-        /// shown to people on the verse page, never to a similarity signal or an AI tool.
+        /// Verses Ibn Kathir relates to this one (QurSim). The ANSWER KEY: shown to people on the
+        /// verse page, never to a similarity signal or an AI tool.
         /// </summary>
-        public Counted[] TafsirRelated { get; set; }
+        public RelatedVerse[] TafsirRelated { get; set; }
     }
 
     /// <summary>One candidate verse and why it was ranked: each signal's standardised contribution.</summary>
@@ -181,6 +217,9 @@ public static class QK
     {
         public UID128   Uid         { get; set; }
         public string   VerseKey    { get; set; }
+        /// <summary>The Uthmani text, so a list of candidates reads without a second call.</summary>
+        public string   Text        { get; set; }
+        public string   Translation { get; set; }
         public double   Score       { get; set; }
         /// <summary>The Arabic text's meaning (embedding of the plain Arabic), standardised over all verses.</summary>
         public double   Semantic    { get; set; }
@@ -206,8 +245,18 @@ public static class QK
     /// <summary>The Lemma node key the connector writes: lemma|root|coarse tag.</summary>
     public static string LemmaKey(string lemma, string root, string posTag) => lemma + "|" + (root ?? "") + "|" + posTag;
 
+    /// <summary>
+    /// The nouns that carry meaning. The Corpus tags as nouns (N) a set of function words too —
+    /// pronouns, إِذَا and قَبْل (time and location adverbs), مَن and مَا asking or conditioning —
+    /// which would otherwise crowd every "most frequent nouns" list.
+    /// </summary>
     public static bool IsContentNoun(string partOfSpeech)
-        => partOfSpeech != "Pronoun" && partOfSpeech != "Relative pronoun" && partOfSpeech != "Demonstrative pronoun";
+        => !FunctionNouns.Contains(partOfSpeech ?? "");
+
+    private static readonly HashSet<string> FunctionNouns = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "Pronoun", "Relative pronoun", "Demonstrative pronoun", "Time adverb", "Location adverb", "Interrogative noun", "Conditional noun",
+    };
 
     public static Counted[] Top(Dictionary<string, int> counts, Dictionary<string, UID128> uids, int take, Func<string, string> label = null)
         => counts.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal).Take(take)

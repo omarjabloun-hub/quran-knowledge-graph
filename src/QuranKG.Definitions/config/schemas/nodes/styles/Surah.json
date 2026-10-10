@@ -6,7 +6,7 @@
   "Description": "A chapter of the Quran (1–114).",
   "Color": "#0f766e",
   "Icon": "fi-rr-book-quran",
-  "LabelField": "NameScholarly",
+  "LabelField": "${Number}. {NameScholarly}",
   "Metadata": {},
   "Shortcuts": [],
   "ChatFields": []

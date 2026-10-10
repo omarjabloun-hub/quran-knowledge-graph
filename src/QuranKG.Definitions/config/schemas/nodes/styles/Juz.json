@@ -6,7 +6,7 @@
   "Description": "One of the 30 parts.",
   "Color": "#0369a1",
   "Icon": "fi-rr-layers",
-  "LabelField": "JuzId",
+  "LabelField": "$Juz {Number}",
   "Metadata": {},
   "Shortcuts": [],
   "ChatFields": []

@@ -1,0 +1,11 @@
+{
+    "output": "$(OutDir)/tps/",
+    "fileName": "quran-kg.js",
+    "outputFormatting": "Formatted",
+    "combineScripts": false,
+    "html": { "disabled": false, "title": "Quran Knowledge Graph" },
+    "resources": [],
+    "cleanOutputFolderBeforeBuildPattern": "*.js|*.css",
+    "console": { "enabled": false },
+    "loader": { "type": "Global" }
+}

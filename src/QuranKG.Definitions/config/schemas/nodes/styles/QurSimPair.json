@@ -6,7 +6,7 @@
   "Description": "Two verses Ibn Kathir relates (QurSim) — the similarity answer key.",
   "Color": "#64748b",
   "Icon": "fi-rr-link",
-  "LabelField": "PairKey",
+  "LabelField": "${VerseA} ~ {VerseB}",
   "Metadata": {},
   "Shortcuts": [],
   "ChatFields": []

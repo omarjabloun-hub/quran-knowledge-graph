@@ -104,19 +104,27 @@ var total  = Enumerable.Range(0, all.Count).Select(i => W_SEM * zSem[i] + W_LEMM
 
 var top = Enumerable.Range(0, all.Count).Where(i => all[i] != seed).OrderByDescending(i => total[i]).Take(count).ToList();
 
+QK.SimilarVerse Row(int i)
+{
+    var found = Graph.TryGet(all[i], out var v);
+    return new QK.SimilarVerse
+    {
+        Uid         = all[i],
+        VerseKey    = found ? v.GetString(N.Verse.VerseKey)      : "",
+        Text        = found ? v.GetString(N.Verse.TextUthmani)   : "",
+        Translation = found ? v.GetString(N.Verse.EnglishSaheeh) : "",
+        Score       = Math.Round(total[i], 3),
+        Semantic    = Math.Round(W_SEM    * zSem[i],   3),
+        Lemmas      = Math.Round(W_LEMMAS * zLem[i],   3),
+        Roots       = Math.Round(W_ROOTS  * zRoots[i], 3),
+        SharedRoots = whyRoots.TryGetValue(i, out var why) ? why.OrderByDescending(r => r.W).Select(r => r.Label).Distinct().Take(6).ToArray() : new string[0],
+    };
+}
+
 return new QK.SimilarDto
 {
     Uid               = seed,
     SemanticAvailable = semanticAvailable,
     Method            = semanticAvailable ? "Arabic meaning (embedding) + shared lemmas + shared roots" : "shared lemmas + shared roots (the Arabic embeddings index has no vector for this verse yet)",
-    Verses            = top.Select(i => new QK.SimilarVerse
-    {
-        Uid         = all[i],
-        VerseKey    = Graph.TryGet(all[i], out var v) ? v.GetString(N.Verse.VerseKey) : "",
-        Score       = Math.Round(total[i], 3),
-        Semantic    = Math.Round(W_SEM * zSem[i], 3),
-        Lemmas      = Math.Round(W_LEMMAS * zLem[i], 3),
-        Roots       = Math.Round(W_ROOTS * zRoots[i], 3),
-        SharedRoots = whyRoots.TryGetValue(i, out var why) ? why.OrderByDescending(x => x.W).Select(x => x.Label).Distinct().Take(6).ToArray() : new string[0],
-    }).ToArray(),
+    Verses            = top.Select(Row).ToArray(),
 };

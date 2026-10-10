@@ -2,8 +2,9 @@
 //
 //   dotnet run --project src/QuranKG.Tools -- fetch [--force] [--only <source>]   download data/raw from data/manifest.json
 //   dotnet run --project src/QuranKG.Tools -- check                              load + validate the corpus, print counts
+//   dotnet run --project src/QuranKG.Tools -- sync-dto [--check]                 regenerate the front end's copy of the endpoint DTOs
 //
-// `just fetch` and `just check-data` call these.
+// `just fetch`, `just check-data` and `just sync-dto` call these.
 
 using System.Diagnostics;
 using QuranKG.Dataset;
@@ -16,9 +17,10 @@ try
 {
     return command switch
     {
-        "fetch" => await Fetch.RunAsync(root, force: args.Contains("--force"), only: Arg(args, "--only")),
-        "check" => Check(root),
-        _       => Help(),
+        "fetch"    => await Fetch.RunAsync(root, force: args.Contains("--force"), only: Arg(args, "--only")),
+        "check"    => Check(root),
+        "sync-dto" => SyncDto.Run(root, check: args.Contains("--check")),
+        _          => Help(),
     };
 }
 catch (CorpusException ex)
@@ -52,7 +54,7 @@ static int Check(string root)
 
 static int Help()
 {
-    Console.WriteLine("usage: QuranKG.Tools fetch [--force] [--only <source>] | check");
+    Console.WriteLine("usage: QuranKG.Tools fetch [--force] [--only <source>] | check | sync-dto [--check]");
     return 2;
 }
 

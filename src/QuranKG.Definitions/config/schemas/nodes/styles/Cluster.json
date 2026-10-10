@@ -6,7 +6,7 @@
   "Description": "A group of verses found by clustering.",
   "Color": "#15803d",
   "Icon": "fi-rr-circle-nodes",
-  "LabelField": "Label",
+  "LabelField": "Label|LabelArabic|ClusterKey",
   "Metadata": {},
   "Shortcuts": [],
   "ChatFields": []

@@ -1,0 +1,32 @@
+<Project Sdk="Transpose.Build.Target/26.9.4870">
+
+  <!--
+    The front end: C# compiled to JavaScript by the Transpose compiler, rendered with Tesserae.
+    The build shells out to the Transpose.Compiler GLOBAL dotnet tool (`tps`); see
+    docs/local-setup.md. A missing tool surfaces as MSB3073 / exit code 127, not as a C# error.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- CS1998 async-without-await, CA2007 ConfigureAwait: noise in transpiled code. -->
+    <NoWarn>CS1998,CA2007</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Curiosity.FrontEnd"       Version="26.10.6571" />
+    <PackageReference Include="Curiosity.FrontEnd.Core"  Version="26.10.6571" />
+    <PackageReference Include="Curiosity.FrontEnd.API"   Version="26.10.6571" />
+    <PackageReference Include="Curiosity.FrontEnd.Admin" Version="26.10.6571" />
+    <PackageReference Include="Transpose.BCL"            Version="26.9.5840" />
+    <!-- Pinned to the Tesserae the Curiosity packages above were built against, so the
+         pre-transpiled Curiosity modules and this project agree on every component. -->
+    <PackageReference Include="Tesserae"                 Version="2026.10.71964" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="tps.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
