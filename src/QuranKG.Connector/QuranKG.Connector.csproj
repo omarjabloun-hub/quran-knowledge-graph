@@ -1,0 +1,26 @@
+<!--
+  Writes the graph: schema + nodes + edges, from the corpus QuranKG.Dataset loads and validates.
+  Runs on your machine and talks to the workspace over HTTP (CURIOSITY_URL / CURIOSITY_API_TOKEN).
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>QuranKG.Connector</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Curiosity.Library"                    Version="26.10.6546" />
+    <PackageReference Include="Microsoft.Extensions.Logging"         Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QuranKG.Dataset\QuranKG.Dataset.csproj" />
+  </ItemGroup>
+
+</Project>
