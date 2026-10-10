@@ -1,0 +1,83 @@
+{
+  "comment": "Every source the graph is built from. `just fetch` downloads each one into data/raw/<target> and checks its SHA-256. A source with \"manual\": true needs a login: the fetch prints the steps instead. See docs/data-sources.md for what each source contributes and its licence.",
+  "sources": [
+    {
+      "name": "kaggle",
+      "title": "The Holy Quran Dataset (Kaggle, yasirabdaali)",
+      "url": "https://www.kaggle.com/api/v1/datasets/download/yasirabdaali/the-holy-quran-dataset",
+      "target": "kaggle/the-holy-quran-dataset.zip",
+      "sha256": "4fd30d8991102d381b3bec0300379a31eb41664862f64eaff1544db08d3c8830",
+      "unzipTo": "kaggle/csv",
+      "licence": "CC0 on Kaggle; the Arabic is Tanzil's text and the English is Qara'i's translation"
+    },
+    {
+      "name": "tanzil-metadata",
+      "title": "Tanzil Quran metadata (surahs, juz, hizb, manzil, ruku, page, sajda)",
+      "url": "https://tanzil.net/res/text/metadata/quran-data.xml",
+      "target": "tanzil/quran-data.xml",
+      "sha256": "8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a",
+      "licence": "Tanzil, CC BY 3.0 — attribute and link to tanzil.net"
+    },
+    {
+      "name": "tanzil-uthmani",
+      "title": "Tanzil Quran text, Uthmani script (display)",
+      "url": "https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&rub=true&tatweel=true&quranType=uthmani&outType=txt-2&agree=true",
+      "target": "tanzil/quran-uthmani.txt",
+      "sha256": "7f30c647331a61100ebf24a80507dc0fcdd9f2df97f1312b5b2dfcb982a7f326",
+      "licence": "Tanzil, CC BY 3.0 — verbatim copies only, keep the notice"
+    },
+    {
+      "name": "tanzil-simple-clean",
+      "title": "Tanzil Quran text, Simple-Clean (standard spelling, no diacritics: search and embeddings)",
+      "url": "https://tanzil.net/pub/download/index.php?marks=true&sajdah=true&rub=true&tatweel=true&quranType=simple-clean&outType=txt-2&agree=true",
+      "target": "tanzil/quran-simple-clean.txt",
+      "sha256": "1862ee63c70fbfc6285e0bb0b9587b89beb5b7891109a4d543d9d2cf8283e8c8",
+      "licence": "Tanzil, CC BY 3.0 — verbatim copies only, keep the notice"
+    },
+    {
+      "name": "translation-qarai",
+      "title": "English translation by Ali Quli Qara'i (Tanzil copy, without the footnotes)",
+      "url": "https://tanzil.net/trans/?transID=en.qarai&type=txt-2",
+      "target": "translations/en.qarai.txt",
+      "sha256": "1207b98ee7ae47891b4dd01b608416da2278820acf54cdaf3943d0a6f9823fdf",
+      "licence": "Tanzil translations: non-commercial use, with attribution"
+    },
+    {
+      "name": "translation-sahih",
+      "title": "English translation, Saheeh International (Tanzil copy)",
+      "url": "https://tanzil.net/trans/?transID=en.sahih&type=txt-2",
+      "target": "translations/en.sahih.txt",
+      "sha256": "a1778a1a56695d9b59ae910809ec46d9f4a55f05961de51cd56e6ebcf9040883",
+      "licence": "Tanzil translations: non-commercial use, with attribution"
+    },
+    {
+      "name": "morphology",
+      "title": "Quranic Arabic Corpus morphology v0.4, Arabic-script fork with root and lemma fixes (mustafa0x/quran-morphology)",
+      "url": "https://raw.githubusercontent.com/mustafa0x/quran-morphology/master/quran-morphology.txt",
+      "target": "morphology/quran-morphology.txt",
+      "sha256": "742bfac59941b2cb09736d5b7aae694af50792261fb8450cbf6afafcc340645f",
+      "licence": "GNU GPL (Quranic Arabic Corpus, corpus.quran.com) — attribution, verbatim"
+    },
+    {
+      "name": "qursim",
+      "title": "QurSim: related verse pairs from Ibn Kathir's tafsir (Sharaf & Atwell, LREC 2012) — the similarity answer key",
+      "url": "http://textminingthequran.com/data/ibn_kathir_similarity.csv",
+      "target": "qursim/ibn_kathir_similarity.csv",
+      "sha256": "c898e39e59b024b4910287af0b22eb8746b91a29be80120f1df8b3b5572ba30c",
+      "licence": "Research data published by the authors; cite Sharaf & Atwell (2012)"
+    },
+    {
+      "name": "qul-topics",
+      "title": "QUL ayah topics (Tarteel) — ~2,500 topics incl. the Stories branch; the clustering reference",
+      "url": "https://qul.tarteel.ai/resources/ayah-topics",
+      "target": "qul/topics.db",
+      "manual": true,
+      "steps": [
+        "Create a free account at https://qul.tarteel.ai and sign in.",
+        "Open https://qul.tarteel.ai/resources/ayah-topics, pick the 'Topics' card, Download → sqlite.",
+        "Save (or unzip) the .db / .sqlite file as data/raw/qul/topics.db, then run `just check-data`."
+      ],
+      "licence": "QUL resources, per the resource card on qul.tarteel.ai"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+
+# Secrets and local state
+.env
+
+# Raw source data — downloaded by `just fetch`, never committed (see data/manifest.json)
+/data/raw/
+
+# Local workspace storage (the Docker volume)
+/.workspace/
+
+# Scratch output of `just export-definitions` — diff it, copy what you want, never commit it
+/.export/
+
+# Embedding benchmark: Python env, model downloads, vectors and reports
+/tools/embedding-benchmark/.venv/
+/tools/embedding-benchmark/out/
+
+# Tooling
+.idea/
+.vs/
+.vscode/
+.claude/settings.local.json
+*.DotSettings.user
+
+# OS
+.DS_Store
+Thumbs.db

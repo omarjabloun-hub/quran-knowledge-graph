@@ -1,0 +1,26 @@
+<!--
+  The corpus read model: one reader per source, the cleaning rules, and the joined, validated
+  corpus. The tools, the tests and the connector all load the data through this project, so a
+  source that changes shape fails here rather than at ingest. No workspace dependency.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>QuranKG.Dataset</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CsvHelper"             Version="33.1.0" />
+    <!-- QUL ayah topics are distributed as SQLite -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="QuranKG.Dataset.Tests" />
+  </ItemGroup>
+
+</Project>
