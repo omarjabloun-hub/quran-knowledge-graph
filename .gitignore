@@ -19,12 +19,15 @@ obj/
 # Embedding benchmark: Python env, model downloads, vectors and reports
 /tools/embedding-benchmark/.venv/
 /tools/embedding-benchmark/out/
+/tools/cluster-benchmark/.venv/
 
 # Tooling
 .idea/
 .vs/
 .vscode/
 .claude/settings.local.json
+# Copied in by the Tesserae package on every front-end build (its own skill): build output
+/.claude/skills/tesserae/
 *.DotSettings.user
 
 # OS

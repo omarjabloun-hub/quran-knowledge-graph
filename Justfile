@@ -22,7 +22,7 @@ default:
 setup:
     @{{run}}setup{{ext}}
 
-# Everything on the local workspace: start it, tokens, fetch, ingest, definitions, front end.
+# Everything on the local workspace: start it, tokens, fetch, ingest, definitions, front end, clusters.
 bootstrap:
     @{{run}}bootstrap{{ext}}
 
@@ -98,6 +98,10 @@ upload-frontend target="local":
 deploy target="local":
     @{{run}}deploy{{ext}} --target {{target}}
 
+# Every surah's passages and the themes several surahs share, built in the workspace (no model). Try: just clusters local '{"Tau":0.12}'
+clusters target="local" body="{}":
+    {{workspace}} clusters '{{body}}' --target {{target}}
+
 # Export the live definitions into .export/ to diff against src/QuranKG.Definitions/.
 export-definitions target="local":
     @{{run}}export-definitions{{ext}} --target {{target}}
@@ -124,3 +128,7 @@ models-pull:
 # Compare embedding models on QurSim (Python; downloads models): see tools/embedding-benchmark.
 benchmark *args="":
     @{{run}}benchmark{{ext}} {{args}}
+
+# Score the passages, themes and similar surahs against the ruku' and QurSim (Python + numpy): see tools/cluster-benchmark.
+benchmark-clusters *args="":
+    @{{run}}benchmark-clusters{{ext}} {{args}}

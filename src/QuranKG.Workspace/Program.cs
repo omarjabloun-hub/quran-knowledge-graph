@@ -5,6 +5,7 @@
 //   dotnet run --project src/QuranKG.Workspace -- status          [--target local|prod]
 //   dotnet run --project src/QuranKG.Workspace -- call <path> [json]  [--target local|prod]
 //   dotnet run --project src/QuranKG.Workspace -- warm            [--target local|prod]
+//   dotnet run --project src/QuranKG.Workspace -- clusters [json] [--save build.json] [--target local|prod]
 //   dotnet run --project src/QuranKG.Workspace -- stage-definitions <out-dir> [--provider harrier|ollama]
 //   dotnet run --project src/QuranKG.Workspace -- use-embeddings harrier|ollama [--target local|prod]
 //
@@ -29,6 +30,7 @@ try
         "status"            => await Status(target),
         "call"              => await Call(target, positional.ElementAtOrDefault(1) ?? throw new UsageException("call <endpoint path> [json body]"), positional.ElementAtOrDefault(2) ?? "{}"),
         "warm"              => await Warm(target),
+        "clusters"          => await Clusters(target, positional.ElementAtOrDefault(1) ?? "{}", Option("--save")),
         "stage-definitions" => Definitions.Stage(settings, positional.ElementAtOrDefault(1) ?? throw new UsageException("stage-definitions <out-dir>"), Definitions.Provider(settings, Option("--provider"))),
         "use-embeddings"    => await Definitions.UseEmbeddingsAsync(settings, target, Definitions.Provider(settings, positional.ElementAtOrDefault(1) ?? throw new UsageException("use-embeddings harrier|ollama"))),
         _                   => Help(),
@@ -53,7 +55,7 @@ string? Option(string name)
 
 static int Help()
 {
-    Console.WriteLine("usage: QuranKG.Workspace tokens | status | call <path> [json] | warm | stage-definitions <dir> | use-embeddings harrier|ollama   [--target local|prod]");
+    Console.WriteLine("usage: QuranKG.Workspace tokens | status | call <path> [json] | warm | clusters [json] [--save file] | stage-definitions <dir> | use-embeddings harrier|ollama   [--target local|prod]");
     return 2;
 }
 
@@ -125,6 +127,33 @@ static async Task<int> Call(Target target, string path, string json)
 
     Console.Error.WriteLine($"({path}: {elapsed.TotalSeconds:F1} s)");
     return 0;
+}
+
+// Builds the passages and themes inside the workspace (qkg/clusters/build) and says what it found.
+// --save writes the whole answer, which tools/cluster-benchmark scores with --from. Fails when the
+// build's own check finds a verse outside exactly one passage, or a passage in two themes.
+static async Task<int> Clusters(Target target, string json, string? save)
+{
+    using var client = await WorkspaceClient.SignInAsync(target);
+    var (body, elapsed) = await client.RunEndpointAsync("qkg/clusters/build", json);
+    var answer = JsonNode.Parse(body)!;
+    int Read(string name) => answer[name]?.GetValue<int>() ?? 0;
+
+    Console.WriteLine($"{Read("Passages"):N0} passages and {Read("Themes"):N0} themes ({Read("VersesInThemes"):N0} verses in a theme); "
+                    + $"{Read("Removed"):N0} clusters of an earlier build removed; {elapsed.TotalSeconds:F1} s.");
+    Console.WriteLine(answer["Method"]?.GetValue<string>());
+
+    if (save is not null)
+    {
+        File.WriteAllText(save, body);
+        Console.WriteLine($"Wrote {save}.");
+    }
+
+    var inconsistent = Read("VersesNotInOnePassage") + Read("PassagesInSeveralThemes");
+    if (inconsistent == 0) return 0;
+
+    Console.Error.WriteLine($"ERROR: {Read("VersesNotInOnePassage")} verse(s) not in exactly one passage, {Read("PassagesInSeveralThemes")} passage(s) in several themes. Run it again.");
+    return 1;
 }
 
 // Compiles the endpoints and fills the dashboard's cache, so the first visitor does not wait for

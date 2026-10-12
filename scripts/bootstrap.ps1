@@ -1,6 +1,7 @@
 # Everything, from an empty machine to the dashboard, on the LOCAL workspace:
 #   start the workspace -> mint tokens -> fetch and check the data -> ingest -> definitions ->
-#   front end -> warm -> status. Each step is idempotent, so it is safe to re-run after a failure.
+#   front end -> warm -> passages and themes -> status. Each step is idempotent, so it is
+#   safe to re-run after a failure.
 . (Join-Path $PSScriptRoot "lib.ps1")
 
 $envFile = Join-Path $script:RootDir ".env"
@@ -21,6 +22,9 @@ Invoke-Checked "check" { dotnet run --project $script:ToolsCsproj -c Release -- 
 
 & (Join-Path $PSScriptRoot "ingest.ps1")
 & (Join-Path $PSScriptRoot "deploy.ps1")
+
+Write-Step "Building the passages and themes"
+Invoke-Workspace clusters
 
 Write-Step "Status"
 Invoke-Workspace status

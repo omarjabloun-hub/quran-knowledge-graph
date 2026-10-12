@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Everything, from an empty machine to the dashboard, on the LOCAL workspace:
 #   start the workspace → mint tokens → fetch and check the data → ingest → definitions →
-#   front end → warm → status. Each step is idempotent, so it is safe to re-run after a failure.
+#   front end → warm → passages and themes → status. Each step is idempotent, so it is
+#   safe to re-run after a failure.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
@@ -24,6 +25,9 @@ dotnet run --project "$TOOLS_CSPROJ" -c Release -- check
 
 bash "$SCRIPT_DIR/ingest.sh"
 bash "$SCRIPT_DIR/deploy.sh"
+
+step "Building the passages and themes"
+workspace clusters
 
 step "Status"
 workspace status
