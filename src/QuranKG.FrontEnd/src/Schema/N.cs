@@ -9,12 +9,17 @@ namespace QuranKG.FrontEnd.Schema
         {
             public const string Type = "Cluster";
             public const string ClusterKey = "ClusterKey";
+            public const string Kind = "Kind";
             public const string Scope = "Scope";
             public const string Label = "Label";
             public const string LabelArabic = "LabelArabic";
             public const string Description = "Description";
             public const string Method = "Method";
             public const string RunId = "RunId";
+            public const string SurahNumber = "SurahNumber";
+            public const string Ordinal = "Ordinal";
+            public const string FirstVerseKey = "FirstVerseKey";
+            public const string LastVerseKey = "LastVerseKey";
         }
 
         public static class Juz
@@ -174,6 +179,8 @@ namespace QuranKG.FrontEnd.Schema
         public const string InCluster = "InCluster";
         public const string ClusterOfSurah = "ClusterOfSurah";
         public const string HasCluster = "HasCluster";
+        public const string HasPassage = "HasPassage";
+        public const string InTheme = "InTheme";
         public const string _Mentions = "_Mentions";
         public const string _AppearsIn = "_AppearsIn";
     }

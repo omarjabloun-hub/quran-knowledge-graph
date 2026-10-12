@@ -67,8 +67,11 @@ internal static class Edges
     public const string HasMember           = nameof(HasMember);           // Cluster → Verse
     public const string InCluster           = nameof(InCluster);           // Verse → Cluster
 
-    public const string ClusterOfSurah      = nameof(ClusterOfSurah);      // Cluster → Surah (a per-surah run)
+    public const string ClusterOfSurah      = nameof(ClusterOfSurah);      // Cluster → Surah (a passage)
     public const string HasCluster          = nameof(HasCluster);          // Surah → Cluster
+
+    public const string HasPassage          = nameof(HasPassage);          // Cluster (theme) → Cluster (passage)
+    public const string InTheme             = nameof(InTheme);             // Cluster (passage) → Cluster (theme)
 
     // --- the workspace's own NLP pair: written by the parsing pipeline, never by the connector --
     public const string _Mentions           = "_Mentions";

@@ -23,8 +23,9 @@ flowchart LR
     Verse -- HasTopic / InTopicBranch --> Topic[Topic<br/>QUL]
     Topic -- ParentTopic --> Topic
     Verse -- InQurSimPair --> QurSimPair[QurSimPair<br/>7,295 · answer key]
-    Cluster[Cluster] -- HasMember --> Verse
-    Cluster -- ClusterOfSurah --> Surah
+    Passage[Cluster: Passage<br/>561] -- HasMember --> Verse
+    Passage -- ClusterOfSurah --> Surah
+    Theme[Cluster: Theme<br/>119] -- HasPassage --> Passage
 ```
 
 Every edge has a reverse (`InSurah`, `RootOfWord`, `LemmaInVerse`, …) with its own name, so a
@@ -41,7 +42,7 @@ traversal reads in the direction it goes.
 | **Revelation** | `Meccan` / `Medinan` | where a surah was revealed |
 | **Topic** | QUL id | a theme, with its parent; verses link to their topic and every ancestor of it |
 | **QurSimPair** | `a~b` | two verses Ibn Kathir relates, with the degree (0–2). **The answer key** |
-| **Cluster** | per run | a group of verses found by clustering — the whole Quran's stories, or one surah's passages. Empty until the Clusters work runs |
+| **Cluster** | `P:7:103-126` · `T:{hash}` | written by `qkg/clusters/build` (`just clusters`), two kinds. A **Passage** is a run of consecutive verses of one surah — its sections (`SurahNumber`, `Ordinal`, `FirstVerseKey`, `LastVerseKey`). A **Theme** groups passages of several surahs that tell the same story or treat the same subject. Both carry an Arabic label (distinctive lemmas), an English one (a reading aid), the `Method` and the `RunId` |
 
 ## Why it is shaped this way
 
@@ -58,4 +59,9 @@ traversal reads in the direction it goes.
   of speech, words per verse) is computed live from them, and each count can open what it counted.
 - **The answer keys are in the graph but out of the AI's reach** (see data-sources.md).
 - **Clusters are written inside the workspace, not by the connector**, because they are derived:
-  they depend on the embedding model and the method, and are re-run as those improve.
+  they depend on the method, and are re-run as it improves — by an admin, or by Sudo, who can read
+  and change `qkg/clusters/build`. The key of a passage is its verse range and the key of a theme a
+  hash of its passages, so a rebuild that finds the same groups keeps the same nodes, and deletes
+  the ones it no longer finds. Their sizes are not stored: every count is read from the edges.
+- **Verse → passage → theme, not verse → theme.** A verse is in exactly one passage (`InCluster`)
+  and a passage in at most one theme (`InTheme`); the build checks both after every run.

@@ -147,19 +147,33 @@ internal static class Nodes
     }
 
     /// <summary>
-    /// A group of verses found by clustering (written by the Clusters work inside the workspace,
-    /// never by this connector). Registered here so the schema and N.cs are complete from the start.
+    /// A group of verses found by clustering. Written by the qkg/clusters/build endpoint inside the
+    /// workspace, never by this connector, which only registers the type so the schema and N.cs are
+    /// complete from the start. Two kinds:
+    ///   Passage  a run of consecutive verses of one surah — the surah's sections;
+    ///   Theme    passages of several surahs that tell the same story or treat the same subject.
+    /// Key: "P:{surah}:{first ayah}-{last ayah}" for a passage, "T:{hash of its passages' keys}" for
+    /// a theme, so a rebuild that finds the same groups keeps the same nodes.
     /// </summary>
     [Node]
     internal sealed class Cluster
     {
-        [Key]      public string ClusterKey  { get; set; } = "";
+        [Key]      public string ClusterKey    { get; set; } = "";
+        /// <summary>"Passage" or "Theme".</summary>
+        [Property] public string Kind          { get; set; } = "";
         /// <summary>"Quran" or "Surah N".</summary>
-        [Property] public string Scope       { get; set; } = "";
-        [Property] public string Label       { get; set; } = "";
-        [Property] public string LabelArabic { get; set; } = "";
-        [Property] public string Description { get; set; } = "";
-        [Property] public string Method      { get; set; } = "";
-        [Property] public string RunId       { get; set; } = "";
+        [Property] public string Scope         { get; set; } = "";
+        [Property] public string Label         { get; set; } = "";
+        [Property] public string LabelArabic   { get; set; } = "";
+        [Property] public string Description   { get; set; } = "";
+        [Property] public string Method        { get; set; } = "";
+        [Property] public string RunId         { get; set; } = "";
+        /// <summary>A passage's surah; 0 for a theme.</summary>
+        [Property] public int    SurahNumber   { get; set; }
+        /// <summary>A passage's place in its surah (1, 2 …); a theme's rank by the surahs it spans.</summary>
+        [Property] public int    Ordinal       { get; set; }
+        /// <summary>A passage's first and last verse ("7:103"); empty for a theme.</summary>
+        [Property] public string FirstVerseKey { get; set; } = "";
+        [Property] public string LastVerseKey  { get; set; } = "";
     }
 }
