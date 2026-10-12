@@ -20,6 +20,14 @@ closes it.
       workspace tool, the embeddings switch to Ollama (`docs/local-setup.md`)
 - [x] Embedding benchmark against QurSim, dev/test protocol, first results — and the similarity
       weights set from it (`tools/embedding-benchmark`, `qkg/verse/similar`)
+- [x] Clusters, first version, built inside the workspace (`qkg/clusters/build`, `just clusters`,
+      part of `just bootstrap`): every surah cut into passages where its vocabulary changes (561),
+      passages of different surahs grouped into themes (119) — from the lemmas and roots, no model.
+      Scored on references they do not read (`tools/cluster-benchmark`): passages against the ruku'
+      (Pk 0.334 vs 0.399 for equal-length cuts, held-out surahs), themes against QurSim (6.8× chance).
+      Shown on the Stories and themes page, the surah's Passages tab, the theme and passage pages
+- [x] Similar surahs (`qkg/surah/similar`): shared distinctive lemmas and roots, with the themes
+      both tell as the reason — Spearman 0.41 against QurSim summed over pairs of surahs
 
 ## Next — on the Mac
 
@@ -34,21 +42,20 @@ closes it.
 - [ ] **QUL topics**: download `topics.db` (manual, free account — see `data/manifest.json`), then
       `just check-data && just ingest`. `TopicIngest` and the `Topic` renderer exist; nothing has
       been ingested yet. Check the hierarchy (`ParentTopic`) and the Stories branch.
-- [ ] **Clusters** — the Quran's stories, and each surah's passages. Written inside the workspace
-      (a scheduled task or an admin endpoint, so Sudo can re-run and extend it), never by the
-      connector:
-  - per surah: contiguous segments — boundaries where adjacent-verse similarity (embedding +
-    lexical cohesion) drops, TextTiling-style;
-  - whole Quran: verses grouped across surahs (agglomerative / HDBSCAN on the fused similarity),
-    keeping clusters that span several surahs — the recurring stories (Musa, Ibrahim, Yusuf…);
-  - each cluster named in Arabic and English by the chat model from its distinctive roots and
-    representative verses; `Cluster` nodes + `HasMember` / `ClusterOfSurah` edges;
-  - scored against the QUL topics (purity, adjusted Rand) — which stay out of the clustering's
-    reach, like QurSim out of the similarity's.
+- [ ] **Clusters, next** (measure each with `just benchmark-clusters`, choose on `--split dev`):
+  - name each theme in Arabic and English with the chat model, from its key words and opening
+    verses, once a provider is configured — today's labels are its most distinctive lemmas;
+  - score the passages and themes against the QUL topics once `topics.db` is downloaded (purity,
+    adjusted Rand) — which, like QurSim and the ruku', stay out of the clustering's reach;
+  - a second level: the same tree cut at 0.15 splits the stories into their episodes (Moses and
+    the magicians, Moses at the appointed time, the calf);
+  - try the large embedding models in the cohesion and in the passage vectors — Harrier and
+    AraModernBert-STS gave no reliable gain to the passages.
 - [ ] **AI layer**: an Ollama chat provider (`docs/models.md`), then AI tools for the workspace
       assistant — search verses (Arabic first), read a verse with its words, a root's profile —
-      none of which may reach `QurSimPair`, `Topic` (while it is the clustering reference) or
-      `qkg/verse/words`. Add a skill the workspace assistant reads, describing this schema.
+      none of which may reach `QurSimPair`, `Topic` (while it is the clustering reference),
+      `Verse.Ruku` (the passages' reference) or `qkg/verse/words`. Add a skill the workspace
+      assistant reads, describing this schema.
 - [ ] **Similar words**: the dashboard counts words, forms, lemmas and roots; "similar words"
       beyond a shared root (near-synonyms such as خوف / خشية / رهبة) need a lemma-level similarity
       — embeddings of the lemmas' contexts, or co-occurrence — and a "word family" view.

@@ -61,10 +61,23 @@ just bootstrap      # everything below, in order
 | `just check-data` | loads, joins and validates the corpus — 114 surahs, 6,236 verses, 77,429 words | 5 s |
 | `just ingest` | writes the schema and ~97,500 nodes / ~428,400 edges | 1–2 min |
 | `just deploy` | imports indexes, styles and endpoints; builds and uploads the front end | 1 min |
+| `just clusters` | cuts every surah into passages and groups them into themes, inside the workspace | seconds |
 
 Then open <http://localhost:8080>, sign in with `WORKSPACE_ADMIN_USER` / `WORKSPACE_ADMIN_PASSWORD`
 (admin / admin unless you changed `.env` **before** the first `just up`). The first sign-in opens a
 setup assistant — *Finish later* skips it. The home page is the pattern dashboard.
+
+Where to look:
+
+| | |
+|---|---|
+| **Stories and themes** (sidebar) | the 119 themes — passages of several surahs that tell the same story or treat the same subject — widest first, with a filter |
+| a surah → **Passages** | its sections in order, each with the theme it shares; a strip shows the whole surah at a glance |
+| a surah → **Similar surahs** | the surahs that lean on the same distinctive words, and the themes both tell |
+| a theme or a passage | the theme surah by surah, or the passage verse by verse, with its key words and roots |
+
+None of these needs a model: they read the Arabic morphology (lemmas and roots), so they are there
+as soon as `just bootstrap` ends. Re-run `just clusters` after a new ingest.
 
 In the background the workspace embeds every verse (two embeddings indexes, ~6,200 verses each).
 `just status` shows how far it has got. Until `Verse.TextSimple` is done, *Similar verses* ranks by
@@ -109,6 +122,7 @@ alternatives in [models.md](models.md).
 just up / just down          # start / stop the workspace (data stays in .workspace/)
 just status                  # counts, compile state, embedding progress
 just deploy                  # after changing src/QuranKG.Definitions or src/QuranKG.FrontEnd
+just clusters                # rebuild the passages and themes (after an ingest, or a change to the build)
 just upload-frontend         # front end only (~15 s)
 just ingest                  # after changing the connector
 just call qkg/dashboard/corpus                      # an endpoint's JSON

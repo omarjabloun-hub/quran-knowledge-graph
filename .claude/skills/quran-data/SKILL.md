@@ -73,6 +73,9 @@ The morphology never counts it (its word numbering starts after it), so word cou
 - **QurSim** (Sharaf & Atwell 2012): verses Ibn Kathir's tafsir relates. 2,852 pairs degree 2,
   3,580 degree 1, 863 degree 0. 3,943 verses have at least one degree ≥ 1 partner. It **scores**
   similarity; nothing that computes similarity, nothing an AI can reach, may read it.
+- **The ruku'** (`Verse.Ruku`, `Surah.RukuCount`; 556 sections, from Tanzil's metadata) score the
+  passages the clusters build cuts each surah into. They were laid out partly for recitation and
+  run to similar lengths, so an equal-length cut is a strong baseline — beat it, not chance.
 - **QUL topics** will score clustering the same way.
 - A model fine-tuned on QurSim (`Mathani-Ayat/rattil-ayah-embed`) cannot be evaluated on it.
 
@@ -95,6 +98,13 @@ fuses: Harrier × 0.25 + lemmas + 0.5 roots 17.5 (strong pairs 29.4); AraModernB
 lemmas + roots **20.2** (strong 34.5). 9,976 related pairs share a lemma and 2,888 share none —
 and every method so far finds under 8 % of the second kind in its top 20. That column is what a
 new signal has to move. Tune any weight on `SPLIT=dev`, report on `SPLIT=test`.
+
+Clusters (`qkg/clusters/build`, scored with `just benchmark-clusters`): 561 passages (the ruku' are
+556), cut where the lemma and root vocabulary changes, at Pk **0.334** against the ruku' on the
+held-out surahs where equal-length cuts score 0.399; 119 themes over 5,269 verses, keeping QurSim's
+cross-surah pairs together **6.8×** as often as chance. Similar surahs by shared lemmas and roots:
+Spearman 0.41 against QurSim summed over pairs of surahs. Embeddings gave the passages no reliable
+gain.
 
 ## 8. Adding a source
 

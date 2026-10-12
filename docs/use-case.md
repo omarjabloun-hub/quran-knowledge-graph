@@ -18,7 +18,9 @@ the questions below are answered from the Arabic, with translations as reading a
 | How is one verse built, word by word? | the verse page, Verse tab |
 | Where else does the Quran say this? | the verse page: Similar verses (Arabic meaning + shared lemmas + roots), Tafsir links (Ibn Kathir) |
 | Where does a root occur, in which forms, under which lemmas? | the root page |
-| What are the Quran's stories, and the passages of each surah? | Clusters — next ([TODO](../TODO.md)) |
+| What are the Quran's stories, and where does it tell each one? | the Stories and themes page; a theme's page, surah by surah |
+| How is one surah built — what are its sections? | the surah page, Passages tab (and each passage's page) |
+| Which surahs are like this one? | the surah page, Similar surahs (shared distinctive lemmas and roots, and the themes both tell) |
 
 ## Principles
 
@@ -26,8 +28,9 @@ the questions below are answered from the Arabic, with translations as reading a
    glosses for readers.
 2. **Every number is counted live from the graph**, and every count opens the nodes it counted.
 3. **Measured, not asserted.** Similarity is scored against QurSim (Ibn Kathir's related verses),
-   clusters will be against the QUL topics — and both references stay out of what they measure and
-   out of the AI's reach.
+   the passages against the ruku' (the traditional sections), the themes against QurSim and, once
+   downloaded, the QUL topics — and every reference stays out of what it measures and out of the
+   AI's reach.
 4. **The workspace lives in git.** Anything changed in the admin UI is exported and committed;
    a new machine is rebuilt from this repository with `just bootstrap`.
 5. **Local by default.** The models run on the Mac (Ollama); nothing has to leave it.

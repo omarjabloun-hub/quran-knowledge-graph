@@ -4,8 +4,13 @@ Two kinds of model do work here:
 
 | Kind | Used for | Where it runs |
 |---|---|---|
-| **Embedding** | the meaning of each verse's Arabic — the semantic signal of *Similar verses*, semantic search, clustering | built into the workspace (CPU), or Ollama on the Mac's GPU |
-| **Chat (LLM)** | the workspace assistant, Sudo (the admin assistant that extends the workspace), naming clusters | Ollama on the Mac, or a hosted provider |
+| **Embedding** | the meaning of each verse's Arabic — the semantic signal of *Similar verses*, semantic search | built into the workspace (CPU), or Ollama on the Mac's GPU |
+| **Chat (LLM)** | the workspace assistant, Sudo (the admin assistant that extends the workspace), naming the themes | Ollama on the Mac, or a hosted provider |
+
+**Much needs no model at all.** The dashboard, the passages and themes (`just clusters`), similar
+surahs and the lexical half of similar verses read the Quranic Arabic Corpus morphology — roots and
+lemmas — and are there as soon as `just bootstrap` ends. The models add the meaning of each verse
+to *Similar verses*, and will name the themes and power the assistant.
 
 Everything is **Arabic first**: the embeddings read `Verse.TextSimple` — Tanzil's Simple-Clean
 text, standard spelling without diacritics, which is what the models were trained on (the

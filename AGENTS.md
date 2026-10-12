@@ -13,9 +13,10 @@ Orientation for anyone — person or agent — working in this repository. The w
 | `src/QuranKG.Tools` | `fetch`, `check`, `sync-dto` | no |
 | `src/QuranKG.Connector` | the graph schema (`Schema.cs`, `Edges.cs`), the ingest (`Ingest.cs`), `--dry-run`, `--emit-schema` | yes (Library token) |
 | `src/QuranKG.Definitions` | the workspace as files — `config/` (indexes, styles, settings, schemas), `code/endpoints/qkg/`, `variants/` | imported |
-| `src/QuranKG.FrontEnd` | the dashboard (`Dashboard/`), renderers (`Renderers/`), shared components, the API layer | uploaded |
-| `src/QuranKG.Workspace` | `tokens`, `status`, `call`, `warm`, `stage-definitions`, `use-embeddings` | yes (admin sign-in) |
+| `src/QuranKG.FrontEnd` | the dashboard (`Dashboard/`), the Stories and themes page (`Themes/`), renderers (`Renderers/`), shared components, the API layer | uploaded |
+| `src/QuranKG.Workspace` | `tokens`, `status`, `call`, `warm`, `clusters`, `stage-definitions`, `use-embeddings` | yes (admin sign-in) |
 | `tools/embedding-benchmark` | Python: embeds the verses with candidate models and scores them on QurSim | no |
+| `tools/cluster-benchmark` | Python + numpy: the reference implementation of the clusters build, scored on the ruku' and QurSim | no |
 | `scripts/` | every task as `.sh` (bash 3.2) and `.ps1`, called by the `Justfile` | some |
 | `docs/` | use case, data sources, graph model, models, local setup | — |
 | `.claude/skills/` | `quran-data` (this corpus) and the `curiosity-*` platform skills | — |
@@ -30,11 +31,13 @@ just up | down | status     # the local workspace
 just fetch && just check-data
 just ingest [local|prod] [--dry-run]
 just deploy [local|prod]    # definitions + front end + warm
+just clusters [local|prod]  # passages and themes, built inside the workspace
 just upload-endpoints | upload-frontend
 just call <endpoint> ['{"Uid":"…"}']
 just emit-schema | sync-dto
 just embeddings-ollama | embeddings-harrier
 just benchmark [--only <regex>] [--skip-hf]
+just benchmark-clusters [--split dev|test] [--from build.json]
 just test
 ```
 
