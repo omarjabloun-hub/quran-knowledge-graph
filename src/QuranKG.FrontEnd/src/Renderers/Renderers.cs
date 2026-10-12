@@ -13,7 +13,8 @@ namespace QuranKG.FrontEnd.Renderers
 {
     // The smaller node types. Every type the connector writes has a renderer — one without a
     // renderer has no label and no icon and shows as a raw UID wherever it is reachable. The
-    // Surah, Verse and Root renderers, which carry pages of their own, are in their own files.
+    // Surah, Verse, Root and Cluster renderers, which carry pages of their own, have files of
+    // their own.
     //
     // LabelField values match src/QuranKG.Definitions/config/schemas/nodes/styles/*.json.
 
@@ -159,33 +160,6 @@ namespace QuranKG.FrontEnd.Renderers
                 case 1:  yield return "related".t(); break;
                 default: yield return "relation not obvious".t(); break;
             }
-        }
-    }
-
-    /// <summary>A group of verses found together — a story across the Quran, or a passage of one surah.</summary>
-    public sealed class ClusterRenderer : QuranRendererBase
-    {
-        public ClusterRenderer() : base(new SchemaStyleInfo
-        {
-            Name        = N.Cluster.Type,
-            DisplayName = "Cluster",
-            Icon        = UIcons.CircleNodes.ToString(),
-            LabelField  = LabelFields.FirstOf(N.Cluster.Label, N.Cluster.LabelArabic, N.Cluster.ClusterKey),
-        }) { ShortDisplayName = "CLUS"; }
-
-        protected override string[] Related360Types => new[] { N.Verse.Type, N.Surah.Type };
-
-        protected override IComponent CardBody(Node node)
-        {
-            var description = node.GetString(N.Cluster.Description);
-            return string.IsNullOrEmpty(description) ? null : TextBlock(description).Tiny().Secondary();
-        }
-
-        protected override IEnumerable<string> FooterFacts(Node node)
-        {
-            yield return node.GetString(N.Cluster.LabelArabic);
-            yield return node.GetString(N.Cluster.Scope);
-            yield return node.GetString(N.Cluster.Method);
         }
     }
 }

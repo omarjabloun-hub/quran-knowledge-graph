@@ -7,6 +7,7 @@ using QuranKG.FrontEnd.Components;
 using QuranKG.FrontEnd.Schema;
 using Tesserae;
 using TNT;
+using UID;
 using static Tesserae.UI;
 using static TNT.T;
 using Node = Mosaik.Schema.Node;
@@ -46,8 +47,10 @@ namespace QuranKG.FrontEnd.Renderers
 
         protected override IEnumerable<NodeTab> LeadingTabs(Node node)
         {
-            yield return Tab("read",    "Read".t(),    () => ReadTab(node));
-            yield return Tab("profile", "Profile".t(), () => ProfileTab(node));
+            yield return Tab("read",     "Read".t(),           () => ReadTab(node));
+            yield return Tab("passages", "Passages".t(),       () => PassagesTab(node));
+            yield return Tab("similar",  "Similar surahs".t(), () => SimilarTab(node));
+            yield return Tab("profile",  "Profile".t(),        () => ProfileTab(node));
         }
 
         // -----------------------------------------------------------------------------------
@@ -84,6 +87,86 @@ namespace QuranKG.FrontEnd.Renderers
 
                 return page;
             }).S();
+        }
+
+        // -----------------------------------------------------------------------------------
+        // Passages: the surah's sections, and the themes they share with other surahs
+        // -----------------------------------------------------------------------------------
+
+        private static IComponent PassagesTab(Node surah)
+        {
+            return Defer(async () =>
+            {
+                var result = await QuranApi.SurahPassagesAsync(surah.UID);
+                var page   = VStack().WS().P(16).Gap(12.px());
+
+                if (!result.Built)
+                    return page.Children(Banner("The passages have not been built yet. An administrator builds them with `just clusters` (the qkg/clusters/build endpoint); it takes a few seconds.".t()).Warning());
+
+                var passages = result.Passages ?? new QK.PassageRow[0];
+                var themed   = passages.Count(p => p.ThemeUid != default(UID128));
+
+                page.Add(TextBlock(string.Format("{0} passages, cut where the vocabulary changes; {1} of them tell a story or treat a subject that other surahs share — in green.".t(), passages.Length, themed)).Small());
+                page.Add(Clusters.Strip(passages));
+                page.Add(TextBlock(result.Method + " " + "Built".t() + " " + result.RunId + ".").Tiny().Secondary().PB(4));
+
+                foreach (var p in passages) page.Add(Clusters.PassageCard(p, showSurah: false));
+                return page;
+            }).S();
+        }
+
+        // -----------------------------------------------------------------------------------
+        // Similar surahs: which surahs lean on the same distinctive words
+        // -----------------------------------------------------------------------------------
+
+        private const int SIMILAR_COUNT = 10;
+
+        private static IComponent SimilarTab(Node surah)
+        {
+            return Defer(async () =>
+            {
+                var similar = await QuranApi.SimilarSurahsAsync(surah.UID, SIMILAR_COUNT);
+                var list    = VStack().WS().P(16);
+
+                list.Add(TextBlock("Ranked by".t() + ": " + similar.Method + ".").Small().Secondary());
+                list.Add(TextBlock("Each score is standardised over the other surahs: 2.0 means two standard deviations above the typical surah. The Arabic below each is what they share most; the themes are stories or subjects both tell.".t()).Small().Secondary().PB(12));
+
+                foreach (var s in similar.Surahs ?? new QK.SimilarSurah[0]) list.Add(SimilarCard(s));
+                return list;
+            }).S();
+        }
+
+        private static IComponent SimilarCard(QK.SimilarSurah s)
+        {
+            var header = HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap().Children(
+                TextBlock(s.Number + ". " + s.Name).SemiBold(),
+                Arabic.Inline(s.NameArabic, 20),
+                TextBlock(s.NameEnglish).Small().Secondary(),
+                Badge(s.Place).Foreground(Palette.ForPlace(s.Place)).Outline(),
+                Badge("score".t() + " " + s.Score.ToString("0.0")).Primary(),
+                Badge("lemmas".t() + " " + s.Lemmas.ToString("+0.0;-0.0;0.0")).Neutral(),
+                Badge("roots".t() + " " + s.Roots.ToString("+0.0;-0.0;0.0")).Neutral());
+
+            var shared = HStack().WS().AlignItemsCenter().Gap(12.px()).Wrap().PT(6);
+            foreach (var lemma in s.SharedLemmas ?? new QK.Counted[0])
+            {
+                var captured = lemma;
+                shared.Add(Arabic.Inline(captured.Label, 18).Foreground(Palette.Lemma)
+                                 .OnClick((_, e) => { e.stopPropagation(); Lists.Open(captured.Uid); })
+                                 .Style(st => st.setProperty("cursor", "pointer")));
+            }
+
+            var body = VStack().WS().Children(header, shared);
+
+            var themes = (s.SharedThemes ?? new QK.Counted[0]).Take(4).ToArray();
+            if (themes.Length > 0)
+            {
+                var row = HStack().WS().AlignItemsCenter().Gap(16.px()).Wrap().PT(6).Children(TextBlock("Shared themes:".t()).Tiny().Secondary());
+                foreach (var t in themes) row.Add(Clusters.ThemeLink(t.Uid, t.Detail, t.Label, 0));
+                body.Add(row);
+            }
+
+            return Card(body).OnClick(() => Lists.Open(s.Uid)).MB(8);
         }
 
         // -----------------------------------------------------------------------------------

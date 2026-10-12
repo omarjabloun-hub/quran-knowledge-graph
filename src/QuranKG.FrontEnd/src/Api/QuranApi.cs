@@ -8,8 +8,9 @@ namespace QuranKG.FrontEnd.Api
     /// at a glance which line reaches the server. Every parameter naming something is a
     /// <see cref="UID128"/>: the page already holds the node it is looking at.
     ///
-    /// <para>All the endpoints are read-only (<c>readOnlyCompatible: true</c>) and cached on the
-    /// server for an hour, so calling one again costs a cache hit.</para>
+    /// <para>All the endpoints are read-only (<c>readOnlyCompatible: true</c>). Most are cached on
+    /// the server for an hour, so calling one again costs a cache hit; the ones that read the
+    /// clusters (passages, themes, a cluster, similar surahs) are not, so a rebuild shows at once.</para>
     /// </summary>
     internal static class QuranApi
     {
@@ -39,5 +40,17 @@ namespace QuranKG.FrontEnd.Api
 
         internal static Task<QK.SimilarDto> SimilarVersesAsync(UID128 verseUID, int count)
             => Mosaik.API.Endpoints.CallAsync<QK.SimilarDto>(Endpoints.VerseSimilar, new QK.SimilarRequest { Uid = verseUID, Count = count }, readOnlyCompatible: true);
+
+        internal static Task<QK.SimilarSurahsDto> SimilarSurahsAsync(UID128 surahUID, int count)
+            => Mosaik.API.Endpoints.CallAsync<QK.SimilarSurahsDto>(Endpoints.SurahSimilar, new QK.SimilarRequest { Uid = surahUID, Count = count }, readOnlyCompatible: true);
+
+        internal static Task<QK.SurahPassagesDto> SurahPassagesAsync(UID128 surahUID)
+            => Mosaik.API.Endpoints.CallAsync<QK.SurahPassagesDto>(Endpoints.SurahPassages, new QK.UidRequest { Uid = surahUID }, readOnlyCompatible: true);
+
+        internal static Task<QK.ThemesDto> ThemesAsync()
+            => Mosaik.API.Endpoints.CallAsync<QK.ThemesDto>(Endpoints.ClustersThemes, readOnlyCompatible: true);
+
+        internal static Task<QK.ClusterProfileDto> ClusterProfileAsync(UID128 clusterUID)
+            => Mosaik.API.Endpoints.CallAsync<QK.ClusterProfileDto>(Endpoints.ClusterProfile, new QK.UidRequest { Uid = clusterUID }, readOnlyCompatible: true);
     }
 }

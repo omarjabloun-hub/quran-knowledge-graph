@@ -7,6 +7,7 @@ using Mosaik.Helpers;
 using QuranKG.FrontEnd.Api;
 using QuranKG.FrontEnd.Components;
 using QuranKG.FrontEnd.Schema;
+using QuranKG.FrontEnd.Themes;
 using Tesserae;
 using TNT;
 using UID;
@@ -57,6 +58,10 @@ namespace QuranKG.FrontEnd.Dashboard
                         Panels.Heading("Where the roots live".t(),
                                        "The thirty most frequent roots across the 30 juz or the 114 surahs. Click a cell for the verses where that root occurs there; click a root or a number to open it.".t()),
                         RootMap(corpus),
+
+                        Panels.Heading("Stories and themes".t(),
+                                       "Passages of different surahs that lean on the same distinctive words: the stories the Quran tells more than once, and the subjects it returns to. Click one to read it surah by surah.".t()),
+                        ThemesView.Preview(6),
 
                         Panels.Heading("Every surah".t()),
                         SurahTable(o));

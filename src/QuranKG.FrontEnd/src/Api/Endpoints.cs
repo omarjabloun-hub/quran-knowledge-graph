@@ -25,5 +25,17 @@ namespace QuranKG.FrontEnd.Api
 
         /// <summary>Verses similar to one verse, Arabic first. Body: <c>{ "Uid": …, "Count": 20 }</c>.</summary>
         public const string VerseSimilar = "qkg/verse/similar";
+
+        /// <summary>Surahs similar to one surah, by their distinctive lemmas and roots. Body: <c>{ "Uid": …, "Count": 10 }</c>.</summary>
+        public const string SurahSimilar = "qkg/surah/similar";
+
+        /// <summary>One surah's passages — its sections, found by the clusters build — with their themes. Body: <c>{ "Uid": … }</c>.</summary>
+        public const string SurahPassages = "qkg/surah/passages";
+
+        /// <summary>Every theme: passages of several surahs that tell the same story or treat the same subject. No body.</summary>
+        public const string ClustersThemes = "qkg/clusters/themes";
+
+        /// <summary>One cluster: a theme with its passages, or a passage with its verses. Body: <c>{ "Uid": … }</c>.</summary>
+        public const string ClusterProfile = "qkg/cluster/profile";
     }
 }

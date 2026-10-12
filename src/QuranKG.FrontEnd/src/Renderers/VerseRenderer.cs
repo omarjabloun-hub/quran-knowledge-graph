@@ -119,7 +119,7 @@ namespace QuranKG.FrontEnd.Renderers
                 var list    = VStack().WS().P(16);
 
                 list.Add(TextBlock("Ranked by".t() + ": " + similar.Method + ".").Small().Secondary());
-                list.Add(TextBlock("Each signal is standardised over all 6,236 verses, so the badges say how unusual this verse's overlap is — 2.0 means two standard deviations above the typical verse.".t()).Small().Secondary().PB(12));
+                list.Add(TextBlock("Each signal is standardised over every verse of the Quran, so the badges say how unusual this verse's overlap is — 2.0 means two standard deviations above the typical verse.".t()).Small().Secondary().PB(12));
 
                 if (!similar.SemanticAvailable)
                     list.Add(Banner("The Arabic embeddings are not ready for this verse yet, so this ranking is lexical only.".t()).Warning().MB(12));
