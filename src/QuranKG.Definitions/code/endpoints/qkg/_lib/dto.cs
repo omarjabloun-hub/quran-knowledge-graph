@@ -19,6 +19,10 @@ public static class QK
     public const string MECCAN  = "Meccan";
     public const string MEDINAN = "Medinan";
 
+    /// <summary>The two kinds of Cluster the clusters build writes (Cluster.Kind).</summary>
+    public const string PASSAGE = "Passage";
+    public const string THEME   = "Theme";
+
     // --- requests -----------------------------------------------------------------------------
 
     public class UidRequest { public UID128 Uid { get; set; } }
@@ -238,6 +242,127 @@ public static class QK
         public bool           SemanticAvailable { get; set; }
         public string         Method            { get; set; }
         public SimilarVerse[] Verses            { get; set; }
+    }
+
+    /// <summary>One candidate surah and why it was ranked.</summary>
+    public class SimilarSurah
+    {
+        public UID128    Uid          { get; set; }
+        public int       Number       { get; set; }
+        public string    NameArabic   { get; set; }
+        public string    Name         { get; set; }
+        public string    NameEnglish  { get; set; }
+        public string    Place        { get; set; }
+        public double    Score        { get; set; }
+        /// <summary>Cosine of the two surahs' rarity-weighted lemmas, standardised over the candidates.</summary>
+        public double    Lemmas       { get; set; }
+        /// <summary>The same over roots, at half weight.</summary>
+        public double    Roots        { get; set; }
+        /// <summary>The distinctive lemmas the two surahs share, the most telling first.</summary>
+        public Counted[] SharedLemmas { get; set; }
+        /// <summary>Themes both surahs have a passage in — shown as a reason, not counted in the score.</summary>
+        public Counted[] SharedThemes { get; set; }
+    }
+
+    public class SimilarSurahsDto
+    {
+        public UID128         Uid    { get; set; }
+        public string         Method { get; set; }
+        public SimilarSurah[] Surahs { get; set; }
+    }
+
+    /// <summary>A passage: a run of consecutive verses of one surah, found by the clusters build.</summary>
+    public class PassageRow
+    {
+        public UID128 Uid                { get; set; }
+        public UID128 SurahUid           { get; set; }
+        public int    SurahNumber        { get; set; }
+        public string SurahName          { get; set; }
+        /// <summary>Its place in the surah: 1, 2 …</summary>
+        public int    Ordinal            { get; set; }
+        public string FirstVerseKey      { get; set; }
+        public string LastVerseKey       { get; set; }
+        public UID128 FirstVerseUid      { get; set; }
+        public int    Verses             { get; set; }
+        public int    Words              { get; set; }
+        public string Label              { get; set; }
+        public string LabelArabic        { get; set; }
+        /// <summary>The opening verse in the Uthmani text, and its Saheeh International gloss.</summary>
+        public string OpeningText        { get; set; }
+        public string OpeningTranslation { get; set; }
+        /// <summary>The theme the passage belongs to; default when it has none.</summary>
+        public UID128 ThemeUid           { get; set; }
+        public string ThemeLabel         { get; set; }
+        public string ThemeLabelArabic   { get; set; }
+        /// <summary>How many surahs that theme spans.</summary>
+        public int    ThemeSurahs        { get; set; }
+    }
+
+    public class SurahPassagesDto
+    {
+        public UID128       Uid      { get; set; }
+        /// <summary>False until the clusters build has run (`just clusters`).</summary>
+        public bool         Built    { get; set; }
+        public string       Method   { get; set; }
+        public string       RunId    { get; set; }
+        public PassageRow[] Passages { get; set; }
+    }
+
+    /// <summary>A theme: passages of several surahs that tell the same story or treat the same subject.</summary>
+    public class ThemeRow
+    {
+        public UID128   Uid          { get; set; }
+        public int      Ordinal      { get; set; }
+        public string   Label        { get; set; }
+        public string   LabelArabic  { get; set; }
+        public int      Passages     { get; set; }
+        public int      Verses       { get; set; }
+        /// <summary>The surahs it spans, in mushaf order.</summary>
+        public UID128[] SurahUIDs    { get; set; }
+        public int[]    SurahNumbers { get; set; }
+        public string[] SurahNames   { get; set; }
+    }
+
+    public class ThemesDto
+    {
+        /// <summary>False until the clusters build has run (`just clusters`).</summary>
+        public bool       Built          { get; set; }
+        public string     Method         { get; set; }
+        public string     RunId          { get; set; }
+        /// <summary>Passages over the whole Quran, and how many verses there are and how many fall in a theme.</summary>
+        public int        Passages       { get; set; }
+        public int        Verses         { get; set; }
+        public int        VersesInThemes { get; set; }
+        public ThemeRow[] Themes         { get; set; }
+    }
+
+    public class VerseLine
+    {
+        public UID128 Uid         { get; set; }
+        public string VerseKey    { get; set; }
+        public string Text        { get; set; }
+        public string Translation { get; set; }
+    }
+
+    /// <summary>One cluster: a theme with its passages, or a passage with its verses.</summary>
+    public class ClusterProfileDto
+    {
+        public UID128       Uid         { get; set; }
+        public string       Kind        { get; set; }
+        public string       Label       { get; set; }
+        public string       LabelArabic { get; set; }
+        public string       Method      { get; set; }
+        public string       RunId       { get; set; }
+        /// <summary>The lemmas and roots its verses use far more than the rest of the Quran.</summary>
+        public Counted[]    KeyLemmas   { get; set; }
+        public Counted[]    KeyRoots    { get; set; }
+        /// <summary>A theme: its passages in mushaf order. A passage: itself, with its theme.</summary>
+        public PassageRow[] Passages    { get; set; }
+        /// <summary>A passage: its verses in order. A theme: empty — each passage opens its own.</summary>
+        public VerseLine[]  Verses      { get; set; }
+        /// <summary>A passage: the passages before and after it in its surah (default at either end).</summary>
+        public UID128       Previous    { get; set; }
+        public UID128       Next        { get; set; }
     }
 
     // --- shared reads -------------------------------------------------------------------------

@@ -18,8 +18,13 @@ code/endpoints/qkg/
 ├── dashboard/corpus.cs       the pattern dashboard: totals, per-surah stats, root heat maps, Meccan vs Medinan
 ├── root/profile.cs           one root: spread over surahs, lemmas, forms, verses
 ├── surah/profile.cs          one surah: verse lengths, top and DISTINCTIVE roots, lemmas
+├── surah/passages.cs         one surah's passages, with the theme each shares
+├── surah/similar.cs          similar surahs: shared distinctive lemmas + roots; the themes both tell
 ├── verse/words.cs            one verse: words in order, roots, lemmas, Ibn Kathir's related verses
-└── verse/similar.cs          similar verses, Arabic first: embedding + shared lemmas + shared roots
+├── verse/similar.cs          similar verses, Arabic first: embedding + shared lemmas + shared roots
+├── clusters/build.cs         WRITES the passages and themes (AdminOnly, not read-only) — `just clusters`
+├── clusters/themes.cs        every theme, widest first, with the surahs it spans
+└── cluster/profile.cs        one theme with its passages, or one passage with its verses
 variants/embeddings-ollama/   the optional local-model embeddings index (`just embeddings-ollama`)
 ```
 
@@ -48,7 +53,9 @@ rather than adds, and `EMBEDDING_PROVIDER=ollama` in `.env` makes later uploads 
 
 ## Endpoints
 
-All `ReadOnly`, `AllUsers`, cached for an hour (`CacheFor(3600)`; an import clears the cache).
+All `ReadOnly` and `AllUsers` but `clusters/build`, which writes the Cluster nodes and is
+`AdminOnly`. Most are cached for an hour (`CacheFor(3600)`; an import clears the cache); the ones
+that read the clusters are not, so a rebuild shows at once — they answer in under a second.
 Every metric is counted live from the graph; every count ships the UID of what it counted.
 Call one from the shell: `just call qkg/dashboard/corpus`, or with a body:
 `just call qkg/verse/similar '{"Uid":"…","Count":10}'`.
@@ -59,10 +66,14 @@ workspace. After changing a DTO, `just sync-dto` regenerates the front end's cop
 
 **QurSim is the answer key.** `verse/words` returns Ibn Kathir's related verses for people to
 read. No similarity signal reads it, and no AI tool may call that endpoint or expose those
-nodes — otherwise every similarity score becomes a tautology.
+nodes — otherwise every similarity score becomes a tautology. The clusters build reads neither
+QurSim nor the ruku' (`Verse.Ruku`), the references its passages and themes are scored against
+(`tools/cluster-benchmark`).
 
 ## What the import does NOT carry (manual steps)
 
+- **The clusters themselves**: they are data, not definitions — `just clusters` builds them after
+  an import (`just bootstrap` does).
 - **An AI provider** for chat and for naming clusters: Admin → AI → Providers. Its key is a
   secret per environment. See `docs/models.md` (a local Ollama LLM or a hosted model).
 - **Tokens**: `just tokens` mints the two the scripts need and writes them into `.env`.
