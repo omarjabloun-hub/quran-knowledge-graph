@@ -18,7 +18,9 @@ if (-not (Test-Path $py)) {
     Invoke-Checked "pip" { & $py -m pip install --quiet -r (Join-Path $bench "requirements.txt") }
 }
 
+# Inside a script block $args is the block's own (empty) list, so the script's is kept first.
+$passThrough = $args
 Write-Step "Running the benchmark"
 $env:TOKENIZERS_PARALLELISM = "false"
 Push-Location $bench
-try { Invoke-Checked "benchmark" { & $py -I run.py @args } } finally { Pop-Location }
+try { Invoke-Checked "benchmark" { & $py -I run.py @passThrough } } finally { Pop-Location }
