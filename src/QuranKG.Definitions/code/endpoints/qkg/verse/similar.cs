@@ -24,9 +24,9 @@
 //
 // THE WEIGHTS ARE MEASURED, per embedding model, with tools/embedding-benchmark (fusion specs,
 // chosen on the dev half of QurSim's queries, reported on the test half):
-//   Harrier 270M (built in, the default)  W_SEM 0.25 — at 1.0 it made the ranking WORSE than
-//                                          lemmas alone (top-10 recall 16.0 vs 17.0)
-//   AraModernBert-STS, for comparison     W_SEM 1.0 — top-10 recall 19.7, strong pairs 33.3
+//   Harrier 270M (built in, the default)  W_SEM 0.25 — top-10 recall 17.5; at 1.0 it made the
+//                                          ranking WORSE than lemmas alone (16.6 vs 17.7)
+//   AraModernBert-STS, for comparison     W_SEM 1.0 — top-10 recall 20.2, strong pairs 34.5
 // After `just embeddings-ollama`, benchmark the new model and set W_SEM from its own grid.
 
 const int    BATCH    = 900;
