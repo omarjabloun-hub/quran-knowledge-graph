@@ -1,5 +1,7 @@
 # Runs every job in candidates.tsv whose vectors are missing, then scores everything.
 #   python -I run.py [--only REGEX] [--skip-ollama] [--skip-hf] [--evaluate-only] [fusion specs...]
+#   python -I run.py --weights [--only REGEX] ...   then each model's W_SEM: chosen on the dev half,
+#                                                   reported on the test half (weights.py)
 #
 # Inputs come from data/raw (run `just fetch` first); everything is written under out/ (gitignored):
 #   out/verses.jsonl, out/gold.json   prep.py
@@ -43,6 +45,10 @@ if '--evaluate-only' not in flags:
             cmd += ['--prefix', prefix]
         if subprocess.run(cmd).returncode != 0:
             failed.append(model)
+
+if '--weights' in flags:
+    subprocess.run([PY, '-I', os.path.join(HERE, 'weights.py'), *([only] if only else [])], check=True)
+    sys.exit(1 if failed else 0)
 
 table = subprocess.run([PY, '-I', os.path.join(HERE, 'evaluate.py'), OUT, *fusion], check=True, capture_output=True, text=True).stdout
 open(os.path.join(OUT, 'results.md'), 'w', encoding='utf-8').write(table)

@@ -31,14 +31,19 @@ closes it.
 
 ## Next — on the Mac
 
-- [ ] **Run the benchmark with the large models** (`just models-pull`, `just benchmark`):
-      `qwen3-embedding:8b` / `:4b` and `bge-m3` through Ollama, `Qwen3-Embedding-4B` through MPS.
-      The bar: AraModernBert-STS fused with the morphology reaches top-10 recall 20.2 (strong
-      pairs 34.5) on the held-out half, against 17.5 for the built-in Harrier at weight 0.25. Choose
-      the model and its `W_SEM` on the dev half, report on the test half, switch with
-      `just embeddings-ollama`, record the numbers in `tools/embedding-benchmark/README.md` and in
-      the endpoint's header comment. Watch the *no-shared-lemma* column: nothing finds those
-      pairs yet.
+- [x] **Run the benchmark with the large models** on the Mac: 24 embeddings — the Ollama models,
+      Qwen3-Embedding 0.6B / 4B on MPS, multilingual e5 / LaBSE / Arctic, the Arabic models (Arabic
+      Harrier, GATE, NLI-triplet, CAMeLBERT-CA) — each weight chosen on the dev half, reported on
+      the test half (`just benchmark --weights`; `tools/embedding-benchmark/README.md`).
+      AraModernBert-STS stays best (20.2, strong 34.5); `qwen3-embedding:8b` is the best through
+      Ollama (19.0 / 32.4 at W_SEM 0.5); nothing finds the pairs that share no lemma.
+- [ ] **Switch the verse embeddings**: either `just embeddings-ollama` with `qwen3-embedding:8b`
+      and `W_SEM = 0.5` (19.0), or AraModernBert-STS behind an OpenAI-compatible embeddings server
+      on the Mac and `W_SEM = 1.0` (20.2) — a script to start that server, and a variant of the
+      external index pointing at it. Record the numbers in `qkg/verse/similar`'s header comment.
+- [ ] **Similar surahs from the embeddings**: today lexical only (Spearman 0.41). Try the verse
+      vectors aggregated per surah (centred mean; best-match averaged both ways) in
+      `tools/cluster-benchmark`, add to the score only if it beats 0.41 on the dev half.
 - [ ] **QUL topics**: download `topics.db` (manual, free account — see `data/manifest.json`), then
       `just check-data && just ingest`. `TopicIngest` and the `Topic` renderer exist; nothing has
       been ingested yet. Check the hierarchy (`ParentTopic`) and the Stories branch.

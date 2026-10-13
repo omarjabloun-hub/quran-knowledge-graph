@@ -32,28 +32,34 @@ translations are not a similarity signal.
 ollama pull qwen3-embedding:8b      # then: just embeddings-ollama
 ```
 
-| Model (`ollama pull …`) | Download | Dimensions | Why |
+| Model (`ollama pull …`) | Download | Dimensions | Measured (fused R@10, below) |
 |---|---|---|---|
-| **`qwen3-embedding:8b`** | 4.7 GB | 4,096 | the strongest open multilingual embedding model; the default `OLLAMA_EMBEDDING_MODEL` |
-| `qwen3-embedding:4b` | 2.5 GB | 2,560 | nearly as good, twice as fast |
-| `bge-m3` | 1.2 GB | 1,024 | a strong multilingual retriever (XLM-R large) |
-| `embeddinggemma` | 0.6 GB | 768 | small and fast |
+| **`qwen3-embedding:8b`** | 4.7 GB | 4,096 | 19.0 at W_SEM 0.5 — the best through Ollama; the default `OLLAMA_EMBEDDING_MODEL`; ~18 min for the 6,236 verses on an M4 Max |
+| `qwen3-embedding:4b` | 2.5 GB | 2,560 | 18.1, twice as fast |
+| `bge-m3` | 1.2 GB | 1,024 | 17.4 — no better than Harrier |
+| `embeddinggemma` | 0.6 GB | 768 | 17.5 — no better than Harrier |
 
 The workspace calls Ollama's OpenAI-compatible API (`OLLAMA_URL` + `/v1/embeddings`) with the bare
 verse — no instruction prefix — so the benchmark measures Ollama models the same way.
 
-**Measure before switching.** `just benchmark` scores every candidate against QurSim (Ibn
-Kathir's related verses). The numbers so far ([details](../tools/embedding-benchmark/README.md)):
+**Measured, not guessed.** `just benchmark` scores every candidate against QurSim (Ibn Kathir's
+related verses), and `just benchmark --weights` chooses each model's weight on half the queries
+and reports it on the other half. 24 embeddings on an M4 Max ([details](../tools/embedding-benchmark/README.md)):
 
-| Ranking (top-10 recall of related verses, held-out queries) | R@10 | strong pairs |
-|---|---|---|
-| shared lemmas alone | 17.7 | 28.2 |
-| Harrier (built in) × 0.25 + lemmas + roots — **the endpoint today** | 17.5 | 29.4 |
-| AraModernBert-STS × 1.0 + lemmas + roots | **20.2** | **34.5** |
+| Ranking (top-10 recall of related verses, held-out queries) | W_SEM | R@10 | strong pairs |
+|---|---|---|---|
+| shared lemmas + roots, no embedding | — | 16.9 | 28.0 |
+| Harrier (built in) + lemmas + roots — **the endpoint today** | 0.25 | 17.5 | 29.4 |
+| `bge-m3` (Ollama) + lemmas + roots | 1.0 | 17.4 | 29.7 |
+| `qwen3-embedding:4b` (Ollama) + lemmas + roots | 1.0 | 18.1 | 30.9 |
+| **`qwen3-embedding:8b` (Ollama) + lemmas + roots** — the best Ollama can serve | 0.5 | 19.0 | 32.4 |
+| **AraModernBert-STS + lemmas + roots** — the best of all | 1.0 | **20.2** | **34.5** |
 
 The built-in model adds little to the Quranic Arabic Corpus morphology; a good Arabic embedding
-adds a lot. Benchmark the Ollama models on the Mac (`just benchmark --skip-hf`), switch to the
-best, and set its weight (`W_SEM` in `qkg/verse/similar`) from its own dev-half grid.
+adds a lot. The large multilingual models are not the answer: a base-size Arabic model beats an 8B
+one, and the Arabic BERT models — even CAMeLBERT-CA, pretrained on classical Arabic and never
+trained for similarity — match `qwen3-embedding:8b` (18.8–19.3 against 19.0). Switch with
+`just embeddings-ollama` and set the model's `W_SEM` in `qkg/verse/similar`.
 
 The workspace's external embeddings index speaks the OpenAI API (`<OLLAMA_URL>/v1/embeddings`),
 so any compatible server can stand in for Ollama — for a sentence-transformers model such as

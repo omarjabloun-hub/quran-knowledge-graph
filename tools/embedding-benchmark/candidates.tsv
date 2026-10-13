@@ -17,10 +17,24 @@ hf	Qwen/Qwen3-Embedding-4B	arabic_plain	sts	Instruct: Retrieve semantically simi
 hf	BAAI/bge-m3	arabic_plain	plain		XLM-R large, 8k context
 hf	intfloat/multilingual-e5-large-instruct	arabic_plain	sts	Instruct: Retrieve semantically similar text\nQuery: 	
 hf	microsoft/harrier-oss-v1-0.6b	arabic_plain	doc		the larger Harrier
+hf	intfloat/multilingual-e5-large	arabic_plain	sts	query: 	the e5 convention for symmetric tasks: "query: " on both sides
+hf	sentence-transformers/LaBSE	arabic_plain	plain		translation-pair model; the base of Arabic-labse-Matryoshka
+hf	Snowflake/snowflake-arctic-embed-l-v2.0	arabic_plain	plain		XLM-R large retriever, multilingual
 # --- Arabic-specialised (modern standard Arabic; none is trained on Quranic text) ---
 hf	NAMAA-Space/AraModernBert-Base-STS	arabic_plain	plain		
 hf	Omartificial-Intelligence-Space/Arabic-Triplet-Matryoshka-V2	arabic_plain	plain		
 hf	Omartificial-Intelligence-Space/GATE-AraBert-v1	arabic_plain	plain		
 hf	silma-ai/silma-embedding-matryoshka-v0.1	arabic_plain	plain		
+hf	Omartificial-Intelligence-Space/Harrier-Arabic-Matryoshka-270m	arabic_plain	doc		the built-in Harrier 270M fine-tuned on Arabic (GATE authors)
+hf	Omartificial-Intelligence-Space/Harrier-Arabic-Matryoshka-0.6B	arabic_plain	doc		Harrier 0.6B fine-tuned on Arabic
+hf	Omartificial-Intelligence-Space/Harrier-Arabic-Matryoshka-0.6B	arabic_plain	sts	Instruct: Retrieve semantically similar text\nQuery: 	its own "sts_query" prompt, on both sides
+hf	Omartificial-Intelligence-Space/Arabic-labse-Matryoshka	arabic_plain	plain		LaBSE fine-tuned on Arabic NLI triplets
+hf	Omartificial-Intelligence-Space/Marbert-all-nli-triplet-Matryoshka	arabic_plain	plain		MARBERTv2 fine-tuned on Arabic NLI triplets
+hf	Omartificial-Intelligence-Space/Arabert-all-nli-triplet-Matryoshka	arabic_plain	plain		AraBERT fine-tuned on Arabic NLI triplets
+# --- classical Arabic pretraining (not a sentence model: sentence-transformers mean-pools it) ---
+hf	CAMeL-Lab/bert-base-arabic-camelbert-ca	arabic_plain	plain		pretrained on classical Arabic (OpenITI); no similarity training
 # --- NOT benchmarked on purpose ---
+# Omartificial-Intelligence-Space/NeoAraBERT-MSA-Synonym-Matryoshka-V1 needs trust_remote_code (custom NeoBERT code).
+# BAAI/bge-multilingual-gemma2 (9B) is ~37 GB in fp32 on MPS: too much next to the workspace.
+# UBC-NLP Swan (Arabic-centric, NAACL 2025) is not published on Hugging Face.
 # Mathani-Ayat/rattil-ayah-embed is fine-tuned on QurSim itself: scoring it against QurSim is circular.
