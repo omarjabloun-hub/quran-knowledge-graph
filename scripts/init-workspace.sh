@@ -36,3 +36,9 @@ fi
 step "Workspace is running at $CURIOSITY_URL"
 info "Sign in as ${WORKSPACE_ADMIN_USER:-admin} (password in .env). The first sign-in opens a setup"
 info "assistant: 'Finish later' skips it."
+
+# The verses' Arabic is embedded, and search queries too, by the embeddings server when the
+# workspace uses it (`just embeddings-arabic`): start it with the workspace.
+if [ "${EMBEDDING_PROVIDER:-harrier}" = "arabic" ]; then
+  bash "$ROOT_DIR/scripts/embedding-server.sh" start
+fi

@@ -1,0 +1,6 @@
+# The embeddings server (scripts/embedding-server.sh creates .venv from this).
+# torch picks the Apple GPU (MPS) on a Mac, CUDA on an NVIDIA box, the CPU otherwise.
+sentence-transformers>=5.1
+torch>=2.8
+transformers>=4.56
+numpy>=2.0

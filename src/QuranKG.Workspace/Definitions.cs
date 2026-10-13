@@ -6,7 +6,9 @@ namespace QuranKG.Workspace;
 
 /// <summary>
 /// The definitions folder as the workspace should receive it, and the one switch in it: which
-/// model embeds the Arabic of every verse.
+/// model embeds the Arabic of every verse — <c>harrier</c> (built in), <c>ollama</c>
+/// (OLLAMA_EMBEDDING_MODEL in Ollama) or <c>arabic</c> (EMBEDDING_SERVER_MODEL, AraModernBert-STS,
+/// in tools/embedding-server). The last two are the same external index, pointed at another server.
 ///
 /// <para>Only ONE embeddings index may exist on a field — the endpoints ask
 /// <c>Graph.Embeddings.GetIndex(type, field)</c>, which returns the first it finds — and an import
@@ -19,17 +21,23 @@ internal static class Definitions
 {
     public const string HARRIER = "harrier";
     public const string OLLAMA  = "ollama";
+    public const string ARABIC  = "arabic";
 
     private static readonly string[] Folders = { "code", "config", "nlp" };
 
     private static string DefinitionsDir(Settings s) => Path.Combine(s.Root, "src", "QuranKG.Definitions");
-    private static string VariantDir(Settings s)     => Path.Combine(DefinitionsDir(s), "variants", "embeddings-ollama", "config", "indexes", "others");
+    private static string VariantDir(Settings s)     => Path.Combine(DefinitionsDir(s), "variants", "embeddings-external", "config", "indexes", "others");
 
     public static string Provider(Settings s, string? requested)
     {
         var provider = (requested ?? s.Get("EMBEDDING_PROVIDER", HARRIER)!).ToLowerInvariant();
-        return provider is HARRIER or OLLAMA ? provider : throw new UsageException($"Unknown embeddings provider '{provider}' (expected: harrier | ollama)");
+        return provider is HARRIER or OLLAMA or ARABIC ? provider : throw new UsageException($"Unknown embeddings provider '{provider}' (expected: harrier | ollama | arabic)");
     }
+
+    /// <summary>Where the external index of <paramref name="provider"/> sends the text, as the workspace container sees it, and the model it names.</summary>
+    private static (string Url, string Model) External(Settings s, string provider) => provider == ARABIC
+        ? (s.Get("EMBEDDING_SERVER_URL", "http://host.docker.internal:8765")!, s.Get("EMBEDDING_SERVER_MODEL", "NAMAA-Space/AraModernBert-Base-STS")!)
+        : (s.Get("OLLAMA_URL", "http://host.docker.internal:11434")!, s.Get("OLLAMA_EMBEDDING_MODEL", "qwen3-embedding:8b")!);
 
     /// <summary>Copies code/, config/ and nlp/ into <paramref name="outDir"/> (READMEs left out) and applies the provider.</summary>
     public static int Stage(Settings s, string outDir, string provider)
@@ -56,11 +64,10 @@ internal static class Definitions
             }
         }
 
-        if (provider == OLLAMA)
+        if (provider != HARRIER)
         {
-            var url   = s.Get("OLLAMA_URL", "http://host.docker.internal:11434")!;
-            var model = s.Get("OLLAMA_EMBEDDING_MODEL", "qwen3-embedding:8b")!;
-            var index = Path.Combine(outDir, "config", "indexes", "others");
+            var (url, model) = External(s, provider);
+            var index        = Path.Combine(outDir, "config", "indexes", "others");
 
             foreach (var variant in Directory.EnumerateFiles(VariantDir(s), "*.json"))
             {
@@ -88,9 +95,15 @@ internal static class Definitions
     }
 
     /// <summary>
-    /// Makes <paramref name="provider"/> the embeddings model of every field the ollama variant
+    /// Makes <paramref name="provider"/> the embeddings model of every field the external variant
     /// covers: deletes the other provider's index on those fields from the workspace and records
     /// the choice in .env, so the next upload stages the matching file.
+    ///
+    /// <para>The workspace does not say which server an external index calls, and an import that
+    /// changes its URL or model does not re-embed what is there. So an external index is kept only
+    /// when .env records that this workspace already uses the same external provider; switching
+    /// between ollama and arabic — or any external switch on production, whose provider .env does
+    /// not record — deletes it, and the upload creates it afresh.</para>
     /// </summary>
     public static async Task<int> UseEmbeddingsAsync(Settings s, Target target, string provider)
     {
@@ -100,7 +113,9 @@ internal static class Definitions
                               .ToHashSet();
 
         // An index's Tag ends with its encoder: "MosaikGraph-Verse-TextSimple-Harrier" / "…-External".
-        var keepSuffix = provider == OLLAMA ? "-External" : "-Harrier";
+        var previous = target.Name == "local" ? Provider(s, null) : null;
+        bool Keep(string tag) => provider == HARRIER ? tag.EndsWith("-Harrier", StringComparison.Ordinal)
+                                                     : tag.EndsWith("-External", StringComparison.Ordinal) && previous == provider;
 
         using var client  = await WorkspaceClient.SignInAsync(target);
         var status        = await client.GetJsonAsync("api/index/status/all");
@@ -114,7 +129,7 @@ internal static class Definitions
             var field    = index["FieldName"]?.GetValue<string>() ?? "";
             var tag      = index["Tag"]?.GetValue<string>() ?? "";
 
-            if (!fields.Contains((nodeType, field)) || tag.EndsWith(keepSuffix, StringComparison.Ordinal)) continue;
+            if (!fields.Contains((nodeType, field)) || Keep(tag)) continue;
 
             await client.DeleteIndexAsync(nodeType, uid);
             Console.WriteLine($"  deleted {tag} ({uid}) from {target.Url}");

@@ -21,6 +21,11 @@ obj/
 /tools/embedding-benchmark/out/
 /tools/cluster-benchmark/.venv/
 
+# Embeddings server: Python env, log and PID
+/tools/embedding-server/.venv/
+/tools/embedding-server/server.log*
+/tools/embedding-server/server.pid
+
 # Tooling
 .idea/
 .vs/

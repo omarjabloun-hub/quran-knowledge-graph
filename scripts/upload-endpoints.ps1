@@ -1,6 +1,6 @@
 # Imports the workspace definitions - indexes, node styles, search settings, endpoints - from
 # src/QuranKG.Definitions. The import is idempotent. The embeddings index on the verses' Arabic
-# is the one EMBEDDING_PROVIDER names (harrier | ollama): see `just embeddings-ollama`.
+# is the one EMBEDDING_PROVIDER names (harrier | ollama | arabic): see `just embeddings-arabic`.
 #
 # Ingest first: an endpoint naming a node type the graph does not have yet does not compile.
 #

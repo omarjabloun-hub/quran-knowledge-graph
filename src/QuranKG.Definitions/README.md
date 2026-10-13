@@ -25,7 +25,7 @@ code/endpoints/qkg/
 ├── clusters/build.cs         WRITES the passages and themes (AdminOnly, not read-only) — `just clusters`
 ├── clusters/themes.cs        every theme, widest first, with the surahs it spans
 └── cluster/profile.cs        one theme with its passages, or one passage with its verses
-variants/embeddings-ollama/   the optional local-model embeddings index (`just embeddings-ollama`)
+variants/embeddings-external/ the external embeddings index (`just embeddings-arabic` / `embeddings-ollama`)
 ```
 
 ## Indexes — Arabic first
@@ -44,12 +44,15 @@ costs ~4× the tokens and changes 17 % of the word spellings. Uthmani stays for 
 
 ### Switching the Arabic embeddings to a local model
 
-The built-in Harrier model works with no setup. To use a stronger model served by Ollama on
-your machine (see `docs/models.md` for which one), run `just embeddings-ollama`: it deletes the
-Harrier `Verse.TextSimple` index and imports `variants/embeddings-ollama/` with the model named
-in `.env` (`OLLAMA_EMBEDDING_MODEL`). Only one embeddings index may exist on a field —
-`Graph.Embeddings.GetIndex(type, field)` returns the first one it finds — so the switch replaces
-rather than adds, and `EMBEDDING_PROVIDER=ollama` in `.env` makes later uploads keep it that way.
+The built-in Harrier model works with no setup; the model in use is AraModernBert-STS, the best
+measured (`docs/models.md`), served on the Mac by `tools/embedding-server`. `just embeddings-arabic`
+deletes the Harrier `Verse.TextSimple` index and imports `variants/embeddings-external/` pointed at
+that server (`EMBEDDING_SERVER_URL`, `EMBEDDING_SERVER_MODEL`); `just embeddings-ollama` imports the
+same file pointed at Ollama (`OLLAMA_URL`, `OLLAMA_EMBEDDING_MODEL`). Only one embeddings index may
+exist on a field — `Graph.Embeddings.GetIndex(type, field)` returns the first one it finds — so the
+switch replaces rather than adds, and `EMBEDDING_PROVIDER` in `.env` makes later uploads keep it
+that way. The workspace does not say which server an external index calls, so moving between the
+two external providers deletes and re-creates it too.
 
 ## Endpoints
 

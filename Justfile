@@ -116,6 +116,14 @@ call path body="{}" target="local":
 embeddings-ollama target="local":
     @{{run}}embeddings{{ext}} ollama --target {{target}}
 
+# The embeddings server: AraModernBert-STS on this Mac's GPU, for `just embeddings-arabic` (start | stop | status).
+embedding-server action="start":
+    @{{run}}embedding-server{{ext}} {{action}}
+
+# Embed the verses' Arabic with AraModernBert-STS (the best measured) through the embeddings server.
+embeddings-arabic target="local":
+    @{{run}}embeddings{{ext}} arabic --target {{target}}
+
 # Back to the workspace's built-in Harrier model.
 embeddings-harrier target="local":
     @{{run}}embeddings{{ext}} harrier --target {{target}}

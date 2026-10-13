@@ -6,8 +6,8 @@
 //   dotnet run --project src/QuranKG.Workspace -- call <path> [json]  [--target local|prod]
 //   dotnet run --project src/QuranKG.Workspace -- warm            [--target local|prod]
 //   dotnet run --project src/QuranKG.Workspace -- clusters [json] [--save build.json] [--target local|prod]
-//   dotnet run --project src/QuranKG.Workspace -- stage-definitions <out-dir> [--provider harrier|ollama]
-//   dotnet run --project src/QuranKG.Workspace -- use-embeddings harrier|ollama [--target local|prod]
+//   dotnet run --project src/QuranKG.Workspace -- stage-definitions <out-dir> [--provider harrier|ollama|arabic]
+//   dotnet run --project src/QuranKG.Workspace -- use-embeddings harrier|ollama|arabic [--target local|prod]
 //
 // Every command reads .env from the repository root (a variable set in the environment wins).
 
@@ -32,7 +32,7 @@ try
         "warm"              => await Warm(target),
         "clusters"          => await Clusters(target, positional.ElementAtOrDefault(1) ?? "{}", Option("--save")),
         "stage-definitions" => Definitions.Stage(settings, positional.ElementAtOrDefault(1) ?? throw new UsageException("stage-definitions <out-dir>"), Definitions.Provider(settings, Option("--provider"))),
-        "use-embeddings"    => await Definitions.UseEmbeddingsAsync(settings, target, Definitions.Provider(settings, positional.ElementAtOrDefault(1) ?? throw new UsageException("use-embeddings harrier|ollama"))),
+        "use-embeddings"    => await Definitions.UseEmbeddingsAsync(settings, target, Definitions.Provider(settings, positional.ElementAtOrDefault(1) ?? throw new UsageException("use-embeddings harrier|ollama|arabic"))),
         _                   => Help(),
     };
 }
@@ -55,7 +55,7 @@ string? Option(string name)
 
 static int Help()
 {
-    Console.WriteLine("usage: QuranKG.Workspace tokens | status | call <path> [json] | warm | clusters [json] [--save file] | stage-definitions <dir> | use-embeddings harrier|ollama   [--target local|prod]");
+    Console.WriteLine("usage: QuranKG.Workspace tokens | status | call <path> [json] | warm | clusters [json] [--save file] | stage-definitions <dir> | use-embeddings harrier|ollama|arabic   [--target local|prod]");
     return 2;
 }
 

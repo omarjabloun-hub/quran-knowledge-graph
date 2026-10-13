@@ -33,7 +33,7 @@ internal sealed class Settings
         {
             var key = (string)entry.Key;
             if (values.ContainsKey(key) || key.StartsWith("CURIOSITY_", StringComparison.Ordinal) || key.StartsWith("PROD_", StringComparison.Ordinal)
-                || key.StartsWith("WORKSPACE_", StringComparison.Ordinal) || key.StartsWith("OLLAMA_", StringComparison.Ordinal) || key == "INTERFACE_UPLOAD_TOKEN" || key == "EMBEDDING_PROVIDER")
+                || key.StartsWith("WORKSPACE_", StringComparison.Ordinal) || key.StartsWith("OLLAMA_", StringComparison.Ordinal) || key.StartsWith("EMBEDDING_SERVER_", StringComparison.Ordinal) || key == "INTERFACE_UPLOAD_TOKEN" || key == "EMBEDDING_PROVIDER")
             {
                 values[key] = (string?)entry.Value ?? "";
             }

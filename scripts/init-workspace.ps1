@@ -31,3 +31,9 @@ if (Get-Command curiosity-cli -ErrorAction SilentlyContinue) {
 $user = if ($env:WORKSPACE_ADMIN_USER) { $env:WORKSPACE_ADMIN_USER } else { "admin" }
 Write-Step "Workspace is running at $env:CURIOSITY_URL"
 Write-Info "Sign in as $user (password in .env). The first sign-in opens a setup assistant: 'Finish later' skips it."
+
+# The verses' Arabic is embedded, and search queries too, by the embeddings server when the
+# workspace uses it (`just embeddings-arabic`): start it with the workspace.
+if ($env:EMBEDDING_PROVIDER -eq "arabic") {
+    & (Join-Path $PSScriptRoot "embedding-server.ps1") start
+}
