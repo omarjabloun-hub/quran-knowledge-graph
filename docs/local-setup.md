@@ -90,17 +90,22 @@ ollama serve &                      # the app starts this on its own
 just models-pull                    # qwen3-embedding:8b (4.7 GB) and qwen3:32b (~20 GB)
 ```
 
-### Embed the verses with Qwen3 instead of the built-in model
+### Embed the verses with AraModernBert-STS instead of the built-in model
 
 ```bash
-just embeddings-ollama              # deletes the Harrier index, creates the Ollama one
-just status                         # watch Verse.TextSimple fill up again
+just embedding-server start         # the model on the Mac's GPU (Python venv + 600 MB, the first time)
+just embeddings-arabic              # deletes the Harrier index, creates the external one
+just status                         # watch Verse.TextSimple fill up again (under two minutes)
 ```
 
-This writes `EMBEDDING_PROVIDER=ollama` into `.env`, so later `just deploy` keeps it. Back:
-`just embeddings-harrier`. Only one embeddings index can exist on a field — the endpoints use the
-first one they find — which is why the switch deletes before it creates. Measure first:
-`just benchmark` (see [`tools/embedding-benchmark`](../tools/embedding-benchmark/README.md)).
+AraModernBert-STS is the best of 24 embeddings measured on Quranic Arabic
+([`tools/embedding-benchmark`](../tools/embedding-benchmark/README.md)). This writes
+`EMBEDDING_PROVIDER=arabic` into `.env`, so later `just deploy` keeps it, and `just up` starts the
+server with the workspace — it must be running for the workspace to embed or search. Ollama's
+`qwen3-embedding:8b` is the alternative (`just embeddings-ollama`, and `W_SEM = 0.5` in
+`qkg/verse/similar`); back to the built-in: `just embeddings-harrier`. Only one embeddings index
+can exist on a field — the endpoints use the first one they find — which is why the switch deletes
+before it creates.
 
 ### A chat model for the assistant and for naming clusters
 
@@ -139,6 +144,7 @@ just export-definitions      # after changing anything in the admin UI → diff 
 | An endpoint still answers the old way | Answers are cached for an hour, keyed on each endpoint's own code. After changing only `code/endpoints/qkg/_lib/dto.cs`, restart the workspace (`just down && just up`). |
 | The front end looks unchanged | Hard-reload the browser (⌘⇧R): `index.html` carries a content hash. |
 | *Similar verses* says "lexical only" | The embeddings index is still filling up: `just status`. With Ollama, check it answers: `curl localhost:11434/api/tags`. |
+| The external `Verse.TextSimple` index stays at 0 | `just embedding-server status` — start it if it is down; its log is `tools/embedding-server/server.log`. |
 | The Ollama index stays at 0 | The container cannot reach Ollama. On a Mac, Docker Desktop forwards `host.docker.internal` to the Mac's own `127.0.0.1`, where Ollama listens by default. On Linux the bridge does not reach loopback: start Ollama with `OLLAMA_HOST=0.0.0.0`. Check `OLLAMA_URL` in `.env` and re-run `just embeddings-ollama`. |
 | `MSB3073 … tps: not found` | `dotnet tool install --global Transpose.Compiler` and put `~/.dotnet/tools` on `PATH`. |
 | The container restarts in a loop on macOS | Keep `MSK_DISABLE_RESOURCE_MONITORING=true` (docker-compose.yml sets it). |

@@ -22,15 +22,17 @@
 // verses) is the answer key the weights are measured against, so it is NOT read here, and the
 // QUL topics are not read either (the Clusters work is scored against them).
 //
-// THE WEIGHTS ARE MEASURED, per embedding model, with tools/embedding-benchmark (fusion specs,
-// chosen on the dev half of QurSim's queries, reported on the test half):
-//   Harrier 270M (built in, the default)  W_SEM 0.25 — top-10 recall 17.5; at 1.0 it made the
-//                                          ranking WORSE than lemmas alone (16.6 vs 17.7)
-//   AraModernBert-STS, for comparison     W_SEM 1.0 — top-10 recall 20.2, strong pairs 34.5
-// After `just embeddings-ollama`, benchmark the new model and set W_SEM from its own grid.
+// THE WEIGHTS ARE MEASURED, per embedding model, with tools/embedding-benchmark (`just benchmark
+// --weights`: W_SEM chosen on the dev half of QurSim's queries, reported on the test half; 24 models):
+//                                                               W_SEM  top-10 recall / strong pairs
+//   AraModernBert-STS  (just embeddings-arabic — the index)     1.0    20.2 / 34.5  the best
+//   qwen3-embedding:8b (just embeddings-ollama)                 0.5    19.0 / 32.4  best through Ollama
+//   Harrier 270M       (built in, just embeddings-harrier)      0.25   17.5 / 29.4  at 1.0 below lemmas alone
+//   no embedding: shared lemmas + roots                                16.9 / 28.0
+// W_SEM belongs to the model: after switching the index, set it from that model's own grid.
 
 const int    BATCH    = 900;
-const double W_SEM    = 0.25;
+const double W_SEM    = 1.0;
 const double W_LEMMAS = 1.0;
 const double W_ROOTS  = 0.5;
 

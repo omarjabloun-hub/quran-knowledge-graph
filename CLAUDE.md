@@ -78,7 +78,9 @@ just status                     # after an import: "Code compiles", counts as ex
 - Endpoint answers are cached (`CacheFor(3600)`) **per user**, keyed on the endpoint's own code:
   a change to `_lib/dto.cs` alone does not invalidate its dependents — restart the workspace.
 - Only one embeddings index per field: `Graph.Embeddings.GetIndex` returns the first. Switch with
-  `just embeddings-ollama` / `-harrier`, which delete before they create.
+  `just embeddings-arabic` / `-ollama` / `-harrier`, which delete before they create.
+- The verses' Arabic is embedded by AraModernBert-STS through `tools/embedding-server`: it must be
+  running (`just up` starts it) for the workspace to embed a verse or answer a semantic search.
 - Embeddings index `MinimumLength` defaults to 20 characters, which skips short verses (الم):
   ours are 1.
 - Exact similarity search: hand `FindSimilar` fewer than 1,000 candidate UIDs at a time (the HNSW

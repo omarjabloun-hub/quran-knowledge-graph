@@ -37,10 +37,12 @@ closes it.
       the test half (`just benchmark --weights`; `tools/embedding-benchmark/README.md`).
       AraModernBert-STS stays best (20.2, strong 34.5); `qwen3-embedding:8b` is the best through
       Ollama (19.0 / 32.4 at W_SEM 0.5); nothing finds the pairs that share no lemma.
-- [ ] **Switch the verse embeddings**: either `just embeddings-ollama` with `qwen3-embedding:8b`
-      and `W_SEM = 0.5` (19.0), or AraModernBert-STS behind an OpenAI-compatible embeddings server
-      on the Mac and `W_SEM = 1.0` (20.2) — a script to start that server, and a variant of the
-      external index pointing at it. Record the numbers in `qkg/verse/similar`'s header comment.
+- [x] **Switch the verse embeddings** to AraModernBert-STS (`W_SEM = 1.0`: 20.2, strong 34.5),
+      served on the Mac by `tools/embedding-server` (`just embedding-server`, started by `just up`)
+      behind the OpenAI embeddings API; `just embeddings-arabic`. The workspace ranks exactly as the
+      benchmark (same top 20 on five verses).
+- [ ] **Serve the embeddings model for production**: the server binds the Mac's 127.0.0.1; a
+      production workspace needs it hosted where it can reach it (`EMBEDDING_SERVER_URL`).
 - [ ] **Similar surahs from the embeddings**: today lexical only (Spearman 0.41). Try the verse
       vectors aggregated per surah (centred mean; best-match averaged both ways) in
       `tools/cluster-benchmark`, add to the score only if it beats 0.41 on the dev half.

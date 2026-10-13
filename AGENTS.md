@@ -16,6 +16,7 @@ Orientation for anyone — person or agent — working in this repository. The w
 | `src/QuranKG.FrontEnd` | the dashboard (`Dashboard/`), the Stories and themes page (`Themes/`), renderers (`Renderers/`), shared components, the API layer | uploaded |
 | `src/QuranKG.Workspace` | `tokens`, `status`, `call`, `warm`, `clusters`, `stage-definitions`, `use-embeddings` | yes (admin sign-in) |
 | `tools/embedding-benchmark` | Python: embeds the verses with candidate models and scores them on QurSim | no |
+| `tools/embedding-server` | Python: AraModernBert-STS behind the OpenAI embeddings API — what the workspace embeds the verses' Arabic with | called by it |
 | `tools/cluster-benchmark` | Python + numpy: the reference implementation of the clusters build, scored on the ruku' and QurSim | no |
 | `scripts/` | every task as `.sh` (bash 3.2) and `.ps1`, called by the `Justfile` | some |
 | `docs/` | use case, data sources, graph model, models, local setup | — |
@@ -35,7 +36,8 @@ just clusters [local|prod]  # passages and themes, built inside the workspace
 just upload-endpoints | upload-frontend
 just call <endpoint> ['{"Uid":"…"}']
 just emit-schema | sync-dto
-just embeddings-ollama | embeddings-harrier
+just embedding-server [start|stop|status]
+just embeddings-arabic | embeddings-ollama | embeddings-harrier
 just benchmark [--only <regex>] [--skip-hf]
 just benchmark-clusters [--split dev|test] [--from build.json]
 just test

@@ -149,16 +149,14 @@ the same time); the first run of a model also downloads it.
   (7.3 %); fused, they stay out (≈0 %), because the lexical z-scores dominate the bottom of the
   ranking. The embedding re-orders the verses the morphology already found.
 
-### Next: switch the workspace
+### In the workspace
 
-Two ways to put the winner in `qkg/verse/similar`, then set `W_SEM` and record these numbers in
-the endpoint's header comment:
-
-- **`qwen3-embedding:8b` through Ollama** — `just embeddings-ollama` (the default
-  `OLLAMA_EMBEDDING_MODEL`), `W_SEM = 0.5`: 19.0 / 32.4, nothing else to run.
-- **AraModernBert-STS** — `W_SEM = 1.0`: 20.2 / 34.5. The workspace calls
-  `<OLLAMA_URL>/v1/embeddings`, whoever answers, so serve it with any OpenAI-compatible embeddings
-  server on the Mac and point the external index at it.
+AraModernBert-STS embeds the verses' Arabic, served on the Mac by
+[`tools/embedding-server`](../embedding-server/README.md) (`just embedding-server start &&
+just embeddings-arabic`), with `W_SEM = 1.0` in `qkg/verse/similar`. The workspace's ranking is
+the fusion measured here: on five verses, the same top 20 in the same order. The alternative that
+needs no server of our own is `qwen3-embedding:8b` through Ollama (`just embeddings-ollama`,
+`W_SEM = 0.5`: 19.0 / 32.4).
 
 Not benchmarked, on purpose: `Mathani-Ayat/rattil-ayah-embed`, which is fine-tuned on QurSim —
 scoring it against QurSim would be circular.
