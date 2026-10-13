@@ -12,12 +12,12 @@ set -euo pipefail
 BENCH="$ROOT_DIR/tools/embedding-benchmark"
 VENV="$BENCH/.venv"
 
-require_command python3 "Install Python 3.11+ (brew install python@3.12)."
+find_python
 [ -d "$ROOT_DIR/data/raw" ] || fail "No data/raw/ — run 'just fetch' first."
 
 if [ ! -x "$VENV/bin/python" ]; then
   step "Creating the benchmark's Python environment (.venv)"
-  python3 -m venv "$VENV"
+  "$PYTHON" -m venv "$VENV"
   "$VENV/bin/pip" install --quiet --upgrade pip
   "$VENV/bin/pip" install --quiet -r "$BENCH/requirements.txt"
 fi

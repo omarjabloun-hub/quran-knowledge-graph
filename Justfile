@@ -125,10 +125,13 @@ models-pull:
     ollama pull ${OLLAMA_EMBEDDING_MODEL:-qwen3-embedding:8b}
     ollama pull ${OLLAMA_CHAT_MODEL:-qwen3:32b}
 
-# Compare embedding models on QurSim (Python; downloads models): see tools/embedding-benchmark.
-benchmark *args="":
-    @{{run}}benchmark{{ext}} {{args}}
+# Arguments pass through quoted, so a regex works: just benchmark --weights --only "Qwen3|e5"
+# Compare embedding models on QurSim (Python; downloads models); --weights picks each W_SEM: see tools/embedding-benchmark.
+[positional-arguments]
+benchmark *args:
+    @{{run}}benchmark{{ext}} "$@"
 
 # Score the passages, themes and similar surahs against the ruku' and QurSim (Python + numpy): see tools/cluster-benchmark.
-benchmark-clusters *args="":
-    @{{run}}benchmark-clusters{{ext}} {{args}}
+[positional-arguments]
+benchmark-clusters *args:
+    @{{run}}benchmark-clusters{{ext}} "$@"

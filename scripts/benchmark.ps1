@@ -7,8 +7,7 @@ $bench = Join-Path $script:RootDir "tools/embedding-benchmark"
 $venv  = Join-Path $bench ".venv"
 $py    = if ($IsWindows) { Join-Path $venv "Scripts/python.exe" } else { Join-Path $venv "bin/python" }
 
-$python = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
-Assert-Command $python "Install Python 3.11+ from https://www.python.org/downloads/"
+$python = Find-Python
 if (-not (Test-Path (Join-Path $script:RootDir "data/raw"))) { Stop-WithError "No data/raw/ - run 'just fetch' first." }
 
 if (-not (Test-Path $py)) {

@@ -27,6 +27,25 @@ require_command() {
   command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1. ${2:-}"
 }
 
+# Sets PYTHON to a working Python 3.11+ for the benchmarks' virtual environments. macOS puts its
+# own 3.9 first on PATH, so the versioned names are tried before plain python3; a candidate whose
+# pyexpat does not load is skipped (Homebrew's Python on macOS 26.2 links a newer libexpat than
+# the system has, and pip then fails inside `python -m venv`); uv's own Python comes last.
+find_python() {
+  local check='import sys, pyexpat; sys.exit(sys.version_info < (3, 11))'
+  for candidate in python3.12 python3.13 python3.11 python3; do
+    if command -v "$candidate" >/dev/null 2>&1 && "$candidate" -c "$check" 2>/dev/null; then
+      PYTHON="$candidate"
+      return
+    fi
+  done
+  if command -v uv >/dev/null 2>&1; then
+    PYTHON="$(uv python find 3.12 2>/dev/null || true)"
+    if [ -n "$PYTHON" ] && "$PYTHON" -c "$check" 2>/dev/null; then return; fi
+  fi
+  fail "No working Python 3.11+ found (python3 is $(python3 --version 2>&1 || echo missing)). Install one: uv python install 3.12 (or brew install python@3.12)"
+}
+
 # Reads --target <local|prod> out of the arguments into TARGET; the rest is the caller's.
 parse_target() {
   TARGET="local"

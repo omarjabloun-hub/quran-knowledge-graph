@@ -38,6 +38,23 @@ function Assert-Command($name, $hint) {
     if (-not (Get-Command $name -ErrorAction SilentlyContinue)) { Stop-WithError "Missing required command: $name. $hint" }
 }
 
+# A working Python 3.11+ for the benchmarks' virtual environments: the versioned names first (macOS
+# puts its own 3.9 first on PATH as python3), then python3 and python, then uv's own Python. A
+# candidate whose pyexpat does not load is skipped: pip fails inside `python -m venv` without it.
+function Find-Python {
+    $check = "import sys, pyexpat; sys.exit(sys.version_info < (3, 11))"
+    foreach ($candidate in "python3.12", "python3.13", "python3.11", "python3", "python") {
+        if (-not (Get-Command $candidate -ErrorAction SilentlyContinue)) { continue }
+        & $candidate -c $check 2>$null
+        if ($LASTEXITCODE -eq 0) { return $candidate }
+    }
+    if (Get-Command uv -ErrorAction SilentlyContinue) {
+        $found = (& uv python find 3.12 2>$null)
+        if ($found) { & $found -c $check 2>$null; if ($LASTEXITCODE -eq 0) { return $found } }
+    }
+    Stop-WithError "No working Python 3.11+ found. Install one: uv python install 3.12 (or https://www.python.org/downloads/)"
+}
+
 # Reads --target <local|prod> out of the arguments and returns it.
 function Get-Target($argList) {
     $target = "local"
