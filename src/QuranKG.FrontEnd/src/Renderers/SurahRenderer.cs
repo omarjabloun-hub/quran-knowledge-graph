@@ -116,7 +116,7 @@ namespace QuranKG.FrontEnd.Renderers
         }
 
         // -----------------------------------------------------------------------------------
-        // Similar surahs: which surahs lean on the same distinctive words
+        // Similar surahs: which surahs lean on the same distinctive words, and hold verses close in meaning
         // -----------------------------------------------------------------------------------
 
         private const int SIMILAR_COUNT = 10;
@@ -129,7 +129,7 @@ namespace QuranKG.FrontEnd.Renderers
                 var list    = VStack().WS().P(16);
 
                 list.Add(TextBlock("Ranked by".t() + ": " + similar.Method + ".").Small().Secondary());
-                list.Add(TextBlock("Each score is standardised over the other surahs: 2.0 means two standard deviations above the typical surah. The Arabic below each is what they share most; the themes are stories or subjects both tell.".t()).Small().Secondary().PB(12));
+                list.Add(TextBlock("Each score is standardised over the other surahs: 2.0 means two standard deviations above the typical surah. The Arabic below each is what they share most; the verse pairs are the closest in meaning the Arabic embedding found; the themes are stories or subjects both tell.".t()).Small().Secondary().PB(12));
 
                 foreach (var s in similar.Surahs ?? new QK.SimilarSurah[0]) list.Add(SimilarCard(s));
                 return list;
@@ -145,7 +145,8 @@ namespace QuranKG.FrontEnd.Renderers
                 Badge(s.Place).Foreground(Palette.ForPlace(s.Place)).Outline(),
                 Badge("score".t() + " " + s.Score.ToString("0.0")).Primary(),
                 Badge("lemmas".t() + " " + s.Lemmas.ToString("+0.0;-0.0;0.0")).Neutral(),
-                Badge("roots".t() + " " + s.Roots.ToString("+0.0;-0.0;0.0")).Neutral());
+                Badge("roots".t() + " " + s.Roots.ToString("+0.0;-0.0;0.0")).Neutral(),
+                Badge("meaning".t() + " " + s.Meaning.ToString("+0.0;-0.0;0.0")).Neutral());
 
             var shared = HStack().WS().AlignItemsCenter().Gap(12.px()).Wrap().PT(6);
             foreach (var lemma in s.SharedLemmas ?? new QK.Counted[0])
@@ -158,6 +159,16 @@ namespace QuranKG.FrontEnd.Renderers
 
             var body = VStack().WS().Children(header, shared);
 
+            var pairs = s.CloseVerses ?? new QK.VersePair[0];
+            if (pairs.Length > 0)
+            {
+                var row = HStack().WS().AlignItemsCenter().Gap(14.px()).Wrap().PT(6).Children(TextBlock("Close in meaning:".t()).Tiny().Secondary());
+                foreach (var pair in pairs.Take(3))
+                    row.Add(HStack().AlignItemsCenter().Gap(4.px()).Children(VerseLink(pair.SeedUid, pair.SeedVerseKey), TextBlock("↔").Tiny().Secondary(), VerseLink(pair.Uid, pair.VerseKey)));
+                row.Add(TextBlock(string.Format("{0} pairs among each verse's 10 nearest".t(), pairs.Length)).Tiny().Secondary());
+                body.Add(row);
+            }
+
             var themes = (s.SharedThemes ?? new QK.Counted[0]).Take(4).ToArray();
             if (themes.Length > 0)
             {
@@ -168,6 +179,11 @@ namespace QuranKG.FrontEnd.Renderers
 
             return Card(body).OnClick(() => Lists.Open(s.Uid)).MB(8);
         }
+
+        private static IComponent VerseLink(UID128 verse, string key)
+            => TextBlock(key).Small().Foreground(Palette.Meaning)
+                             .OnClick((_, e) => { e.stopPropagation(); Lists.Open(verse); })
+                             .Style(st => st.setProperty("cursor", "pointer"));
 
         // -----------------------------------------------------------------------------------
         // Profile: what this surah's language looks like next to the rest

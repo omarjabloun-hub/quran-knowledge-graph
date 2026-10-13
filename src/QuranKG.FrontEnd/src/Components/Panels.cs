@@ -15,6 +15,8 @@ namespace QuranKG.FrontEnd.Components
         internal static string Noun    => Theme.Colors.Blue600;
         internal static string Verb    => Theme.Colors.Magenta600;
         internal static string Other   => Theme.Colors.Neutral500;
+        /// <summary>Verses tied by the Arabic embedding — the meaning signal.</summary>
+        internal static string Meaning => Theme.Colors.Blue600;
 
         internal static string ForPlace(string place) => place == QK.MEDINAN ? Medinan : Meccan;
     }

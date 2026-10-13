@@ -43,9 +43,10 @@ closes it.
       benchmark (same top 20 on five verses).
 - [ ] **Serve the embeddings model for production**: the server binds the Mac's 127.0.0.1; a
       production workspace needs it hosted where it can reach it (`EMBEDDING_SERVER_URL`).
-- [ ] **Similar surahs from the embeddings**: today lexical only (Spearman 0.41). Try the verse
-      vectors aggregated per surah (centred mean; best-match averaged both ways) in
-      `tools/cluster-benchmark`, add to the score only if it beats 0.41 on the dev half.
+- [x] **Similar surahs from the embeddings**: each seed verse's 10 nearest verses in the other
+      surahs, counted per surah, × 1.5 (`qkg/surah/similar`, `tools/cluster-benchmark`): held-out
+      Spearman 0.40 → 0.41, top 5 in our top 10 32 → 36 % (+4, CI +1 to +7). Averaged surah vectors
+      score below the lexical signals. The closest verse pairs are shown on each similar surah.
 - [ ] **QUL topics**: download `topics.db` (manual, free account — see `data/manifest.json`), then
       `just check-data && just ingest`. `TopicIngest` and the `Topic` renderer exist; nothing has
       been ingested yet. Check the hierarchy (`ParentTopic`) and the Stories branch.

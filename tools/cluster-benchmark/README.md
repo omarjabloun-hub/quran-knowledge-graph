@@ -2,8 +2,9 @@
 
 The clusters build (`qkg/clusters/build`, `just clusters`) cuts every surah into **passages** and
 groups passages of different surahs into **themes**; `qkg/surah/similar` ranks **similar surahs**.
-All three read only the Arabic morphology — each verse's lemmas and roots. This tool scores them
-against references made by people, which none of them read:
+Passages and themes read only the Arabic morphology — each verse's lemmas and roots; similar
+surahs read it and the verses' Arabic embeddings. This tool scores them against references made
+by people, which none of them read:
 
 | What | Reference | Why it fits |
 |---|---|---|
@@ -20,14 +21,16 @@ passages and 119 themes, which `--from` checks.
 ```bash
 just fetch                                   # the corpus, once
 just benchmark-clusters                      # recompute and score everything (a few seconds)
-just benchmark-clusters --split test         # passages scored on the held-out half of the surahs
+just benchmark-clusters --split test         # passages and similar surahs scored on the held-out half of the surahs
 just benchmark-clusters --target 180 --tau 0.12   # try other settings before changing the build
 dotnet run --project src/QuranKG.Workspace -c Release -- clusters --save build.json
 just benchmark-clusters --from build.json    # score what the workspace actually wrote
 ```
 
 The first run creates `.venv/` (numpy only) and, if it is missing, the verse table with
-`tools/embedding-benchmark/prep.py`.
+`tools/embedding-benchmark/prep.py`. The similar surahs' meaning signal reads the verse vectors
+the embedding benchmark wrote (`--vectors`, default AraModernBert-STS: `just benchmark --only
+AraModernBert` makes them); without them it is left out.
 
 ## How the build works
 
@@ -100,15 +103,41 @@ the Quran tells in many surahs split into single episodes. A few of the 119:
 
 ### Similar surahs against QurSim
 
-| Ranking | Spearman | Top-5 related in our top 5 | in our top 10 |
-|---|---|---|---|
-| random | 0.02 | 4 % | 9 % |
-| shared lemmas | 0.40 | 22 % | 34 % |
-| shared roots | 0.40 | 21 % | 32 % |
-| **lemmas + 0.5 roots — `qkg/surah/similar`** | **0.41** | **24 %** | **34 %** |
+The meaning signal: for each verse of the seed surah, its 10 nearest verses in the other surahs by
+the Arabic embedding (AraModernBert-STS); a candidate surah scores how many of them it holds,
+standardised over the 113 candidates like the lexical signals. The number of neighbours, the way
+of counting and the weight were chosen on the dev half of the seed surahs (`--split dev`); the test
+half was scored once.
 
-Adding the themes two surahs share as a third signal (0.25–1.0) left Spearman at 0.41 and the top
-five at 22–24 %, so the endpoint shows shared themes as a reason and does not count them.
+| Ranking (test half: 60 seed surahs) | Spearman | Top-5 related in our top 5 | in our top 10 |
+|---|---|---|---|
+| random | 0.02 | 3 % | 6 % |
+| shared lemmas | 0.39 | 21 % | 33 % |
+| shared roots | 0.39 | 20 % | 31 % |
+| lemmas + 0.5 roots — the endpoint until 2026-10-14 | 0.40 | 22 % | 32 % |
+| close verses alone | 0.38 | 24 % | 34 % |
+| **lemmas + 0.5 roots + 1.5 close verses — `qkg/surah/similar`** | **0.41** | **25 %** | **36 %** |
+
+On the dev half: 0.42 / 26 % / 35 % against 0.43 / 25 % / 36 %; over all 114 surahs 0.41 / 24 % /
+34 % against 0.42 / 25 % / 36 %. The gain is in the top of the list: a paired bootstrap over the
+test surahs puts "top 5 in our top 10" at +4 points (95 % CI +1 to +7; 13 surahs better, 4 worse),
+"top 5 in our top 5" at +3 (CI −1 to +7), and Spearman over all 113 candidates at +0.01 (CI −0.002
+to +0.025) — the top of the list improves; the order of the rest barely moves. Al-Baqarah's most
+related surah in the reference, Al-Nisāʾ, moves from second to first.
+
+What else was tried (scores over all 114 surahs):
+
+- **A surah's averaged vector** (centroid of its verses, raw or centred) scores *below* the lexical
+  signals (Spearman 0.31 / 0.13 alone) and does not help them: averaging 286 verses washes out what
+  any one of them says.
+- **Best match both ways** (each verse's closest verse in the other surah, averaged): 0.37 alone,
+  less than +0.01 fused.
+- **Counting both ways** (the seed's verses' neighbours and the candidate's) scores as the one-way
+  count, which the endpoint can compute live; neighbours from the full verse fusion (embedding +
+  lemmas + roots) as well, but its weights were tuned on QurSim.
+
+Adding the themes two surahs share as a further signal (0.25–1.0) left Spearman at 0.41 and the
+top five at 22–24 %, so the endpoint shows shared themes as a reason and does not count them.
 
 ## Not done yet
 

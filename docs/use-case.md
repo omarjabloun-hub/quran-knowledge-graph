@@ -20,7 +20,7 @@ the questions below are answered from the Arabic, with translations as reading a
 | Where does a root occur, in which forms, under which lemmas? | the root page |
 | What are the Quran's stories, and where does it tell each one? | the Stories and themes page; a theme's page, surah by surah |
 | How is one surah built — what are its sections? | the surah page, Passages tab (and each passage's page) |
-| Which surahs are like this one? | the surah page, Similar surahs (shared distinctive lemmas and roots, and the themes both tell) |
+| Which surahs are like this one? | the surah page, Similar surahs (shared distinctive lemmas and roots, verses close in meaning, and the themes both tell) |
 
 ## Principles
 

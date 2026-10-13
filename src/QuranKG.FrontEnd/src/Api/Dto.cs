@@ -250,10 +250,26 @@ namespace QuranKG.FrontEnd.Api
             public double    Lemmas       { get; set; }
             /// <summary>The same over roots, at half weight.</summary>
             public double    Roots        { get; set; }
+            /// <summary>The meaning signal: how many of the seed's verses have a verse of this surah among their
+            /// nearest by the Arabic embedding (CloseVerses.Length), standardised over the candidates, at its weight.</summary>
+            public double    Meaning      { get; set; }
             /// <summary>The distinctive lemmas the two surahs share, the most telling first.</summary>
             public Counted[] SharedLemmas { get; set; }
+            /// <summary>Every pair the meaning signal counted — a verse of the seed, one of its nearest verses here — the closest first.</summary>
+            public VersePair[] CloseVerses { get; set; }
             /// <summary>Themes both surahs have a passage in — shown as a reason, not counted in the score.</summary>
             public Counted[] SharedThemes { get; set; }
+        }
+
+        /// <summary>Two verses of different surahs whose Arabic the embedding reads as close.</summary>
+        public class VersePair
+        {
+            public UID128 SeedUid      { get; set; }
+            public string SeedVerseKey { get; set; }
+            public UID128 Uid          { get; set; }
+            public string VerseKey     { get; set; }
+            /// <summary>Cosine of the two verses' embeddings.</summary>
+            public double Similarity   { get; set; }
         }
 
         public class SimilarSurahsDto

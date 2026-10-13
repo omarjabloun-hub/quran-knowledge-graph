@@ -20,7 +20,8 @@
 #             (the same theme sizes, shuffled over the verses).
 #   SURAHS    similar surahs against QurSim summed over pairs of surahs (pairs ÷ √(verses ×
 #             verses)): Spearman per surah, and how many of its five most related surahs reach
-#             the top five.
+#             the top five. --split scores half the seed surahs. The meaning signal reads the verse
+#             embeddings (--vectors, default AraModernBert-STS from tools/embedding-benchmark).
 import collections, hashlib, json, math, os, sys
 import xml.etree.ElementTree as ET
 import numpy as np
@@ -32,6 +33,7 @@ out = args[0]
 opt = {k: v for k, v in zip(args[1::2], args[2::2])}
 TARGET = float(opt.get('--target', 160))
 TAU    = float(opt.get('--tau', 0.10))
+VECTORS = opt.get('--vectors', os.path.join(out, 'vec', 'NAMAA-Space--AraModernBert-Base-STS__arabic_plain__plain.f32'))
 SPLIT  = opt.get('--split', 'all')
 root   = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 ruku_xml = opt.get('--ruku', os.path.join(root, 'data/raw/tanzil/quran-data.xml'))
@@ -251,6 +253,8 @@ print('|---|---|---|---|---|---|---|')
 print(f'| {len(themes)} | {(theme_of >= 0).sum():,} of {N:,} | {biggest} | {widest} | {kept:,} of {len(cross):,} ({100 * kept / len(cross):.1f} %) | {chance:.0f} | {kept / max(1e-9, chance):.1f} |')
 
 # --- similar surahs --------------------------------------------------------------------------------
+# The constants of qkg/surah/similar.
+SW_LEMMAS, SW_ROOTS, SW_MEANING, NEIGHBOURS = 1.0, 0.5, 1.5, 10
 NS = 114
 def surah_cosines(sets):
     tf = [collections.Counter(t for i in by_surah[s] for t in sets[i]) for s in range(1, NS + 1)]
@@ -286,14 +290,37 @@ for a, b, d in gold:
 nv = np.array([len(by_surah[s]) for s in range(1, NS + 1)])
 ref /= np.sqrt(np.outer(nv, nv))
 CL, CR = surah_cosines(LEM), surah_cosines(ROO)
-print('\n## Similar surahs against QurSim summed over pairs of surahs\n')
+
+def close_verses(E):
+    """Row a, column b: how many (verse of a, one of its NEIGHBOURS nearest verses in other surahs) pairs land in b."""
+    S, C = np.asarray(SUR), np.zeros((NS, NS))
+    for start in range(0, N, 1000):
+        block = E[start:start + 1000] @ E.T
+        block[S[start:start + 1000, None] == S[None, :]] = -np.inf
+        nn = np.argpartition(-block, NEIGHBOURS, axis=1)[:, :NEIGHBOURS]
+        np.add.at(C, (np.repeat(S[start:start + 1000] - 1, NEIGHBOURS), S[nn.ravel()] - 1), 1)
+    return C
+
+rankings = [('random', np.random.default_rng(0).random((NS, NS))), ('shared lemmas', CL), ('shared roots', CR),
+            ('lemmas + 0.5 roots', SW_LEMMAS * by_row(CL) + SW_ROOTS * by_row(CR))]
+if os.path.exists(VECTORS):
+    E = np.fromfile(VECTORS, dtype='<f4').reshape(N, -1)
+    E = E / np.linalg.norm(E, axis=1, keepdims=True)
+    CM = close_verses(E)
+    rankings += [(f'close verses alone ({NEIGHBOURS} nearest of each verse, {os.path.basename(VECTORS).split("__")[0]})', CM),
+                 (f'lemmas + 0.5 roots + {SW_MEANING:g} close verses — qkg/surah/similar',
+                  SW_LEMMAS * by_row(CL) + SW_ROOTS * by_row(CR) + SW_MEANING * by_row(CM))]
+else:
+    print(f'\n(no verse vectors at {VECTORS}: the meaning signal is left out — run just benchmark --only AraModernBert)')
+
+seeds = sum(1 for i in range(NS) if ref[i].sum() > 0 and in_split(i + 1))
+print(f'\n## Similar surahs against QurSim summed over pairs of surahs — {SPLIT} seed surahs ({seeds})\n')
 print('| Ranking | Spearman | Top-5 related in our top 5 | in our top 10 |')
 print('|---|---|---|---|')
-for name, M in (('random', np.random.default_rng(0).random((NS, NS))), ('shared lemmas', CL), ('shared roots', CR),
-                ('lemmas + 0.5 roots — qkg/surah/similar', by_row(CL) + 0.5 * by_row(CR))):
+for name, M in rankings:
     rho, top5, top10 = [], [], []
     for i in range(NS):
-        if ref[i].sum() == 0:
+        if ref[i].sum() == 0 or not in_split(i + 1):
             continue
         o = [j for j in range(NS) if j != i]
         rho.append(np.corrcoef(ranks(M[i, o]), ranks(ref[i, o]))[0, 1])
