@@ -10,8 +10,9 @@
 //
 // Admin only, not read-only, not cached; `just clusters` runs it. A rebuild that finds the same
 // groups keeps the same nodes (the key is the passage's verse range, or a hash of the theme's
-// passages) and deletes the ones it no longer finds. Sudo can re-run it, or change a constant
-// below and re-run it.
+// passages) and deletes the ones it no longer finds — Passages and Themes only: the SimilarGroups
+// of qkg/clusters/similar-build are left alone. Sudo can re-run it, or change a constant below and
+// re-run it.
 //
 // Everything is read from the Arabic morphology — the lemmas and roots of each verse — so it
 // runs as soon as the connector has: no embeddings and no model. Adding the verse embeddings to
@@ -31,8 +32,9 @@
 // Average-linkage clustering merges groups while their average cosine is at least tau (0.10); a
 // group becomes a theme when it spans at least two surahs.
 //
-// LABELS. A cluster is named by its most distinctive lemmas (up to two proper nouns first) and, as
-// a reading aid only, by the most distinctive words of Saheeh International's English.
+// LABELS. A cluster is named by its most distinctive content lemmas — nouns and verbs, no particle,
+// pronoun or adverb — up to two proper nouns first, and, as a reading aid only, by the most
+// distinctive words of Saheeh International's English.
 //
 // NOT READ, because they are the references the clusters are scored against: the ruku' (the
 // traditional sections) and the QUL topics for passages and themes, QurSim for themes. MEASURED
@@ -290,28 +292,34 @@ var themes = Enumerable.Range(0, np).Where(k => alive[k])
                        .ToList();
 
 // --- labels ---------------------------------------------------------------------------------------
-var lemmaPlain  = new Dictionary<int, string>();
-var lemmaProper = new Dictionary<int, bool>();
+var lemmaPlain   = new Dictionary<int, string>();
+var lemmaProper  = new Dictionary<int, bool>();
+var lemmaContent = new Dictionary<int, bool>();
 string PlainOf(int lemma)
 {
     if (!lemmaPlain.TryGetValue(lemma, out var text))
     {
         var found = Graph.TryGet(lemmaUids[lemma], out var node);
-        lemmaPlain[lemma]  = text = found ? node.GetString(N.Lemma.LemmaPlain) : "";
-        lemmaProper[lemma] = found && node.GetString(N.Lemma.PartOfSpeech) == PROPER_NOUN;
+        lemmaPlain[lemma]   = text = found ? node.GetString(N.Lemma.LemmaPlain) : "";
+        lemmaProper[lemma]  = found && node.GetString(N.Lemma.PartOfSpeech) == PROPER_NOUN;
+        lemmaContent[lemma] = found && node.GetString(N.Lemma.PosTag) != "P" && QK.IsContentNoun(node.GetString(N.Lemma.PartOfSpeech));
     }
     return text;
 }
+
+// A label names the subject, so it is drawn from content words only: a rare particle or adverb
+// (كلا, بل, لن, إذ, لدى) can be distinctive of a passage's style, never of what it is about.
+// The same rule as the key words of qkg/cluster/profile. The grouping itself still reads them.
+bool IsContent(int lemma) { PlainOf(lemma); return lemmaContent[lemma]; }
 
 string ArabicLabel(IEnumerable<int> verses)
 {
     var counts = new Dictionary<int, int>();
     foreach (var i in verses) foreach (var t in lemmasOf[i]) counts[t] = counts.TryGetValue(t, out var c) ? c + 1 : 1;
-    var top = counts.Where(kv => lemmaDfPassages[kv.Key] <= np / 2.0)
+    var top = counts.Where(kv => lemmaDfPassages[kv.Key] <= np / 2.0 && IsContent(kv.Key))
                     .Select(kv => (Lemma: kv.Key, Score: kv.Value * Math.Log((double)np / lemmaDfPassages[kv.Key])))
                     .OrderByDescending(x => x.Score).ThenBy(x => PlainOf(x.Lemma), StringComparer.Ordinal)
                     .Take(6).Select(x => x.Lemma).ToList();
-    foreach (var t in top) PlainOf(t);
     var proper = top.Where(t => lemmaProper[t]).Take(2).ToList();
     return string.Join(" · ", proper.Concat(top.Where(t => !proper.Contains(t))).Take(3).Select(PlainOf).Where(s => !string.IsNullOrEmpty(s)));
 }
@@ -371,9 +379,12 @@ var surahType   = Graph.GetNodeTypeUID(N.Surah.Type);
 var surahUid    = Q().StartAt(N.Surah.Type).AsEnumerable().ToDictionary(s => s.GetInt(N.Surah.Number), s => s.UID);
 
 // --- 1. delete the clusters this build no longer finds, and the edges that named them -------------
+// Only its own kinds: other builds write Clusters too (qkg/clusters/similar-build, Kind
+// SimilarGroup) and keep theirs. A group naming a passage deleted here loses that edge below.
 var wanted   = new HashSet<string>(passageKeys.Concat(themeKeys), StringComparer.Ordinal);
 var existing = Q().StartAt(N.Cluster.Type).AsEnumerable().ToList();
-var stale    = existing.Where(c => !wanted.Contains(c.GetString(N.Cluster.ClusterKey))).Select(c => c.UID).ToList();
+var stale    = existing.Where(c => (c.GetString(N.Cluster.Kind) == QK.PASSAGE || c.GetString(N.Cluster.Kind) == QK.THEME)
+                            && !wanted.Contains(c.GetString(N.Cluster.ClusterKey))).Select(c => c.UID).ToList();
 var touched  = new HashSet<UID128>();
 foreach (var uid in stale)
 {
@@ -383,6 +394,8 @@ foreach (var uid in stale)
     foreach (var n in Q().StartAt(uid).Out(N.Cluster.Type, E.HasPassage).AsUIDEnumerable())    touched.Add(n);
 }
 foreach (var uid in stale) await Graph.TryDeleteAsync(uid);
+if (stale.Count > 0)
+    foreach (var other in existing.Where(c => c.GetString(N.Cluster.Kind) != QK.PASSAGE && c.GetString(N.Cluster.Kind) != QK.THEME)) touched.Add(other.UID);
 touched.ExceptWith(stale);
 foreach (var uid in touched) await Graph.RemoveInvalidEdges(uid);
 
@@ -459,7 +472,7 @@ foreach (var group in Enumerable.Range(0, np).GroupBy(k => surahOf[passages[k][0
 // --- 5. check what was written: every verse in exactly one passage, every passage in at most one theme
 var versesNotInOnePassage = verseUid.Count(v => Q().StartAt(v).Out(N.Cluster.Type, E.InCluster).AsUIDEnumerable().Count() != 1);
 var passagesInSeveralThemes = passageKeys.Count(key => Q().StartAt(ClusterUid(key)).Out(N.Cluster.Type, E.InTheme).AsUIDEnumerable().Count() > 1);
-var clustersNow = Q().StartAt(N.Cluster.Type).AsUIDEnumerable().Count();
+var clustersNow = Q().StartAt(N.Cluster.Type).AsEnumerable().Count(c => c.GetString(N.Cluster.Kind) == QK.PASSAGE || c.GetString(N.Cluster.Kind) == QK.THEME);
 
 Logger.LogInformation("qkg/clusters/build: {Passages} passages, {Themes} themes, {Stale} stale clusters removed in {Seconds:F1} s", np, themes.Count, stale.Count, clock.Elapsed.TotalSeconds);
 

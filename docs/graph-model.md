@@ -42,7 +42,7 @@ traversal reads in the direction it goes.
 | **Revelation** | `Meccan` / `Medinan` | where a surah was revealed |
 | **Topic** | QUL id | a theme, with its parent; verses link to their topic and every ancestor of it |
 | **QurSimPair** | `a~b` | two verses Ibn Kathir relates, with the degree (0–2). **The answer key** |
-| **Cluster** | `P:7:103-126` · `T:{hash}` | written by `qkg/clusters/build` (`just clusters`), two kinds. A **Passage** is a run of consecutive verses of one surah — its sections (`SurahNumber`, `Ordinal`, `FirstVerseKey`, `LastVerseKey`). A **Theme** groups passages of several surahs that tell the same story or treat the same subject. Both carry an Arabic label (distinctive lemmas), an English one (a reading aid), the `Method` and the `RunId` |
+| **Cluster** | `P:7:103-126` · `T:{hash}` | written by `qkg/clusters/build` (`just clusters`), two kinds. A **Passage** is a run of consecutive verses of one surah — its sections (`SurahNumber`, `Ordinal`, `FirstVerseKey`, `LastVerseKey`). A **Theme** groups passages of several surahs that tell the same story or treat the same subject. Both carry an Arabic label (distinctive lemmas), an English one (a reading aid), the `Method` and the `RunId`. A third kind, **SimilarGroup** (`S:{hash}`), is written by `qkg/clusters/similar-build`: passages grouped by Arabic meaning, lemmas and roots, with `HasPassage` edges only (a passage does not name its group); `qkg/clusters/build` leaves them alone |
 
 ## Why it is shaped this way
 

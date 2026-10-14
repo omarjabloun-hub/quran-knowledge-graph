@@ -17,7 +17,8 @@ var uid = req?.Uid ?? default(UID128);
 if (uid == default(UID128))                                           return BadRequest("Uid (a Cluster) is required");
 if (!Graph.TryGet(uid, out var cluster) || cluster.Type != N.Cluster.Type) return NotFound($"Cluster '{uid}' not found.");
 
-var isTheme  = cluster.GetString(N.Cluster.Kind) == QK.THEME;
+// A theme and a similarity group (qkg/clusters/similar-build) are both passages of several surahs.
+var isTheme  = cluster.GetString(N.Cluster.Kind) != QK.PASSAGE;
 var passages = (isTheme ? Q().StartAt(uid).Out(N.Cluster.Type, E.HasPassage).AsEnumerable().ToList() : new List<ReadOnlyNode> { cluster })
                   .OrderBy(p => p.GetInt(N.Cluster.SurahNumber)).ThenBy(p => p.GetInt(N.Cluster.Ordinal)).ToList();
 
@@ -28,7 +29,7 @@ QK.PassageRow Row(ReadOnlyNode p, List<ReadOnlyNode> verses)
 {
     var surah = Q().StartAt(p.UID).Out(N.Surah.Type, E.ClusterOfSurah).AsEnumerable().FirstOrDefault();
     var first = verses.FirstOrDefault();
-    var theme = Q().StartAt(p.UID).Out(N.Cluster.Type, E.InTheme).AsEnumerable().FirstOrDefault();
+    var theme = Q().StartAt(p.UID).Out(N.Cluster.Type, E.InTheme).AsEnumerable().FirstOrDefault(c => c.GetString(N.Cluster.Kind) == QK.THEME);
     return new QK.PassageRow
     {
         Uid                = p.UID,

@@ -23,6 +23,7 @@ just fetch                                   # the corpus, once
 just benchmark-clusters                      # recompute and score everything (a few seconds)
 just benchmark-clusters --split test         # passages and similar surahs scored on the held-out half of the surahs
 just benchmark-clusters --target 180 --tau 0.12   # try other settings before changing the build
+just benchmark-clusters --groups             # also Sudo's similarity groups (qkg/clusters/similar-build) next to the themes
 dotnet run --project src/QuranKG.Workspace -c Release -- clusters --save build.json
 just benchmark-clusters --from build.json    # score what the workspace actually wrote
 ```
@@ -43,8 +44,9 @@ AraModernBert` makes them); without them it is left out.
 - **Themes.** Each passage is a tf-idf vector of its lemmas (and of its roots at half weight).
   Average-linkage clustering merges groups while their average cosine is at least 0.10; a group
   spanning two surahs or more is a theme.
-- **Labels.** The most distinctive lemmas (up to two proper nouns first), and as a reading aid the
-  most distinctive words of the Saheeh International English.
+- **Labels.** The most distinctive content lemmas — nouns and verbs, no particle, pronoun or
+  adverb (كلا, بل, لن, إذ, لدى tell a passage's style, not its subject) — up to two proper nouns
+  first, and as a reading aid the most distinctive words of the Saheeh International English.
 
 ## Results
 
@@ -100,6 +102,36 @@ the Quran tells in many surahs split into single episodes. A few of the 119:
 | جناح · نساء · معروف — marriage and divorce | 2, 4, 24, 33, 60, 65 |
 | منافق · حلف · رسول — the hypocrites | 4, 5, 9, 58, 63 |
 | تحت · نهر · خالد — gardens beneath which rivers flow | 13 surahs |
+
+### Similarity groups (`qkg/clusters/similar-build`) against the themes
+
+A second grouping of the same passages, built in the workspace by Sudo: each passage's mean verse
+embedding (AraModernBert-STS), lemmas and roots, each cosine standardised over the pairs of passages
+of different surahs, summed 1 / 1 / 0.5, −1 for two passages of one surah, average linkage at
+z ≥ tau (1.5 by default: 141 groups). `--groups` rebuilds it here — the same 141 groups at 1.5 —
+and scores it the way the themes are scored:
+
+| Grouping | tau | Groups | Verses grouped | Biggest (passages) | Related pairs across surahs kept together | Times chance |
+|---|---|---|---|---|---|---|
+| similarity groups | 1.25 | 124 | 92 % | 19 | 434 (7.2 %) | 6.3 |
+| themes | 0.08 | 90 | 93 % | 29 | 591 (9.8 %) | 5.2 |
+| **similarity groups** | **1.5** | **141** | **87 %** | **15** | **356 (5.9 %)** | **7.3** |
+| **themes** | **0.10** | **119** | **84 %** | **18** | **402 (6.7 %)** | **7.2** |
+| similarity groups | 2.0 | 157 | 78 % | 7 | 278 (4.6 %) | 8.4 |
+| themes | 0.12 | 141 | 75 % | 11 | 287 (4.8 %) | 8.8 |
+| similarity groups | 2.5 | 144 | 61 % | 5 | 213 (3.5 %) | 9.6 |
+| themes | 0.15 | 133 | 57 % | 5 | 212 (3.5 %) | 11.3 |
+
+Read at the same share of verses grouped, the two come out alike, the themes a little ahead in
+pairs kept: the meaning signal, averaged over a passage, adds nothing measurable to the lemmas and
+roots — as for the passage cuts and the surahs' averaged vectors above. Two cautions for its sweep
+(`qkg/clusters/similar-sweep`): it keeps the tau with the best lift, and lift only rises as fewer
+verses are grouped (14.6 at 3.0, where half the verses are in no group), so it always keeps the
+highest tau tried; and it chooses on QurSim itself, every pair, with no held-out half — the figure it
+reports is the one it was tuned to. Choose tau by reading the groups, as the themes' was.
+
+The two groupings are kept side by side in the graph — Clusters of Kind `SimilarGroup` are left alone
+by `qkg/clusters/build` — and the Stories and themes page switches between them.
 
 ### Similar surahs against QurSim
 

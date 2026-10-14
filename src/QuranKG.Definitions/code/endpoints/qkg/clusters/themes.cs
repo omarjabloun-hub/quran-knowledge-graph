@@ -37,11 +37,14 @@ foreach (var t in themes)
     });
 }
 
+// Built, Method and RunId from this build's own clusters: qkg/clusters/similar-build writes Clusters too.
+var own = clusters.Where(c => c.GetString(N.Cluster.Kind) == QK.PASSAGE || c.GetString(N.Cluster.Kind) == QK.THEME).ToList();
+
 return new QK.ThemesDto
 {
-    Built          = clusters.Count > 0,
-    Method         = clusters.Select(c => c.GetString(N.Cluster.Method)).FirstOrDefault() ?? "",
-    RunId          = clusters.Select(c => c.GetString(N.Cluster.RunId)).FirstOrDefault() ?? "",
+    Built          = own.Count > 0,
+    Method         = own.Select(c => c.GetString(N.Cluster.Method)).FirstOrDefault() ?? "",
+    RunId          = own.Select(c => c.GetString(N.Cluster.RunId)).FirstOrDefault() ?? "",
     Passages       = clusters.Count(c => c.GetString(N.Cluster.Kind) == QK.PASSAGE),
     Verses         = Q().StartAt(N.Verse.Type).AsUIDEnumerable().Count(),
     VersesInThemes = versesInThemes,

@@ -3,6 +3,7 @@
 #   python -I evaluate.py <out>                       recompute everything the way the workspace does
 #   python -I evaluate.py <out> --from build.json     score what one workspace build wrote
 #   python -I evaluate.py <out> --target 180 --tau 0.12 --split dev
+#   python -I evaluate.py <out> --groups              also the similarity groups of qkg/clusters/similar-build, next to the themes
 #
 # <out> is tools/embedding-benchmark/out (verses.jsonl and gold.json, written by its prep.py); the
 # ruku' come from data/raw/tanzil/quran-data.xml. build.json is the answer of `just clusters`.
@@ -328,3 +329,43 @@ for name, M in rankings:
         got = sorted(o, key=lambda j: -M[i, j])
         top5.append(len(want & set(got[:5])) / 5); top10.append(len(want & set(got[:10])) / 5)
     print(f'| {name} | {np.mean(rho):.2f} | {100 * np.mean(top5):.0f} % | {100 * np.mean(top10):.0f} % |')
+
+# --- similarity groups (qkg/clusters/similar-build) against the themes, at the same coverage -----------
+# --groups: Sudo's build — each passage's mean verse embedding, lemmas and roots, each cosine
+# standardised over the pairs of passages of different surahs, summed 1 / 1 / 0.5 and divided by 2.5,
+# -1 for two passages of one surah, average linkage while the average is ≥ tau — next to the themes
+# at several tau. Times chance only rises as fewer verses are grouped, so read the rows at the same
+# share of verses grouped, never the best row of either.
+if '--groups' in args and os.path.exists(VECTORS):
+    surah_of = np.array([SUR[p[0]] for p in passages])
+    XL, XR = passage_vectors(LEM), passage_vectors(ROO)
+    CLp, CRp = XL @ XL.T, XR @ XR.T
+    PV = np.array([E[p].sum(0) for p in passages])
+    PV /= np.linalg.norm(PV, axis=1, keepdims=True)
+    CSp = PV @ PV.T
+    iu = np.triu_indices(NP, 1)
+    other = surah_of[iu[0]] != surah_of[iu[1]]
+    def z(M):
+        v = M[iu][other]
+        return (M - v.mean()) / v.std()
+    Zg = (z(CSp) + z(CLp) + 0.5 * z(CRp)) / 2.5
+    Zg[surah_of[:, None] == surah_of[None, :]] = -1.0
+    Sl = (CLp + 0.5 * CRp) / 1.5
+
+    def scored(groups):
+        of = np.full(N, -1)
+        for t, g in enumerate(groups):
+            for k in g:
+                of[passages[k]] = t
+        kept = sum(of[i] >= 0 and of[i] == of[j] for i, j in cross)
+        ch = np.mean([sum(p[i] >= 0 and p[i] == p[j] for i, j in cross) for p in (rng.permutation(of) for _ in range(20))])
+        return len(groups), (of >= 0).mean(), max(len(g) for g in groups), kept, kept / max(1e-9, ch)
+
+    print('\n## Similarity groups (qkg/clusters/similar-build) and themes, at several tau\n')
+    print('| Grouping | tau | Groups | Verses grouped | Biggest (passages) | Related pairs across surahs kept together | Times chance |')
+    print('|---|---|---|---|---|---|---|')
+    for name, M, taus in (('similarity groups', Zg, [1.0, 1.25, 1.5, 2.0, 2.5, 3.0]), ('themes', Sl, [0.08, 0.10, 0.12, 0.15, 0.18])):
+        for t in taus:
+            groups = [g for g in average_linkage(M, t) if len({SUR[passages[k][0]] for k in g}) >= 2]
+            n, cover, big, kept, x = scored(groups)
+            print(f'| {name} | {t:g} | {n} | {100 * cover:.0f} % | {big} | {kept:,} ({100 * kept / len(cross):.1f} %) | {x:.1f} |')
