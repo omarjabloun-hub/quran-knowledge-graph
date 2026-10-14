@@ -109,7 +109,24 @@ before it creates.
 
 ### A chat model for the assistant and for naming clusters
 
-In the workspace: **Manage → AI → Providers → add → Ollama**:
+The Quran Research Assistant (the **AI Assistant** page) counts, reads and tests claims through
+tool calls, so it needs a model that calls tools reliably. Two ways to give it one:
+
+**Claude, through a local OpenAI-compatible wrapper** (what this machine uses: a container
+exposing the Claude Code CLI as `/v1/chat/completions` on port 8000). In the workspace:
+**Manage → AI → LLM Providers → OpenAI → Add another OpenAI**:
+
+| Field | Value |
+|---|---|
+| Custom Open AI Host | `http://host.docker.internal:8000/v1/chat/completions` |
+| API key | the wrapper's shared key (`CLAUDE_API_KEY` in the wrapper's own `.env`, never in this repository) |
+| Model | `sonnet` (or `opus` for longer investigations) |
+
+then **Test connection**, and make it the default under **Manage → AI → Defaults**. The provider
+lives in the workspace, not in `src/QuranKG.Definitions`: it carries a secret and names this
+machine. Bind the wrapper's port to `127.0.0.1` unless something outside the Mac must reach it.
+
+**Or a local model through Ollama**: **Manage → AI → Providers → add → Ollama**:
 
 | Field | Value |
 |---|---|

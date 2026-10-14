@@ -1,5 +1,6 @@
 using Mosaik;
 using Mosaik.Helpers;
+using QuranKG.FrontEnd.Chat;
 using QuranKG.FrontEnd.Components;
 using QuranKG.FrontEnd.Dashboard;
 using QuranKG.FrontEnd.Themes;
@@ -35,6 +36,7 @@ namespace QuranKG.FrontEnd
         private static void Configure(AppSettings settings)
         {
             settings.HomeView              = state => new PatternDashboard(state);
+            settings.AssistantView         = QuranChatView.Create;
             settings.DisableOnboardingTips = true;
 
             // A page of our own is a route AND a way in: the entry here, the route in OnLoad.

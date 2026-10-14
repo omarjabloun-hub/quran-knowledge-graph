@@ -90,6 +90,12 @@ just status                     # after an import: "Code compiles", counts as ex
   previous build for an hour. They answer in under a second; keep it that way.
 - `ReadOnlyNode` is a class: `FirstOrDefault()` over nodes gives null, not an empty node.
 - Session tokens do not survive a workspace restart; the minted Library / Upload tokens do.
+- In an AI tool, `scope.RunEndpointAsync<string>` returns **null** for an endpoint that answers
+  with a DTO (it converts only a string): read it as `RunEndpointAsync<JObject>` / `<JToken>`.
+- The stock chat page starts every chat with only consult ticked, whatever the assistant pins:
+  the tools reach the model because `Chat/QuranChatView.cs` pins them on post and replace.
+- The sandbox has no `query` command on purpose: the query engine emits whole nodes, and a verse
+  node carries its ruku'.
 
 ## Commits
 

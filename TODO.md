@@ -59,11 +59,19 @@ closes it.
     the magicians, Moses at the appointed time, the calf);
   - try the large embedding models in the cohesion and in the passage vectors — Harrier and
     AraModernBert-STS gave no reliable gain to the passages.
-- [ ] **AI layer**: an Ollama chat provider (`docs/models.md`), then AI tools for the workspace
-      assistant — search verses (Arabic first), read a verse with its words, a root's profile —
-      none of which may reach `QurSimPair`, `Topic` (while it is the clustering reference),
-      `Verse.Ruku` (the passages' reference) or `qkg/verse/words`. Add a skill the workspace
-      assistant reads, describing this schema.
+- [x] **AI layer**: the Quran Research Assistant on its own chat page, with the Quran tools
+      (count by lemma / root / form / text with the verses and the same-count baseline,
+      co-occurrence, read verses word by word, similar verses and surahs), a sandbox over the
+      corpus as files, Search Records and the consult readers — none reaching `QurSimPair`, `Topic`,
+      `Verse.Ruku` or `qkg/verse/words`. Chat through Claude via a local wrapper (`docs/local-setup.md`).
+- [ ] **AI layer, next**:
+  - an "Ask the assistant" button on the verse, surah, root and theme pages that opens a chat with
+    the node attached (`curiosity-chat-experience`, AiAssist);
+  - verse keys in replies as links (`ParseAs` needs a spotter that recognises `2:255`);
+  - saved findings: a claim, its counting rule, its counts, its verses and its baseline, kept as a
+    node a reader can reopen and the assistant can build on;
+  - an investigation agent for long pattern searches (hypothesis → count → baseline, many rounds),
+    with its own budget, reporting the hypotheses that failed with the ones that held.
 - [ ] **Similar words**: the dashboard counts words, forms, lemmas and roots; "similar words"
       beyond a shared root (near-synonyms such as خوف / خشية / رهبة) need a lemma-level similarity
       — embeddings of the lemmas' contexts, or co-occurrence — and a "word family" view.

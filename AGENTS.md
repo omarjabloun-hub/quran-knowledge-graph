@@ -62,3 +62,23 @@ in the csproj files: Curiosity.Library 26.10.6546, Curiosity.FrontEnd* 26.10.657
 | `qkg/verse/similar` | similar verses: Arabic embedding + shared lemmas + shared roots, with each signal's contribution |
 
 All read-only, `AllUsers`, sharing the DTO library `qkg/_lib/dto` (admin-only).
+
+## The AI layer
+
+The **AI Assistant** page (`src/QuranKG.FrontEnd/src/Chat/QuranChatView.cs`) is the Quran Research
+Assistant with its four tools pinned on every turn — the stock page starts each chat with only
+consult ticked.
+
+| Definition (`src/QuranKG.Definitions/code/`) | What |
+|---|---|
+| `ai-assistants/quran-research-assistant-…1111.cs` | the assistant: the method for testing a claim (fix the counting rule, count both sides, list the verses, measure the baseline), one worked example |
+| `chat-ai-tools/QuranTooLs111111111111.cs` | CountTerm (lemma / root / form / text, with every verse and how many lemmas share the count), FindVerses, ReadVerses, SameCount, SimilarVerses, SimilarSurahs |
+| `chat-ai-tools/QuranFiLes111111111111.cs` | the sandbox `quran`: words / verses / surahs / lemmas / roots as TSV, bash and python, `app` for the read-only endpoints |
+| `chat-ai-tools/SEARCHRecords111111111.cs` | the workspace search, fenced to Verse, Surah, Root, Lemma, Cluster, Juz |
+| `chat-ai-tools/ConsuLt111111111111111.cs` | the consult readers for those types and Word |
+
+None of them reads `QurSimPair`, `Topic`, `Verse.Ruku`, `Surah.RukuCount` or calls `qkg/verse/words`
+(CLAUDE.md, non-negotiable 2). Check a tool after an import:
+`GET api/chatai/tools/get/function-names?toolUID=<uid>` is not `[]`, and
+`POST api/chatai/tools/test?toolUID=<uid>&functionName=<f>` with the arguments as a JSON array of
+JSON values (`["\"آدم\"", "\"lemma\"", "0", "5"]`).
