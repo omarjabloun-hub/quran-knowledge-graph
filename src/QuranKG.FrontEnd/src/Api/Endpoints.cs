@@ -37,5 +37,11 @@ namespace QuranKG.FrontEnd.Api
 
         /// <summary>One cluster: a theme with its passages, or a passage with its verses. Body: <c>{ "Uid": … }</c>.</summary>
         public const string ClusterProfile = "qkg/cluster/profile";
+
+        /// <summary>Every passage, surah by surah, with its size and theme — the map of the clusters build. No body.</summary>
+        public const string ClustersMap = "qkg/clusters/map";
+
+        /// <summary>A surah, a passage or a theme as text to read, in passages, with the key words marked. Body: <c>{ "Uid": … }</c>.</summary>
+        public const string ReadText = "qkg/read/text";
     }
 }

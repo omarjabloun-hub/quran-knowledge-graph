@@ -13,7 +13,7 @@ Orientation for anyone — person or agent — working in this repository. The w
 | `src/QuranKG.Tools` | `fetch`, `check`, `sync-dto` | no |
 | `src/QuranKG.Connector` | the graph schema (`Schema.cs`, `Edges.cs`), the ingest (`Ingest.cs`), `--dry-run`, `--emit-schema` | yes (Library token) |
 | `src/QuranKG.Definitions` | the workspace as files — `config/` (indexes, styles, settings, schemas), `code/endpoints/qkg/`, `variants/` | imported |
-| `src/QuranKG.FrontEnd` | the dashboard (`Dashboard/`), the Stories and themes page (`Themes/`), renderers (`Renderers/`), shared components, the API layer | uploaded |
+| `src/QuranKG.FrontEnd` | the dashboard (`Dashboard/`), the Quran View (`Reader/`), the Stories and themes page and its map (`Themes/`), renderers (`Renderers/`), the reader and shared components (`Components/`), the API layer | uploaded |
 | `src/QuranKG.Workspace` | `tokens`, `status`, `call`, `warm`, `clusters`, `stage-definitions`, `use-embeddings` | yes (admin sign-in) |
 | `tools/embedding-benchmark` | Python: embeds the verses with candidate models and scores them on QurSim | no |
 | `tools/embedding-server` | Python: AraModernBert-STS behind the OpenAI embeddings API — what the workspace embeds the verses' Arabic with | called by it |

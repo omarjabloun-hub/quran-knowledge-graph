@@ -14,6 +14,8 @@ namespace QuranKG.FrontEnd.Api
         /// <summary>The two kinds of Cluster the clusters build writes (Cluster.Kind).</summary>
         public const string PASSAGE = "Passage";
         public const string THEME   = "Theme";
+        /// <summary>The Clusters qkg/clusters/similar-build writes: passages grouped by meaning, lemmas and roots.</summary>
+        public const string SIMILAR_GROUP = "SimilarGroup";
 
         // --- requests -----------------------------------------------------------------------------
 
@@ -371,6 +373,134 @@ namespace QuranKG.FrontEnd.Api
             /// <summary>A passage: the passages before and after it in its surah (default at either end).</summary>
             public UID128       Previous    { get; set; }
             public UID128       Next        { get; set; }
+        }
+
+        // --- reading ------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Text to read: a surah, a passage or a theme, as runs of consecutive verses — a surah's
+        /// passages, a theme's passages surah by surah — each with what the clusters build says of it.
+        /// </summary>
+        public class ReadingDto
+        {
+            /// <summary>The Surah or Cluster read.</summary>
+            public UID128           Uid           { get; set; }
+            /// <summary>"Surah", Passage or Theme.</summary>
+            public string           Kind          { get; set; }
+            public string           Label         { get; set; }
+            public string           LabelArabic   { get; set; }
+            /// <summary>False until the clusters build has run: a surah is then one section with no passage.</summary>
+            public bool             PassagesBuilt { get; set; }
+            public string           Method        { get; set; }
+            public string           RunId         { get; set; }
+            /// <summary>A surah: the surahs either side. A passage: the passages either side in its surah. Default at either end.</summary>
+            public UID128           Previous      { get; set; }
+            public UID128           Next          { get; set; }
+            /// <summary>A passage or a theme: the lemmas its verses use far more than the rest of the Quran — the words highlighted.</summary>
+            public Counted[]        KeyLemmas     { get; set; }
+            public ReadingSection[] Sections      { get; set; }
+        }
+
+        /// <summary>A run of consecutive verses of one surah: a passage, or the whole surah before the build.</summary>
+        public class ReadingSection
+        {
+            /// <summary>Default when the clusters have not been built.</summary>
+            public UID128         PassageUid       { get; set; }
+            public int            Ordinal          { get; set; }
+            public string         Label            { get; set; }
+            public string         LabelArabic      { get; set; }
+            public UID128         SurahUid         { get; set; }
+            public int            SurahNumber      { get; set; }
+            public string         SurahName        { get; set; }
+            public string         SurahNameArabic  { get; set; }
+            public UID128         ThemeUid         { get; set; }
+            public string         ThemeLabel       { get; set; }
+            public string         ThemeLabelArabic { get; set; }
+            public int            ThemeSurahs      { get; set; }
+            /// <summary>The theme's Ordinal on the Themes page — its colour on the map and in the reader; 0 without a theme.</summary>
+            public int            ThemeOrdinal     { get; set; }
+            /// <summary>The similarity group (qkg/clusters/similar-build) the passage is in; default without one.</summary>
+            public UID128         GroupUid         { get; set; }
+            public string         GroupLabelArabic { get; set; }
+            public int            GroupOrdinal     { get; set; }
+            public int            GroupSurahs      { get; set; }
+            public ReadingVerse[] Verses           { get; set; }
+        }
+
+        public class ReadingVerse
+        {
+            public UID128 Uid         { get; set; }
+            public string VerseKey    { get; set; }
+            public int    Ayah        { get; set; }
+            /// <summary>The Uthmani text, and its Saheeh International gloss.</summary>
+            public string Text        { get; set; }
+            public string Translation { get; set; }
+            /// <summary>Its words in the morphology: the text's words line up with them when the counts agree.</summary>
+            public int    Words       { get; set; }
+            /// <summary>The positions (1-based) of its words whose lemma is one of the key lemmas — of the passage it is read in, or of the theme.</summary>
+            public int[]  Highlights  { get; set; }
+            /// <summary>"recommended" / "obligatory" on a verse of prostration, else empty.</summary>
+            public string Sajda       { get; set; }
+        }
+
+        /// <summary>
+        /// Every passage of the Quran, surah by surah, with the theme and the similarity group it is in:
+        /// both groupings of the passages at a glance.
+        /// </summary>
+        public class ClusterMapDto
+        {
+            public bool         Built        { get; set; }
+            public string       Method       { get; set; }
+            public string       RunId        { get; set; }
+            /// <summary>The similarity groups' build (qkg/clusters/similar-build), empty until it has run.</summary>
+            public string       GroupsMethod { get; set; }
+            public string       GroupsRunId  { get; set; }
+            public MapSurah[]   Surahs       { get; set; }
+            /// <summary>In mushaf order.</summary>
+            public MapPassage[] Passages     { get; set; }
+            public MapGroup[]   Themes       { get; set; }
+            public MapGroup[]   Groups       { get; set; }
+        }
+
+        /// <summary>A theme or a similarity group: its passages counted, and the surahs it spans.</summary>
+        public class MapGroup
+        {
+            public UID128 Uid          { get; set; }
+            public string Kind         { get; set; }
+            public int    Ordinal      { get; set; }
+            public string Label        { get; set; }
+            public string LabelArabic  { get; set; }
+            public int    Passages     { get; set; }
+            public int    Verses       { get; set; }
+            public int[]  SurahNumbers { get; set; }
+        }
+
+        public class MapSurah
+        {
+            public UID128 Uid        { get; set; }
+            public int    Number     { get; set; }
+            public string Name       { get; set; }
+            public string NameArabic { get; set; }
+            public string Place      { get; set; }
+            public int    Words      { get; set; }
+        }
+
+        public class MapPassage
+        {
+            public UID128 Uid          { get; set; }
+            public int    SurahNumber  { get; set; }
+            public int    Ordinal      { get; set; }
+            public int    FirstAyah    { get; set; }
+            public int    LastAyah     { get; set; }
+            public int    Words        { get; set; }
+            public string LabelArabic  { get; set; }
+            public string Label        { get; set; }
+            /// <summary>Its theme's Ordinal on the Themes page (0 when the passage has no theme), and its UID.</summary>
+            public int    ThemeOrdinal { get; set; }
+            public UID128 ThemeUid     { get; set; }
+            /// <summary>The same for its similarity group.</summary>
+            public int    GroupOrdinal { get; set; }
+            public UID128 GroupUid     { get; set; }
         }
     }
 }

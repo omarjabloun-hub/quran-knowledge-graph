@@ -10,7 +10,7 @@ namespace QuranKG.FrontEnd.Api
     ///
     /// <para>All the endpoints are read-only (<c>readOnlyCompatible: true</c>). Most are cached on
     /// the server for an hour, so calling one again costs a cache hit; the ones that read the
-    /// clusters (passages, themes, a cluster, similar surahs) are not, so a rebuild shows at once.</para>
+    /// clusters (passages, themes, the map, a cluster, the reading text, similar surahs) are not, so a rebuild shows at once.</para>
     /// </summary>
     internal static class QuranApi
     {
@@ -52,5 +52,12 @@ namespace QuranKG.FrontEnd.Api
 
         internal static Task<QK.ClusterProfileDto> ClusterProfileAsync(UID128 clusterUID)
             => Mosaik.API.Endpoints.CallAsync<QK.ClusterProfileDto>(Endpoints.ClusterProfile, new QK.UidRequest { Uid = clusterUID }, readOnlyCompatible: true);
+
+        internal static Task<QK.ClusterMapDto> ClustersMapAsync()
+            => Mosaik.API.Endpoints.CallAsync<QK.ClusterMapDto>(Endpoints.ClustersMap, readOnlyCompatible: true);
+
+        /// <summary>A Surah or a Cluster (a passage or a theme) as text to read.</summary>
+        internal static Task<QK.ReadingDto> ReadTextAsync(UID128 surahOrClusterUID)
+            => Mosaik.API.Endpoints.CallAsync<QK.ReadingDto>(Endpoints.ReadText, new QK.UidRequest { Uid = surahOrClusterUID }, readOnlyCompatible: true);
     }
 }

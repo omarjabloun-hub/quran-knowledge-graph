@@ -18,8 +18,9 @@
 // THE ANSWER KEYS STAY OUT (CLAUDE.md, non-negotiable 2): no file carries QurSimPair, Topic,
 // Verse.Ruku or Surah.RukuCount; search and consult are fenced to the types below; `app` lists
 // only endpoints that read none of them (qkg/verse/words, which returns QurSim pairs, is absent,
-// and so is qkg/clusters/build, which writes). There is no `query` command: the query engine emits
-// whole nodes, and a verse node carries its ruku'.
+// and so are qkg/clusters/build and similar-build, which write, and similar-score, which reads
+// QurSim). There is no `query` command: the query engine emits whole nodes, and a verse node
+// carries its ruku'.
 
 public class QuranSandbox : ISandbox
 {
@@ -29,6 +30,7 @@ public class QuranSandbox : ISandbox
     {
         "qkg/dashboard/corpus", "qkg/surah/profile", "qkg/root/profile", "qkg/verse/similar",
         "qkg/surah/similar", "qkg/surah/passages", "qkg/clusters/themes", "qkg/cluster/profile",
+        "qkg/clusters/map", "qkg/clusters/similar-groups", "qkg/read/text",
     };
 
     public string FunctionName => "quran";

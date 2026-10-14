@@ -35,6 +35,9 @@ obj/
 /.claude/skills/tesserae/
 *.DotSettings.user
 
+# Browser tests (playwright-cli)
+.playwright-cli/
+
 # OS
 .DS_Store
 Thumbs.db

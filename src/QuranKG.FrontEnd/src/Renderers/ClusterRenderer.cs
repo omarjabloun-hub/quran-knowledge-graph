@@ -17,8 +17,10 @@ namespace QuranKG.FrontEnd.Renderers
     /// <summary>
     /// A group of verses the clusters build found (qkg/clusters/build). A THEME — passages of
     /// several surahs that tell the same story or treat the same subject — opens on those
-    /// passages, surah by surah. A PASSAGE — a run of consecutive verses of one surah — opens on
-    /// its verses in order, with the theme it belongs to and the passages either side of it.
+    /// passages read as text, surah by surah, the words that tie them marked. A PASSAGE — a run of
+    /// consecutive verses of one surah — opens on its text, with the theme it belongs to and the
+    /// passages either side of it. Both read through <see cref="ReadingPane"/>: a verse is a
+    /// sentence of the text, not a box, and clicking it opens its translation beside it.
     /// </summary>
     public sealed class ClusterRenderer : QuranRendererBase
     {
@@ -33,7 +35,11 @@ namespace QuranKG.FrontEnd.Renderers
         protected override string[] Related360Types => new[] { N.Verse.Type, N.Surah.Type, N.Cluster.Type };
 
         // A theme and a passage are told apart in a mixed list by the tile alone.
-        protected override string TileText(Node node) => node.GetString(N.Cluster.Kind) == QK.THEME ? "THEME" : "PASS";
+        protected override string TileText(Node node)
+        {
+            var kind = node.GetString(N.Cluster.Kind);
+            return kind == QK.THEME ? "THEME" : kind == QK.SIMILAR_GROUP ? "SIM" : "PASS";
+        }
 
         protected override IComponent CardBody(Node node) => Arabic.Inline(node.GetString(N.Cluster.LabelArabic), 20);
 
@@ -45,9 +51,73 @@ namespace QuranKG.FrontEnd.Renderers
 
         protected override IEnumerable<NodeTab> LeadingTabs(Node node)
         {
-            if (node.GetString(N.Cluster.Kind) == QK.THEME) yield return Tab("theme",   "Passages".t(), () => ThemeTab(node));
-            else                                            yield return Tab("passage", "Verses".t(),   () => PassageTab(node));
+            // A theme and a similarity group (qkg/clusters/similar-build) are both passages of several surahs.
+            if (node.GetString(N.Cluster.Kind) != QK.PASSAGE)
+            {
+                yield return Tab("read",  "Read".t(),     () => ReadTheme(node), scrolls: false);
+                yield return Tab("theme", "Passages".t(), () => ThemeTab(node));
+            }
+            else
+            {
+                yield return Tab("read",    "Read".t(),      () => ReadPassage(node), scrolls: false);
+                yield return Tab("passage", "Key words".t(), () => PassageTab(node));
+            }
         }
+
+        // -----------------------------------------------------------------------------------
+        // Read: the verses as text, the key words marked
+        // -----------------------------------------------------------------------------------
+
+        /// <summary>Every passage of the theme, surah by surah, as text — the words that tie them marked.</summary>
+        private static IComponent ReadTheme(Node theme)
+            => new ReadingPane(new ReadingPane.Settings
+            {
+                Uid               = theme.UID,
+                OptionsKey        = "theme",
+                KeyWordsByDefault = true,
+                ReadInQuran       = true,
+                Header            = text => VStack().WS().PL(16).PR(16).PT(12).Children(
+                                        HStack().WS().AlignItemsCenter().Gap(12.px()).Wrap().Children(
+                                            Arabic.Inline(text.LabelArabic, 26),
+                                            TextBlock(text.Label).Secondary(),
+                                            TextBlock(string.Format("{0} passages in {1} surahs, {2} verses".t(),
+                                                                    (text.Sections ?? new QK.ReadingSection[0]).Length,
+                                                                    (text.Sections ?? new QK.ReadingSection[0]).Select(x => x.SurahNumber).Distinct().Count(),
+                                                                    (text.Sections ?? new QK.ReadingSection[0]).Sum(x => (x.Verses ?? new QK.ReadingVerse[0]).Length))).Small().Secondary()),
+                                        TextBlock((text.Kind == QK.SIMILAR_GROUP
+                                                      ? "A similarity group: passages close in Arabic meaning (their verses' embeddings) and in their lemmas and roots. The words they share most are marked. A surah's name opens the passage in its surah."
+                                                      : "Grouped because they lean on the same distinctive words: those marked in the text. A surah's name opens the passage in its surah.").t()).Tiny().Secondary()),
+            }).S();
+
+        /// <summary>The passage as text, with the way to the passages either side and to its theme.</summary>
+        private static IComponent ReadPassage(Node passage)
+            => new ReadingPane(new ReadingPane.Settings
+            {
+                Uid               = passage.UID,
+                OptionsKey        = "passage",
+                KeyWordsByDefault = true,
+                ReadInQuran       = true,
+                Header            = text =>
+                {
+                    var section = (text.Sections ?? new QK.ReadingSection[0]).FirstOrDefault();
+                    var where   = HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().PL(16).PR(16).PT(12);
+                    if (text.Previous != default(UID128))
+                        where.Add(Button("Previous".t()).SetIcon(UIcons.AngleLeft).Compact().OnClick(() => Lists.Open(text.Previous)));
+                    if (section is object)
+                    {
+                        where.Add(TextBlock(string.Format("{0}. {1} · {2} · passage {3}".t(), section.SurahNumber, section.SurahName, QuranReader.Range(section), section.Ordinal)).SemiBold());
+                        where.Add(Arabic.Inline(text.LabelArabic, 22));
+                        if (section.ThemeUid != default(UID128))
+                            where.Add(Clusters.ThemeLink(section.ThemeUid, section.ThemeLabelArabic, section.ThemeLabel, section.ThemeSurahs));
+                        where.Add(Button("Read in its surah".t()).SetIcon(UIcons.BookQuran).Compact()
+                                     .OnClick(() => QuranLinks.Go(section.SurahNumber, (section.Verses ?? new QK.ReadingVerse[0]).Select(v => v.Ayah).FirstOrDefault())));
+                    }
+                    where.Add(TextBlock("").Grow());
+                    if (text.Next != default(UID128))
+                        where.Add(Button("Next".t()).SetIcon(UIcons.AngleRight, afterText: true).Compact().OnClick(() => Lists.Open(text.Next)));
+                    return where;
+                },
+            }).S();
 
         // -----------------------------------------------------------------------------------
         // A theme: where the Quran tells it
@@ -114,10 +184,6 @@ namespace QuranKG.FrontEnd.Renderers
                         Clusters.ThemeLink(row.ThemeUid, row.ThemeLabelArabic, row.ThemeLabel, row.ThemeSurahs)));
 
                 page.Add(KeyWords(profile));
-
-                foreach (var v in profile.Verses ?? new QK.VerseLine[0])
-                    page.Add(Lists.VerseRow(v.Uid, v.VerseKey, v.Text, v.Translation));
-
                 return page;
             }).S();
         }

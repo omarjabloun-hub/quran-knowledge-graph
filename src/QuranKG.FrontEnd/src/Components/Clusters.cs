@@ -19,6 +19,17 @@ namespace QuranKG.FrontEnd.Components
         internal static string ThemeColor => Theme.Colors.Green700;
         internal static string Unthemed   => Theme.Colors.Neutral300;
 
+        /// <summary>
+        /// A theme's own colour, the same on the map, in the reader and on the Themes page: hues a
+        /// golden angle apart, so themes next to each other in the list never look alike.
+        /// </summary>
+        internal static string ColorOf(int themeOrdinal)
+            => themeOrdinal <= 0 ? Unthemed : "hsl(" + (int)((themeOrdinal * 137.508) % 360) + ", 58%, 46%)";
+
+        /// <summary>A similarity group's colour (qkg/clusters/similar-build): the same walk round the hues, softer, so it is never read as a theme's.</summary>
+        internal static string GroupColorOf(int groupOrdinal)
+            => groupOrdinal <= 0 ? Unthemed : "hsl(" + (int)((groupOrdinal * 137.508 + 69) % 360) + ", 42%, 52%)";
+
         /// <summary>"7:103–126", or "7:103" for a passage of one verse.</summary>
         internal static string Range(QK.PassageRow p)
             => p.FirstVerseKey == p.LastVerseKey ? p.FirstVerseKey : p.FirstVerseKey + "–" + p.LastVerseKey.Split(':').Last();

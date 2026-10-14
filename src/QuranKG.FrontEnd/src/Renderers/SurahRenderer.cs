@@ -15,14 +15,13 @@ using Node = Mosaik.Schema.Node;
 namespace QuranKG.FrontEnd.Renderers
 {
     /// <summary>
-    /// A surah. Its page opens on the text itself — read in order, in Arabic, each verse opening
-    /// its own page — then its lexical profile: how long its verses run, which roots it leans on
+    /// A surah. Its page opens on the text itself — read in order, in Arabic, as continuous text in
+    /// its passages (<see cref="ReadingPane"/>), a clicked verse opening its translation beside it —
+    /// then its lexical profile: how long its verses run, which roots it leans on
     /// and which it uses far more than the rest of the Quran.
     /// </summary>
     public sealed class SurahRenderer : QuranRendererBase
     {
-        private const string BISMILLAH = "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ";
-
         public SurahRenderer() : base(new SchemaStyleInfo
         {
             Name        = N.Surah.Type,
@@ -47,7 +46,7 @@ namespace QuranKG.FrontEnd.Renderers
 
         protected override IEnumerable<NodeTab> LeadingTabs(Node node)
         {
-            yield return Tab("read",     "Read".t(),           () => ReadTab(node));
+            yield return Tab("read",     "Read".t(),           () => ReadTab(node), scrolls: false);
             yield return Tab("passages", "Passages".t(),       () => PassagesTab(node));
             yield return Tab("similar",  "Similar surahs".t(), () => SimilarTab(node));
             yield return Tab("profile",  "Profile".t(),        () => ProfileTab(node));
@@ -60,32 +59,15 @@ namespace QuranKG.FrontEnd.Renderers
         private static IComponent ReadTab(Node surah)
         {
             var number = surah.GetInt(N.Surah.Number);
-
-            return Defer(async () =>
+            return new ReadingPane(new ReadingPane.Settings
             {
-                var profile = await QuranApi.SurahProfileAsync(surah.UID);
-                var page    = VStack().WS().P(16);
-
-                page.Add(Arabic.Centered("سورة " + surah.GetString(N.Surah.NameArabic), 34));
-                page.Add(TextBlock(surah.GetString(N.Surah.NameScholarly) + " — " + surah.GetString(N.Surah.NameEnglish)).Small().Secondary().TextCenter().WS().PB(8));
-
-                // Tanzil prefixes the Bismillah to verse 1 of every surah but 1 (where it IS verse 1)
-                // and 9 (which has none); the connector strips it, so it is drawn here as the heading.
-                if (number != 1 && number != 9) page.Add(Arabic.Centered(BISMILLAH, 26).PB(12));
-
-                for (var i = 0; i < profile.VerseUIDs.Length; i++)
-                {
-                    var uid  = profile.VerseUIDs[i];
-                    var text = profile.VerseTexts[i] + " ﴿" + Panels.ArabicDigits(i + 1) + "﴾";
-
-                    page.Add(Card(VStack().WS().Children(
-                                 Arabic.Text(text, 26),
-                                 TextBlock(profile.VerseTranslations[i] ?? "").Small().Secondary()))
-                             .OnClick(() => Lists.Open(uid))
-                             .MB(6));
-                }
-
-                return page;
+                Uid               = surah.UID,
+                OptionsKey        = "quran",
+                KeyWordsByDefault = false,
+                ReadInQuran       = true,
+                Header            = _ => HStack().WS().AlignItemsCenter().PL(16).PR(16).PT(10).Children(
+                                        TextBlock("Click a verse for its translation, its words and the verses related to it.".t()).Small().Secondary().Grow(),
+                                        Button("Open in the Quran View".t()).SetIcon(UIcons.BookQuran).Compact().OnClick(() => QuranLinks.Go(number))),
             }).S();
         }
 

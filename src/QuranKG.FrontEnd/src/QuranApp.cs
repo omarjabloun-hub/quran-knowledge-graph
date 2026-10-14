@@ -3,6 +3,7 @@ using Mosaik.Helpers;
 using QuranKG.FrontEnd.Chat;
 using QuranKG.FrontEnd.Components;
 using QuranKG.FrontEnd.Dashboard;
+using QuranKG.FrontEnd.Reader;
 using QuranKG.FrontEnd.Themes;
 using Tesserae;
 using TNT;
@@ -13,7 +14,7 @@ namespace QuranKG.FrontEnd
     /// <summary>
     /// The application's entry point. It extends the workspace's own front end — search, the
     /// graph explorer, chat and the admin area come with it — replaces the home page with the
-    /// pattern dashboard, and adds the Stories and themes page.
+    /// pattern dashboard, and adds the Quran View (#/read) and the Stories and themes page.
     ///
     /// <para>Renderers are not registered here: the app reflects over this assembly for every
     /// non-abstract INodeRenderer with a parameter-less constructor (src/Renderers/), so a renderer
@@ -44,10 +45,15 @@ namespace QuranKG.FrontEnd
             {
                 if (mode != AppSidebar.Mode.Default) return;
 
+                var read = new SidebarButton("QKG_READ", UIcons.BookQuran, "Read the Quran".t())
+                    .OnClick(() => Router.Navigate(QuranLinks.Route));
+
                 var themes = new SidebarButton("QKG_THEMES", UIcons.CircleNodes, "Stories and themes".t())
                     .OnClick(() => Router.Navigate(ThemesView.Route));
 
+                refresh.Add(() => read.IsSelected   = QuranView.IsShowing());
                 refresh.Add(() => themes.IsSelected = ThemesView.IsShowing());
+                sidebar.AddContent(read);
                 sidebar.AddContent(themes);
             };
         }
@@ -56,6 +62,7 @@ namespace QuranKG.FrontEnd
         private static void OnLoad()
         {
             Router.Register(ThemesView.Route, state => App.ShowDefault(new ThemesView(state)));
+            QuranView.Register();
         }
     }
 }

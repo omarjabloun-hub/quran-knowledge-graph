@@ -18,7 +18,8 @@ the questions below are answered from the Arabic, with translations as reading a
 | How is one verse built, word by word? | the verse page, Verse tab |
 | Where else does the Quran say this? | the verse page: Similar verses (Arabic meaning + shared lemmas + roots), Tafsir links (Ibn Kathir) |
 | Where does a root occur, in which forms, under which lemmas? | the root page |
-| What are the Quran's stories, and where does it tell each one? | the Stories and themes page; a theme's page, surah by surah |
+| I want to read the Quran, and see what a verse says and what it is tied to | the Quran View (Read the Quran): click a verse |
+| What are the Quran's stories, and where does it tell each one? | the Stories and themes page — the map lights a theme across the surahs; a theme's page reads its passages one after another |
 | How is one surah built — what are its sections? | the surah page, Passages tab (and each passage's page) |
 | Which surahs are like this one? | the surah page, Similar surahs (shared distinctive lemmas and roots, verses close in meaning, and the themes both tell) |
 

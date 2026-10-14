@@ -26,6 +26,19 @@ closes it.
       Scored on references they do not read (`tools/cluster-benchmark`): passages against the ruku'
       (Pk 0.334 vs 0.399 for equal-length cuts, held-out surahs), themes against QurSim (6.8× chance).
       Shown on the Stories and themes page, the surah's Passages tab, the theme and passage pages
+- [x] **Reading** (`qkg/read/text`, `Components/Reader.cs`, `ReadingPane.cs`, `Reader/QuranView.cs`):
+      the Quran View (`#/read/2/255`) — the 114 surahs, each read as continuous Arabic in its
+      passages, the English beside it on demand, a clicked verse opening its translations, words,
+      passage, theme, closest verses and tafsir links. A surah's Read tab, a passage and a theme read
+      through the same pane, with each passage's or the theme's key words marked
+- [x] **The clusters map** (`qkg/clusters/map`, `Themes/ClusterMap.cs`): every surah in its passages,
+      coloured by theme or by similarity group, on the Stories and themes page; hover lights a group
+      across the Quran
+- [x] **Similarity groups** (Sudo, in the workspace; now in git: `qkg/clusters/similar-build`,
+      `-groups`, `-score`, `-sweep`): passages grouped by meaning + lemmas + roots, 141 at tau 1.5.
+      Reviewed: at the same coverage they score as the themes (`just benchmark-clusters --groups`);
+      `qkg/clusters/build` no longer deletes them; shown beside the themes on the map, in the reader
+      and on their own pages
 - [x] Similar surahs (`qkg/surah/similar`): shared distinctive lemmas and roots, with the themes
       both tell as the reason — Spearman 0.41 against QurSim summed over pairs of surahs
 
@@ -52,7 +65,17 @@ closes it.
       been ingested yet. Check the hierarchy (`ParentTopic`) and the Stories branch.
 - [ ] **Clusters, next** (measure each with `just benchmark-clusters`, choose on `--split dev`):
   - name each theme in Arabic and English with the chat model, from its key words and opening
-    verses, once a provider is configured — today's labels are its most distinctive lemmas;
+    verses — a provider is now configured; today's labels are its most distinctive content lemmas
+    (particles and adverbs were dropped from the labels on 2026-10-14);
+  - the grouping still reads every lemma: try leaving particles and adverbs out of the passage
+    vectors too — rare ones (كلا, بل) group passages by style (themes such as "أدرى · نعيم · سجين")
+    — and keep it only if the themes score as well against QurSim;
+  - similarity groups: the sweep keeps the tau with the best lift, which is always the highest
+    tried, and tunes on QurSim itself — choose by reading or on half the pairs; their labels still
+    include pronouns and particles (إيا); `similar-groups` answers anonymous types, not DTOs;
+  - a theme's key is a hash of its passages, so a change to any one of them gives the theme a new
+    UID and a saved link to it breaks on the next build: key it on something steadier (its largest
+    passage);
   - score the passages and themes against the QUL topics once `topics.db` is downloaded (purity,
     adjusted Rand) — which, like QurSim and the ruku', stay out of the clustering's reach;
   - a second level: the same tree cut at 0.15 splits the stories into their episodes (Moses and
@@ -65,8 +88,8 @@ closes it.
       corpus as files, Search Records and the consult readers — none reaching `QurSimPair`, `Topic`,
       `Verse.Ruku` or `qkg/verse/words`. Chat through Claude via a local wrapper (`docs/local-setup.md`).
 - [ ] **AI layer, next**:
-  - an "Ask the assistant" button on the verse, surah, root and theme pages that opens a chat with
-    the node attached (`curiosity-chat-experience`, AiAssist);
+  - an "Ask the assistant" button on the verse, surah, root and theme pages — and in the reader's
+    verse panel — that opens a chat with the node attached (`curiosity-chat-experience`, AiAssist);
   - verse keys in replies as links (`ParseAs` needs a spotter that recognises `2:255`);
   - saved findings: a claim, its counting rule, its counts, its verses and its baseline, kept as a
     node a reader can reopen and the assistant can build on;
@@ -75,6 +98,10 @@ closes it.
 - [ ] **Similar words**: the dashboard counts words, forms, lemmas and roots; "similar words"
       beyond a shared root (near-synonyms such as خوف / خشية / رهبة) need a lemma-level similarity
       — embeddings of the lemmas' contexts, or co-occurrence — and a "word family" view.
+
+- [ ] **Reading, next**: choose the translation shown beside the Arabic (Qarai, and the QUL
+      word-by-word gloss once ingested); read by juz and by mushaf page (`Verse.Page`) as well as by
+      surah; remember the last verse read.
 
 ## Later
 

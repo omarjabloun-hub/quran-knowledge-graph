@@ -94,6 +94,15 @@ just status                     # after an import: "Code compiles", counts as ex
   with a DTO (it converts only a string): read it as `RunEndpointAsync<JObject>` / `<JToken>`.
 - The stock chat page starts every chat with only consult ticked, whatever the assistant pins:
   the tools reach the model because `Chat/QuranChatView.cs` pins them on post and replace.
+- Clusters have three kinds: Passage and Theme (`qkg/clusters/build`), SimilarGroup
+  (`qkg/clusters/similar-build`). A build deletes only its own kinds; a reader filters on Kind (a
+  passage's `InTheme` is its theme; its similarity group is found from the group's `HasPassage`).
+- Endpoints can be written in the workspace too (Sudo wrote the similarity groups there):
+  `just export-definitions` and diff before `just upload-endpoints`, which overwrites what it uploads.
+- In the front end, no CSS class may contain `ec-`: the icon font's rule `span[class*="ec-"]` sets
+  such a span in monospace (`qkg-sec-head` did; the reader's classes are `qkg-pas-…`).
+- Arabic in Amiri Quran has a line box about twice the letters' height: mark words with a colour,
+  not a background, or the marks become tall blocks.
 - The sandbox has no `query` command on purpose: the query engine emits whole nodes, and a verse
   node carries its ruku'.
 

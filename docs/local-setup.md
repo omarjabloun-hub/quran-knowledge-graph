@@ -71,10 +71,11 @@ Where to look:
 
 | | |
 |---|---|
-| **Stories and themes** (sidebar) | the 119 themes — passages of several surahs that tell the same story or treat the same subject — widest first, with a filter |
+| **Read the Quran** (sidebar) | the Quran View: a surah as continuous text in its passages; click a verse for its translations, words, passage, theme and related verses. `#/read/2/255` opens on a verse |
+| **Stories and themes** (sidebar) | the 119 themes — passages of several surahs that tell the same story or treat the same subject — widest first, with a filter — under a map of every surah in its passages, coloured by theme |
 | a surah → **Passages** | its sections in order, each with the theme it shares; a strip shows the whole surah at a glance |
 | a surah → **Similar surahs** | the surahs that lean on the same distinctive words, and the themes both tell |
-| a theme or a passage | the theme surah by surah, or the passage verse by verse, with its key words and roots |
+| a theme or a passage | **Read**: the theme's passages one after another, or the passage, as text with the words that tie them marked; then its key words and roots |
 
 None of these needs a model: they read the Arabic morphology (lemmas and roots), so they are there
 as soon as `just bootstrap` ends. Re-run `just clusters` after a new ingest.
