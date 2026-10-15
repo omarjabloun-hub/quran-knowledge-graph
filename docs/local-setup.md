@@ -111,7 +111,8 @@ before it creates.
 ### A chat model for the assistant and for naming clusters
 
 The Quran Research Assistant (the **AI Assistant** page) counts, reads and tests claims through
-tool calls, so it needs a model that calls tools reliably. Two ways to give it one:
+tool calls, so it needs a model that calls tools reliably. The verses it cites (`21:30`,
+`2:255–257`) are links: a click opens the verse in its surah over the chat. Two ways to give it a model:
 
 **Claude, through a local OpenAI-compatible wrapper** (what this machine uses: a container
 exposing the Claude Code CLI as `/v1/chat/completions` on port 8000). In the workspace:

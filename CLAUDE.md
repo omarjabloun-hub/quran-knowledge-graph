@@ -103,6 +103,9 @@ just status                     # after an import: "Code compiles", counts as ex
   such a span in monospace (`qkg-sec-head` did; the reader's classes are `qkg-pas-…`).
 - Arabic in Amiri Quran has a line box about twice the letters' height: mark words with a colour,
   not a background, or the marks become tall blocks.
+- The chat's `CustomMessageRenderer` receives each message before its markdown is drawn, and a
+  reply only once streaming ends (the transcript is reloaded): to rewrite a message's text, watch
+  it with a `MutationObserver` (`Components/VerseReferences.cs`), do not read it once.
 - The sandbox has no `query` command on purpose: the query engine emits whole nodes, and a verse
   node carries its ruku'.
 

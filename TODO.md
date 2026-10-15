@@ -87,10 +87,12 @@ closes it.
       co-occurrence, read verses word by word, similar verses and surahs), a sandbox over the
       corpus as files, Search Records and the consult readers — none reaching `QurSimPair`, `Topic`,
       `Verse.Ruku` or `qkg/verse/words`. Chat through Claude via a local wrapper (`docs/local-setup.md`).
+      Verse keys in a message (`21:30`, `2:255–257`) are links that open the verse in its surah over
+      the chat (`Components/VerseReferences.cs`, the chat's `CustomMessageRenderer`; no `ParseAs`
+      spotter needed).
 - [ ] **AI layer, next**:
   - an "Ask the assistant" button on the verse, surah, root and theme pages — and in the reader's
     verse panel — that opens a chat with the node attached (`curiosity-chat-experience`, AiAssist);
-  - verse keys in replies as links (`ParseAs` needs a spotter that recognises `2:255`);
   - saved findings: a claim, its counting rule, its counts, its verses and its baseline, kept as a
     node a reader can reopen and the assistant can build on;
   - an investigation agent for long pattern searches (hypothesis → count → baseline, many rounds),

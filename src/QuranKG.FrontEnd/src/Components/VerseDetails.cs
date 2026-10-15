@@ -156,7 +156,9 @@ namespace QuranKG.FrontEnd.Components
 
         internal static void Go(int surah, int ayah = 0)
         {
-            // A node page is a modal over the page: reading in the Quran replaces both.
+            // A node page, or a verse opened from the chat, is a modal over the page: reading in the
+            // Quran replaces them all.
+            VerseReferences.Close();
             ModalStack.Clear();
             Router.Navigate(For(surah, ayah));
         }

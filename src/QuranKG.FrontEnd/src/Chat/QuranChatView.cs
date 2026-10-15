@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Mosaik;
 using Mosaik.Components;
 using Mosaik.Schema;
+using QuranKG.FrontEnd.Components;
 using Tesserae;
 using TNT;
 using UID;
@@ -16,6 +17,9 @@ namespace QuranKG.FrontEnd.Chat
     /// and starts each chat with only consult ticked, so the assistant could read a verse but not
     /// count a word, and answered "how many times" from memory. Here the assistant and its tools are
     /// pinned and both pickers are hidden: the method in its prompt needs all of them.</para>
+    ///
+    /// <para>The verses a message names are links (<see cref="VerseReferences"/>): a click reads the
+    /// verse in its surah without leaving the chat.</para>
     ///
     /// <para>The UIDs restate the header of code/ai-assistants/quran-research-assistant-defaULtAiASSistaNt1111.cs,
     /// so an edit to the assistant in the admin UI cannot quietly take a tool away from the page.</para>
@@ -58,6 +62,9 @@ namespace QuranKG.FrontEnd.Chat
             ShowCitationsPanel       = true,
 
             ChatRoute                = chatUID => DefaultRoutes.ChatAI.OpenChat(chatUID, default),
+
+            // "21:30" in a question or an answer opens the verse in its surah, over the chat.
+            CustomMessageRenderer    = (chat, message, content) => VerseReferences.Linkify(content),
 
             NewChat                  = NewChatAsync,
             PostMessage              = PostMessageAsync,
