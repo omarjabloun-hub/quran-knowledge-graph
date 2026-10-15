@@ -12,7 +12,14 @@ namespace QuranKG.Tools;
 ///
 /// A source with "parts" is one file per part (a tafsir: one per surah): "{part}" in its url is
 /// replaced by 1…parts, each saved as {target}/{part}.json, and its sha256 is the checksum of the
-/// parts' bytes concatenated in order.
+/// parts' bytes concatenated in order. "partNames" names the parts instead of numbering them (a
+/// recitation's pages are addressed by surah name: {part} becomes the i-th name, still saved as
+/// {i}.json).
+///
+/// "extract" keeps only what a regular expression captures (group 1) of each part, after the
+/// page's escaped quotes (\") are unescaped: a web page whose data is a few kilobytes of JSON in
+/// a few hundred of markup. The checksum is then over what was kept, so it holds while the page's
+/// markup changes around the data.
 /// </summary>
 internal static class Fetch
 {
@@ -31,6 +38,8 @@ internal static class Fetch
         [JsonPropertyName("unzipTo")] public string?      UnzipTo { get; set; }
         [JsonPropertyName("manual")]  public bool         Manual  { get; set; }
         [JsonPropertyName("parts")]   public int          Parts   { get; set; }
+        [JsonPropertyName("partNames")] public List<string> PartNames { get; set; } = [];
+        [JsonPropertyName("extract")] public string?      Extract { get; set; }
         [JsonPropertyName("steps")]   public List<string> Steps   { get; set; } = [];
         [JsonPropertyName("licence")] public string       Licence { get; set; } = "";
     }
@@ -59,6 +68,7 @@ internal static class Fetch
                 continue;
             }
 
+            if (source.PartNames.Count > 0) source.Parts = source.PartNames.Count;
             if (source.Parts > 0)
             {
                 if (!await FetchPartsAsync(http, source, target, force)) failures++;
@@ -132,7 +142,15 @@ internal static class Fetch
             await gate.WaitAsync();
             try
             {
-                var bytes = await http.GetByteArrayAsync(source.Url.Replace("{part}", p.Index.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                var name  = source.PartNames.Count > 0 ? source.PartNames[p.Index - 1] : p.Index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var bytes = await http.GetByteArrayAsync(source.Url.Replace("{part}", name));
+                if (source.Extract is not null)
+                {
+                    var page  = System.Text.Encoding.UTF8.GetString(bytes).Replace("\\\"", "\"");
+                    var match = System.Text.RegularExpressions.Regex.Match(page, source.Extract);
+                    if (!match.Success) throw new InvalidDataException($"{source.Name}: nothing to extract from part {p.Index} ({name}) — the page changed; inspect {source.Url.Replace("{part}", name)}.");
+                    bytes = System.Text.Encoding.UTF8.GetBytes(match.Groups[1].Value);
+                }
                 await File.WriteAllBytesAsync(p.Path, bytes);
             }
             finally { gate.Release(); }

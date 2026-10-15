@@ -254,3 +254,50 @@ public sealed class QuranQuote
     public required string   Quoted     { get; init; }
     public string Key => $"{HadithKey}>{Verse.Key}";
 }
+
+/// <summary>
+/// A reciter and the reading he recites in. Key: "mohamed-latrech". The audio is never copied:
+/// each surah's recording is streamed from <see cref="Source"/>'s host.
+/// </summary>
+public sealed class Reciter
+{
+    public required string Id           { get; init; }
+    public required string Name         { get; init; }
+    public required string NameArabic   { get; init; }
+    /// <summary>The reading (riwaya), e.g. "Qalun from Nafi'".</summary>
+    public required string Riwaya       { get; init; }
+    public required string RiwayaArabic { get; init; }
+    public required string Country      { get; init; }
+    /// <summary>"Murattal" (measured) or "Mujawwad".</summary>
+    public required string Style        { get; init; }
+    public required string Source       { get; init; }
+    public required string SourceUrl    { get; init; }
+    public required string Attribution  { get; init; }
+}
+
+/// <summary>
+/// One surah recited: its recording and where each of the corpus's verses starts and ends in it.
+/// Key: "mohamed-latrech:2". A recording in another reading counts its verses its own way (Qalun's
+/// Madani count makes Al-Baqarah 285 verses, not 286): <see cref="RecordedVerses"/> is its count,
+/// and <see cref="Verses"/> the corpus's verses, timed through a word alignment of the two texts.
+/// </summary>
+public sealed class Recitation
+{
+    public required string Reciter        { get; init; }
+    public required int    Surah          { get; init; }
+    public required string AudioUrl       { get; init; }
+    /// <summary>Seconds.</summary>
+    public required double Duration       { get; init; }
+    /// <summary>How many verses the recording's own reading counts in the surah.</summary>
+    public required int    RecordedVerses { get; init; }
+    /// <summary>Every verse of the surah in the corpus's numbering, in order.</summary>
+    public required IReadOnlyList<RecitedVerse> Verses { get; init; }
+    public string Key => $"{Reciter}:{Surah}";
+}
+
+/// <summary>
+/// Where a verse is in a recording, in seconds. <c>Exact</c>: it starts where a verse of the
+/// recording starts, so the time is the recording's own; otherwise the verse starts inside one of
+/// the recording's verses and its time is estimated from the letters before it.
+/// </summary>
+public sealed record RecitedVerse(int Ayah, double Start, double End, bool Exact);

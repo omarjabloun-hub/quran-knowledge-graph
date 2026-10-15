@@ -20,6 +20,8 @@ public sealed class Corpus
     public required IReadOnlyList<HadithBook>       HadithBooks       { get; init; }
     public required IReadOnlyList<Hadith>           Hadiths           { get; init; }
     public required IReadOnlyList<QuranQuote>       QuranQuotes       { get; init; }
+    public required IReadOnlyList<Reciter>          Reciters          { get; init; }
+    public required IReadOnlyList<Recitation>       Recitations       { get; init; }
     /// <summary>What the loader cleaned, and the optional sources it did without.</summary>
     public required IReadOnlyList<string>     Notes       { get; init; }
 
@@ -285,6 +287,28 @@ public static class CorpusLoader
             }
         }
 
+        // ---- recitations: each verse's place in a reciter's recording -----------------------------
+        var reciters    = new List<Reciter>();
+        var recitations = new List<Recitation>();
+        var hafsBySurah = verses.GroupBy(v => v.Ref.Surah)
+                                .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.OrderBy(v => v.Ref.Ayah).Select(v => v.TextSimple).ToList());
+        foreach (var reciter in RecitationSource.Reciters)
+        {
+            var dir = Path.Combine(layout.RecitationDir, reciter.Id);
+            if (!Directory.Exists(dir) || !File.Exists(layout.QalunText))
+            {
+                notes.Add($"Recitation {reciter.Id} not found under {layout.RecitationDir} — run `just fetch`; it is skipped.");
+                continue;
+            }
+            var read = RecitationSource.Read(layout.QalunText, dir, reciter, hafsBySurah);
+            problems.AddRange(read.Problems);
+            reciters.Add(reciter);
+            recitations.AddRange(read.Recitations);
+            notes.Add($"Recitation {reciter.Name} ({reciter.Riwaya}): {read.Recitations.Count} surahs, {read.Recitations.Sum(r => r.Duration) / 3600:F1} hours, "
+                    + $"{read.Recitations.Sum(r => r.RecordedVerses):N0} verses in its own count; of the corpus's verses {read.Exact:N0} start where a recorded verse starts "
+                    + $"and {read.Estimated:N0} inside one (timed by the letters before them).");
+        }
+
         if (problems.Count > 0) throw new CorpusException(problems);
 
         return new Corpus
@@ -303,6 +327,8 @@ public static class CorpusLoader
             HadithBooks       = books,
             Hadiths           = hadiths,
             QuranQuotes       = quotes,
+            Reciters          = reciters,
+            Recitations       = recitations,
             Notes       = notes,
         };
     }

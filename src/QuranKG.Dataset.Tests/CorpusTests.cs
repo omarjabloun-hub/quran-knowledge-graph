@@ -171,6 +171,70 @@ public class CorpusTests
         Assert.DoesNotContain("الله", neighbour.Keywords);
     }
 
+    [Fact]
+    public void Every_verse_has_its_place_in_the_recitation()
+    {
+        Assert.Equal(114, Corpus.Recitations.Count);
+        Assert.Equal(6_214, Corpus.Recitations.Sum(r => r.RecordedVerses));   // Qalun's Madani count
+        foreach (var r in Corpus.Recitations)
+        {
+            Assert.Equal(Corpus.Surahs[r.Surah - 1].AyahCount, r.Verses.Count);
+            for (var i = 0; i < r.Verses.Count; i++)
+            {
+                Assert.Equal(i + 1, r.Verses[i].Ayah);
+                Assert.True(r.Verses[i].End >= r.Verses[i].Start, $"{r.Key} verse {i + 1} ends before it starts");
+                if (i > 0) Assert.Equal(r.Verses[i - 1].End, r.Verses[i].Start);
+            }
+            Assert.Equal(Math.Round(r.Duration, 3), r.Verses[^1].End);
+        }
+    }
+
+    [Fact]
+    public void Al_fatiha_recited_in_qalun_keeps_each_verse_on_its_own_words()
+    {
+        // Qalun does not count the Bismillah: its verse 1 is «الحمد لله», which is the corpus's 1:2,
+        // and its 7th starts at «غير المغضوب عليهم», inside the corpus's 1:7.
+        var f = Recited(1);
+        Assert.Equal(0, f.Verses[0].Start);
+        Assert.Equal(3.08, f.Verses[1].Start);
+        Assert.Equal(19.76, f.Verses[6].Start);
+        Assert.All(f.Verses, v => Assert.True(v.Exact));
+    }
+
+    [Fact]
+    public void A_verse_that_starts_inside_a_recorded_verse_is_estimated()
+    {
+        // Qalun does not count «الم» as a verse: its 2:1 runs on to «هدى للمتقين», so the corpus's 2:2
+        // starts inside it — after «الم», before the recording's 2:2.
+        var baqarah = Recited(2);
+        Assert.True(baqarah.Verses[0].Exact);
+        Assert.False(baqarah.Verses[1].Exact);
+        Assert.InRange(baqarah.Verses[1].Start, baqarah.Verses[0].Start + 0.5, baqarah.Verses[2].Start - 0.5);
+
+        // Ayat al-Kursi starts where the recording's 2:253 does: Qalun ends that verse at «الحي القيوم»
+        // and counts the rest of 2:255 as its 2:254, so the start is the recording's own.
+        Assert.True(baqarah.Verses[254].Exact);
+
+        // Qalun's 11:81 ends at «من سجيل»; the corpus's 11:82 starts where it does, its 11:83 inside Qalun's 11:82.
+        Assert.True(Recited(11).Verses[81].Exact);
+        Assert.False(Recited(11).Verses[82].Exact);
+    }
+
+    [Fact]
+    public void Two_texts_are_aligned_word_by_word_across_spelling()
+    {
+        string[] words = ["يا", "ايها", "الناس", "اعبدوا", "ربكم", "الذي", "خلقكم"];
+        IReadOnlyList<string>[] verses = [["ياايها", "الناس", "اعبدوا"], ["ربكم", "الذي", "خلقكم"]];
+        Assert.Equal([0, 4], Sources.RecitationSource.Align(words, verses));
+
+        // A verse whose first word is spelled differently starts at the word most like it.
+        string[] hafs = ["الحمد", "لله", "مالك", "يوم", "الدين"];
+        IReadOnlyList<string>[] qalun = [["الحمد", "لله"], ["ملك", "يوم", "الدين"]];
+        Assert.Equal([0, 2], Sources.RecitationSource.Align(hafs, qalun));
+    }
+
+    private static Recitation Recited(int surah) => Corpus.Recitations.Single(r => r.Surah == surah);
+
     private static void Quote(string hadith, string verse, string kind)
     {
         var q = Corpus.QuranQuotes.SingleOrDefault(x => x.HadithKey == hadith && x.Verse.Key == verse);
