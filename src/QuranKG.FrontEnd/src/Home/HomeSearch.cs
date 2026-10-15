@@ -282,7 +282,7 @@ namespace QuranKG.FrontEnd.Home
             {
                 var list = document.getElementById("qkg-surahs");
                 if (list is object) list.scrollIntoView(); else QuranLinks.Go(1);
-            }, "plain", "☰", "All 114 surahs".t()));
+            }, "plain", "☰", "Every surah, to read".t()));
 
             var popular = Div(Att("qkg-hero-popular"));
             var label   = Span(Att("qkg-hero-popular-label"));

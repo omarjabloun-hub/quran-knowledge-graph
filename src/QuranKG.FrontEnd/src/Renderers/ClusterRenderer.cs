@@ -76,17 +76,20 @@ namespace QuranKG.FrontEnd.Renderers
                 OptionsKey        = "theme",
                 KeyWordsByDefault = true,
                 ReadInQuran       = true,
-                Header            = text => VStack().WS().PL(16).PR(16).PT(12).Children(
-                                        HStack().WS().AlignItemsCenter().Gap(12.px()).Wrap().Children(
-                                            Arabic.Inline(text.LabelArabic, 26),
-                                            TextBlock(text.Label).Secondary(),
-                                            TextBlock(string.Format("{0} passages in {1} surahs, {2} verses".t(),
-                                                                    (text.Sections ?? new QK.ReadingSection[0]).Length,
-                                                                    (text.Sections ?? new QK.ReadingSection[0]).Select(x => x.SurahNumber).Distinct().Count(),
-                                                                    (text.Sections ?? new QK.ReadingSection[0]).Sum(x => (x.Verses ?? new QK.ReadingVerse[0]).Length))).Small().Secondary()),
-                                        TextBlock((text.Kind == QK.SIMILAR_GROUP
-                                                      ? "A similarity group: passages close in Arabic meaning (their verses' embeddings) and in their lemmas and roots. The words they share most are marked. A surah's name opens the passage in its surah."
-                                                      : "Grouped because they lean on the same distinctive words: those marked in the text. A surah's name opens the passage in its surah.").t()).Tiny().Secondary()),
+                Header            = text =>
+                {
+                    var sections = text.Sections ?? new QK.ReadingSection[0];
+                    var surahs   = sections.Select(x => x.SurahNumber).Distinct().Count();
+                    var head     = Look.El("div", "qkg-theme-hero");
+                    head.appendChild(Look.El("span", "qkg-kicker", (text.Kind == QK.SIMILAR_GROUP ? "Similarity group · {0} surahs" : "Theme · told in {0} surahs").t().Replace("{0}", surahs.ToString())));
+                    head.appendChild(Look.Ar(text.LabelArabic, "qkg-arw qkg-theme-hero-ar"));
+                    if (!string.IsNullOrEmpty(text.Label)) head.appendChild(Look.El("span", "qkg-h3", text.Label));
+                    head.appendChild(Look.El("span", "qkg-note", string.Format("{0} passages · {1} verses — ".t(), sections.Length, sections.Sum(x => (x.Verses ?? new QK.ReadingVerse[0]).Length))
+                        + (text.Kind == QK.SIMILAR_GROUP
+                              ? "passages close in Arabic meaning and in their lemmas and roots; the words they share most are marked. A surah's name opens the passage in its surah."
+                              : "grouped because they lean on the same distinctive words, marked in the text. A surah's name opens the passage in its surah.").t()));
+                    return Raw(head).WS();
+                },
             }).S();
 
         /// <summary>The passage as text, with the way to the passages either side and to its theme.</summary>
@@ -100,22 +103,22 @@ namespace QuranKG.FrontEnd.Renderers
                 Header            = text =>
                 {
                     var section = (text.Sections ?? new QK.ReadingSection[0]).FirstOrDefault();
-                    var where   = HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().PL(16).PR(16).PT(12);
-                    if (UID128.IsNotNull(text.Previous))
-                        where.Add(Button("Previous".t()).SetIcon(UIcons.AngleLeft).Compact().OnClick(() => Lists.Open(text.Previous)));
+                    var where   = Look.El("div", "qkg-reader-header");
+                    if (UID128.IsNotNull(text.Previous)) where.appendChild(Look.IconButton("‹", "The passage before".t(), () => Lists.Open(text.Previous)));
                     if (section is object)
                     {
-                        where.Add(TextBlock(string.Format("{0}. {1} · {2} · passage {3}".t(), section.SurahNumber, section.SurahName, QuranReader.Range(section), section.Ordinal)).SemiBold());
-                        where.Add(Arabic.Inline(text.LabelArabic, 22));
-                        if (UID128.IsNotNull(section.ThemeUid))
-                            where.Add(Clusters.ThemeLink(section.ThemeUid, section.ThemeLabelArabic, section.ThemeLabel, section.ThemeSurahs));
-                        where.Add(Button("Read in its surah".t()).SetIcon(UIcons.BookQuran).Compact()
-                                     .OnClick(() => QuranLinks.Go(section.SurahNumber, (section.Verses ?? new QK.ReadingVerse[0]).Select(v => v.Ayah).FirstOrDefault())));
+                        where.appendChild(Look.SurahNumber(section.SurahNumber));
+                        where.appendChild(Look.El("div", "qkg-reader-header-name",
+                            Look.El("span", "qkg-h3", section.SurahName + " · " + string.Format("passage {0}".t(), section.Ordinal)),
+                            Look.El("span", "qkg-note", QuranReader.Range(section))));
+                        where.appendChild(Look.Ar(text.LabelArabic, "qkg-arw qkg-reader-header-ar"));
+                        if (UID128.IsNotNull(section.ThemeUid)) where.appendChild(Clusters.ThemeChip(section.ThemeUid, section.ThemeLabelArabic, section.ThemeLabel, section.ThemeSurahs, section.ThemeOrdinal));
                     }
-                    where.Add(TextBlock("").Grow());
-                    if (UID128.IsNotNull(text.Next))
-                        where.Add(Button("Next".t()).SetIcon(UIcons.AngleRight, afterText: true).Compact().OnClick(() => Lists.Open(text.Next)));
-                    return where;
+                    where.appendChild(Look.El("span", "qkg-toolbar-spacer"));
+                    if (section is object)
+                        where.appendChild(Look.Button("Read in its surah".t(), () => QuranLinks.Go(section.SurahNumber, (section.Verses ?? new QK.ReadingVerse[0]).Select(v => v.Ayah).FirstOrDefault()), "ghost", "☰"));
+                    if (UID128.IsNotNull(text.Next)) where.appendChild(Look.IconButton("›", "The passage after".t(), () => Lists.Open(text.Next)));
+                    return Raw(where).WS();
                 },
             }).S();
 
@@ -129,25 +132,26 @@ namespace QuranKG.FrontEnd.Renderers
             {
                 var profile  = await QuranApi.ClusterProfileAsync(theme.UID);
                 var passages = profile.Passages ?? new QK.PassageRow[0];
-                var page     = VStack().WS().P(16).Gap(12.px());
+                var parts    = new List<IComponent>();
 
-                page.Add(Arabic.Text(profile.LabelArabic, 30));
-                page.Add(TextBlock(profile.Label).Secondary());
-                page.Add(TextBlock(string.Format("Told in {0} surahs, in {1} passages and {2} verses. The passages were grouped because they lean on the same distinctive words.".t(),
-                                                 passages.Select(p => p.SurahNumber).Distinct().Count(), passages.Length, passages.Sum(p => p.Verses))).Small());
-                page.Add(KeyWords(profile));
+                var hero = Look.El("div", "qkg-theme-hero qkg-theme-hero-tab");
+                hero.appendChild(Look.Ar(profile.LabelArabic, "qkg-arw qkg-theme-hero-ar"));
+                if (!string.IsNullOrEmpty(profile.Label)) hero.appendChild(Look.El("span", "qkg-h3", profile.Label));
+                hero.appendChild(Look.El("span", "qkg-note", string.Format("Told in {0} surahs, in {1} passages and {2} verses. The passages were grouped because they lean on the same distinctive words.".t(),
+                                                 passages.Select(p => p.SurahNumber).Distinct().Count(), passages.Length, passages.Sum(p => p.Verses))));
+                parts.Add(Raw(hero).WS());
+                parts.Add(KeyWords(profile));
 
                 foreach (var surah in passages.GroupBy(p => p.SurahNumber))
                 {
                     var first = surah.First();
-                    page.Add(TextBlock(first.SurahNumber + ". " + first.SurahName).SemiBold().MediumPlus().PT(8)
-                                .OnClick((_, __) => Lists.Open(first.SurahUid))
-                                .Style(s => s.setProperty("cursor", "pointer")));
-                    foreach (var p in surah) page.Add(Clusters.PassageCard(p, showSurah: false, showTheme: false));
+                    var title = Look.El("div", "qkg-keys", Look.SurahNumber(first.SurahNumber, size: "sm"), Look.El("h3", "qkg-h3", first.SurahName));
+                    parts.Add(Raw(Look.OnClick(title, () => Lists.Open(first.SurahUid))));
+                    foreach (var p in surah) parts.Add(Clusters.PassageCard(p, showSurah: false, showTheme: false));
                 }
 
-                page.Add(TextBlock(profile.Method + " " + "Built".t() + " " + profile.RunId + ".").Tiny().Secondary());
-                return page;
+                parts.Add(Raw(Look.El("p", "qkg-note", profile.Method + " " + "Built".t() + " " + profile.RunId + ".")));
+                return VerseRenderer.Body(parts.ToArray());
             }).S();
         }
 
@@ -161,40 +165,33 @@ namespace QuranKG.FrontEnd.Renderers
             {
                 var profile = await QuranApi.ClusterProfileAsync(passage.UID);
                 var row     = (profile.Passages ?? new QK.PassageRow[0]).FirstOrDefault();
-                var page    = VStack().WS().P(16).Gap(12.px());
-                if (row is null) return page;
+                if (row is null) return VerseRenderer.Body();
 
-                // Previous and next walk the surah passage by passage; the title opens the surah.
-                var where = HStack().WS().AlignItemsCenter().Gap(8.px());
-                if (UID128.IsNotNull(profile.Previous))
-                    where.Add(Button("Previous".t()).SetIcon(UIcons.AngleLeft).Compact().OnClick(() => Lists.Open(profile.Previous)));
-                where.Add(TextBlock(string.Format("{0}. {1} · {2} · passage {3}".t(), row.SurahNumber, row.SurahName, Clusters.Range(row), row.Ordinal)).SemiBold().Grow()
-                             .OnClick((_, __) => Lists.Open(row.SurahUid))
-                             .Style(s => s.setProperty("cursor", "pointer")));
-                if (UID128.IsNotNull(profile.Next))
-                    where.Add(Button("Next".t()).SetIcon(UIcons.AngleRight, afterText: true).Compact().OnClick(() => Lists.Open(profile.Next)));
+                var where = Look.El("div", "qkg-keys");
+                if (UID128.IsNotNull(profile.Previous)) where.appendChild(Look.IconButton("‹", "The passage before".t(), () => Lists.Open(profile.Previous)));
+                where.appendChild(Look.OnClick(Look.El("span", "qkg-h3", string.Format("{0}. {1} · {2} · passage {3}".t(), row.SurahNumber, row.SurahName, Clusters.Range(row), row.Ordinal)), () => Lists.Open(row.SurahUid)));
+                where.appendChild(Look.El("span", "qkg-toolbar-spacer"));
+                if (UID128.IsNotNull(profile.Next)) where.appendChild(Look.IconButton("›", "The passage after".t(), () => Lists.Open(profile.Next)));
 
-                page.Add(where);
-                page.Add(Arabic.Text(profile.LabelArabic, 26));
-                page.Add(TextBlock(profile.Label).Secondary());
-
+                var hero = Look.El("div", "qkg-theme-hero qkg-theme-hero-tab");
+                hero.appendChild(Look.Ar(profile.LabelArabic, "qkg-arw qkg-theme-hero-ar"));
+                if (!string.IsNullOrEmpty(profile.Label)) hero.appendChild(Look.El("span", "qkg-note", profile.Label));
                 if (UID128.IsNotNull(row.ThemeUid))
-                    page.Add(HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().Children(
-                        TextBlock("Part of a theme the Quran tells in several surahs:".t()).Small(),
-                        Clusters.ThemeLink(row.ThemeUid, row.ThemeLabelArabic, row.ThemeLabel, row.ThemeSurahs)));
+                    hero.appendChild(Look.El("div", "qkg-keys",
+                        Look.El("span", "qkg-note", "Part of a theme the Quran tells in several surahs:".t()),
+                        Clusters.ThemeChip(row.ThemeUid, row.ThemeLabelArabic, row.ThemeLabel, row.ThemeSurahs, 0)));
 
-                page.Add(KeyWords(profile));
-                return page;
+                return VerseRenderer.Body(Raw(where).WS(), Raw(hero).WS(), KeyWords(profile));
             }).S();
         }
 
         private static IComponent KeyWords(QK.ClusterProfileDto profile)
-            => Panels.Row(
-                   Panels.Panel("Key words".t(),
-                                "Lemmas these verses use far more than the rest of the Quran: verses using it × (log of how rare it is)². Particles and pronouns are left out.".t(),
-                                Lists.RankedBars(profile.KeyLemmas, Palette.Lemma, value: r => r.Score, valueText: r => r.Count.ToString("N0"))),
-                   Panels.Panel("Key roots".t(),
-                                "The same for roots: the families of words the passage is built from.".t(),
-                                Lists.RankedBars(profile.KeyRoots, Palette.Root, value: r => r.Score, valueText: r => r.Count.ToString("N0"))));
+            => Look.Columns(340,
+                   Look.Panel("Key words".t(),
+                              "Lemmas these verses use far more than the rest of the Quran: verses using it × (log of how rare it is)². Particles and pronouns are left out.".t(),
+                              Charts.Bars(profile.KeyLemmas, Palette.Lemma, value: r => r.Score, valueText: r => r.Count.ToString("N0"))),
+                   Look.Panel("Key roots".t(),
+                              "The same for roots: the families of words the passage is built from.".t(),
+                              Charts.Bars(profile.KeyRoots, Palette.Root, value: r => r.Score, valueText: r => r.Count.ToString("N0"))));
     }
 }

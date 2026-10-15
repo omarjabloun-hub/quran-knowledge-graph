@@ -375,7 +375,6 @@ namespace QuranKG.FrontEnd.Components
             style.textContent = @"
 .qkg-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 32px 12px 32px; }
 .qkg-toolbar-group { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.qkg-toolbar-spacer { flex: 1 1 auto; }
 .qkg-toolbar-where { color: var(--qkg-ink-3); }
 .qkg-toolbar-size .qkg-iconbtn { width: 32px; height: 32px; font-size: 13px; font-weight: 600; }
 .qkg-chip-swatch { width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid currentColor; box-sizing: border-box; opacity: .7; }
@@ -393,6 +392,7 @@ namespace QuranKG.FrontEnd.Components
 .qkg-reader-header-name { display: flex; flex-direction: column; line-height: 1.25; }
 .qkg-reader-header-ar { font-size: 28px; color: var(--qkg-teal-strong); }
 .qkg-study { background: var(--qkg-bg); }
+@media (max-width: 700px) { .qkg-toolbar, .qkg-reader-header { padding-left: 16px; padding-right: 16px; } }
 ";
             document.head.appendChild(style);
         }

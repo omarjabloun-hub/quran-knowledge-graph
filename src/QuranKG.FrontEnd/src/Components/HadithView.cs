@@ -119,7 +119,8 @@ namespace QuranKG.FrontEnd.Components
                 TextBlock(h.NumberInBook > 0 ? string.Format("hadith {0} of the book".t(), h.NumberInBook) : "").Tiny().Secondary().Grow(),
                 nav);
 
-            var page = VStack().WS().P(16).Gap(16.px()).Children(where);
+            Look.EnsureStyles();
+            var page = VStack().WS().Gap(20.px()).Class("qkg-ui qkg-node-body").Children(where);
 
             if (h.IsVariant)
                 page.Add(TextBlock("Only a chain of narrators pointing to the hadith before it (\"with this chain, the same\"): its text is that hadith's.".t()).Small().Secondary());
@@ -131,7 +132,7 @@ namespace QuranKG.FrontEnd.Components
             var chainShown = false;
             toggle.OnClick(() => { chainShown = !chainShown; if (chainShown) withChain.Show(); else withChain.Collapse(); });
 
-            page.Add(Panels.Panel("The hadith".t(),
+            page.Add(Look.Panel("The hadith".t(),
                 "Its text in Arabic without the chain of narrators (cut where the chain ends — a heuristic), then the English. The full Arabic is a click away.".t(),
                 VStack().WS().Gap(10.px()).Children(
                     Arabic.Text(h.Matn, 26),
@@ -151,7 +152,7 @@ namespace QuranKG.FrontEnd.Components
                 if (!string.IsNullOrEmpty(q.Quoted)) row.Add(Arabic.Text("«" + q.Quoted + "»", 17).Foreground(Theme.Colors.Green700));
                 quotes.Add(row);
             }
-            page.Add(Panels.Panel("The Quran in it".t(),
+            page.Add(Look.Panel("The Quran in it".t(),
                 "Verses its Arabic quotes (set in braces by the edition, six words or more, or a whole short verse), shares a phrase with (four or five words), or that only its English translator cites. Found by matching the Arabic: the detector finds 94% of the hadith Bukhari's translator gives a verse for, 82% of Muslim's.".t(),
                 quotes));
 
@@ -172,7 +173,7 @@ namespace QuranKG.FrontEnd.Components
                     row.Add(Arabic.Inline(string.Join(" · ", v.Shared), 15).Foreground(Palette.Lemma).Tooltip("Words of the hadith the verse uses too".t()));
                 closest.Add(row);
             }
-            page.Add(Panels.Panel("Verses closest to it".t(),
+            page.Add(Look.Panel("Verses closest to it".t(),
                 "Ranked from the Arabic: the meaning of its text against each verse's (one embedding model for both), plus the hadith's distinctive words the verse uses. Candidates to read — closeness is not agreement. Measured on the 85 hadith whose translator cites a verse their Arabic does not quote: that verse is in this top 10 for 28% of them (chance: 0.2%).".t(),
                 closest));
 

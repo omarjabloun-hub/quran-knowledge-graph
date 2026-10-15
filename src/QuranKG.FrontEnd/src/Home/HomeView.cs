@@ -137,7 +137,7 @@ namespace QuranKG.FrontEnd.Home
             Draw();
 
             var section = VStack().WS().Gap(20.px()).Children(
-                Look.Heading("The 114 surahs".t(), null, Raw(tools)),
+                Look.Heading(string.Format("The {0} surahs".t(), surahs.Length), null, Raw(tools)),
                 Raw(grid).WS());
             section.Render().id = "qkg-surahs";
             return section;

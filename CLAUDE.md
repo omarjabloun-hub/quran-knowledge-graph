@@ -107,6 +107,12 @@ just status                     # after an import: "Code compiles", counts as ex
 - The chat's `CustomMessageRenderer` receives each message before its markdown is drawn, and a
   reply only once streaming ends (the transcript is reloaded): to rewrite a message's text, watch
   it with a `MutationObserver` (`Components/VerseReferences.cs`), do not read it once.
+- The front end's colours, cards, chips and charts live in `Components/Look.cs` (`--qkg-*` tokens,
+  dark under `body.tss-dark-mode`). A class used on more than one page belongs there: a page's own
+  `EnsureStyles` only runs on that page (`qkg-toolbar-spacer` did not, and the Themes filter sat on
+  the left). Charts draw into SVG attributes, which read no CSS variable: `Palette` keeps hex values.
+- Tesserae sets `box-sizing: border-box`: `.PT()`/`.PB()` on a fixed-height element eat its height
+  (the passage strip vanished at 6px with 12px of padding).
 - In the front end `UID128` is a class: `default(UID128)` is null, but an empty UID from an endpoint
   arrives as `1111111111111111111111`. Test with `UID128.IsNull(x)` / `UID128.IsNotNull(x)`, never
   `!= default(UID128)` (every unthemed passage drew an empty theme chip).

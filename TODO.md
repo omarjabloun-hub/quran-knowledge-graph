@@ -48,6 +48,12 @@ closes it.
       Sheikh Mohamed Latrech (Qalun), every verse of the text timed through a Qalun–Hafs word
       alignment (6,156 exact, 80 estimated); the reader flowing, verse by verse or as the mushaf's
       pages, with page/juz/hizb; a search box in the middle of the home page
+- [x] **The look** (`Components/Look.cs`, `Charts.cs`, `WordTip.cs`, `Home/HomeView.cs`), after the
+      quran.com-inspired mockups: a home page with the 114 surahs, the dashboard as its own Patterns
+      page (`#/patterns`), the reader with a layout switch, light / sepia / dark pages, verse rows
+      with listen / copy / study, passages in the margin, mushaf pages two by two, a word's root and
+      lemma on hover; the verse panel in tabs; every page and node tab redrawn on one set of tokens
+      (dark mode included)
 - [ ] **Recitation, next**:
   - the 80 estimated starts snapped to the nearest pause in the audio (the marks sit at the
     pauses; a pause within ±1.5 s of an estimate is very likely the verse's start);
@@ -141,8 +147,16 @@ closes it.
       — embeddings of the lemmas' contexts, or co-occurrence — and a "word family" view.
 
 - [ ] **Reading, next**: choose the translation shown beside the Arabic (Qarai, and the QUL
-      word-by-word gloss once ingested); read by juz and by mushaf page (`Verse.Page`) as well as by
-      surah; remember the last verse read.
+      word-by-word gloss once ingested — the word tooltip has room for it); read by juz and by mushaf
+      page (`Verse.Page`) as well as by surah (the home page's surah list has no Juz tab yet); remember
+      the last verse read across devices (today: the browser's storage); bookmarks.
+- [ ] **The look, next**: the assistant page is the stock chat view (its welcome and prompts are
+      configured, not restyled); the node pages' tab bar and header are the workspace's own; the
+      Patterns page's root heat map is still the Tesserae chart.
+- [ ] **Bootstrap on a fresh workspace**: `just ingest` calls `qkg/hadith/prune-quotes` before
+      `just deploy` has uploaded it — HTTP 400 "Endpoint does not exist", and `just bootstrap` stops
+      there. Skip the prune when the endpoint is missing (nothing to prune on a first ingest), or
+      deploy the endpoints first.
 
 ## Later
 

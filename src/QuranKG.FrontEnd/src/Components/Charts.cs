@@ -72,6 +72,7 @@ namespace QuranKG.FrontEnd.Components
 
             var cols = Look.El("div", "qkg-cols");
             cols.style.height = height + "px";
+            cols.style.gap    = values.Length > 200 ? "0px" : values.Length > 120 ? "1px" : "2px";
             var grid = Look.El("div", "qkg-cols-grid");
             grid.appendChild(Look.El("span", ""));
             grid.appendChild(Look.El("span", ""));

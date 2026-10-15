@@ -177,7 +177,7 @@ namespace QuranKG.FrontEnd.Dashboard
                 var rows = byRevelation ? revelation : mushaf;
                 note.textContent = byRevelation
                     ? "The surahs in the traditional chronological order Tanzil gives: left to right, the short Meccan verses give way to the long Medinan ones.".t()
-                    : "Surahs 1 to 114 as the mushaf orders them, broadly longest first.".t();
+                    : string.Format("Surahs 1 to {0} as the mushaf orders them, broadly longest first.".t(), rows.Length);
                 host.Clear();
                 host.Add(LengthChart(rows, max, byRevelation));
             }
@@ -202,7 +202,7 @@ namespace QuranKG.FrontEnd.Dashboard
                                                  byRevelation ? " · " + string.Format("revealed #{0}".t(), surahs[i].RevelationOrder) : ""),
                               i => Lists.Open(surahs[i].Uid),
                               height: 220, max: max,
-                              xLabels: new[] { "1", "20", "40", "60", "80", "100", "114" },
+                              xLabels: new[] { "1", "20", "40", "60", "80", "100", surahs.Length.ToString() },
                               label: "Words per verse in each surah".t());
 
         // -----------------------------------------------------------------------------------

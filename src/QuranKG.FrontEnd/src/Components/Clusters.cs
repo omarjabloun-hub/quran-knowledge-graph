@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using QuranKG.FrontEnd.Api;
 using Tesserae;
@@ -5,6 +6,7 @@ using TNT;
 using UID;
 using static Tesserae.UI;
 using static TNT.T;
+using static Transpose.Core.dom;
 
 namespace QuranKG.FrontEnd.Components
 {
@@ -16,8 +18,8 @@ namespace QuranKG.FrontEnd.Components
     internal static class Clusters
     {
         /// <summary>The Cluster colour of the workspace style (config/schemas/nodes/styles/Cluster.json).</summary>
-        internal static string ThemeColor => Theme.Colors.Green700;
-        internal static string Unthemed   => Theme.Colors.Neutral300;
+        internal static string ThemeColor => Look.TEAL;
+        internal static string Unthemed   => "#d3d9d6";
 
         /// <summary>
         /// A theme's own colour, the same on the map, in the reader and on the Themes page: hues a
@@ -37,67 +39,91 @@ namespace QuranKG.FrontEnd.Components
         /// <summary>A passage: where it is and how long, its distinctive words, its opening verse, and the theme it shares.</summary>
         internal static IComponent PassageCard(QK.PassageRow p, bool showSurah, bool showTheme = true)
         {
-            var header = HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap().Children(
-                TextBlock((showSurah ? p.SurahNumber + ". " + p.SurahName + " · " : "") + Range(p)).SemiBold(),
-                TextBlock(string.Format("{0} verses · {1} words".t(), p.Verses, Panels.Number(p.Words))).Small().Secondary(),
-                Arabic.Inline(p.LabelArabic, 17).Foreground(Palette.Lemma));
+            Look.EnsureStyles();
+            var card = Look.El("div", "qkg-card qkg-passage");
+            var head = Look.El("div", "qkg-passage-head");
+            head.appendChild(Look.El("span", "qkg-passage-range", (showSurah ? p.SurahNumber + ". " + p.SurahName + " · " : "") + Range(p)));
+            head.appendChild(Look.El("span", "qkg-note", string.Format("{0} verses · {1} words".t(), p.Verses, Panels.Number(p.Words))));
+            head.appendChild(Look.Ar(p.LabelArabic, "qkg-arw qkg-passage-label"));
+            card.appendChild(head);
 
-            var body = VStack().WS().Children(
-                header,
-                Arabic.Text(p.OpeningText + " …", 22).PT(6),
-                TextBlock(p.OpeningTranslation ?? "").Small().Secondary());
+            var ar = Look.El("p", "qkg-passage-ar", (p.OpeningText ?? "") + " …");
+            ar.setAttribute("dir", "rtl");
+            ar.setAttribute("lang", "ar");
+            card.appendChild(ar);
+            if (!string.IsNullOrEmpty(p.OpeningTranslation)) card.appendChild(Look.El("p", "qkg-passage-en", p.OpeningTranslation));
 
             if (showTheme && UID128.IsNotNull(p.ThemeUid))
-                body.Add(HStack().WS().AlignItemsCenter().Gap(8.px()).PT(6).Children(
-                    TextBlock("Theme shared with other surahs:".t()).Tiny().Secondary(),
-                    ThemeLink(p.ThemeUid, p.ThemeLabelArabic, p.ThemeLabel, p.ThemeSurahs)));
+                card.appendChild(Look.El("div", "qkg-keys",
+                    Look.El("span", "qkg-note", "Theme shared with other surahs:".t()),
+                    ThemeChip(p.ThemeUid, p.ThemeLabelArabic, p.ThemeLabel, p.ThemeSurahs, 0)));
 
-            return Card(body).OnClick(() => Lists.Open(p.Uid)).MB(8);
+            var uid = p.Uid;
+            Look.OnClick(card, () => Lists.Open(uid));
+            EnsureStyles();
+            return Raw(card).WS();
         }
 
-        /// <summary>
-        /// A theme named inline — its Arabic label, then how many surahs it spans when that is
-        /// known. Opens the theme without opening the card it sits on.
-        /// </summary>
-        internal static IComponent ThemeLink(UID128 theme, string labelArabic, string label, int surahs)
+        /// <summary>A theme as a chip — its colour, its Arabic words, how many surahs tell it. Opens the theme without opening the card it sits on.</summary>
+        internal static HTMLElement ThemeChip(UID128 theme, string labelArabic, string label, int surahs, int ordinal)
         {
-            // A Stack takes no click, so each text carries it; stopPropagation keeps the card it
-            // sits on from opening too.
-            TextBlock Clickable(TextBlock text)
-                => text.Foreground(ThemeColor)
-                       .OnClick((_, e) => { e.stopPropagation(); Lists.Open(theme); })
-                       .Style(s => s.setProperty("cursor", "pointer"));
-
-            var link = HStack().AlignItemsCenter().Gap(6.px()).Children(
-                Icon(UIcons.CircleNodes).Foreground(ThemeColor),
-                Clickable(Arabic.Inline(labelArabic, 16)));
-
-            if (surahs > 0) link.Add(Clickable(TextBlock(string.Format("{0} surahs".t(), surahs)).Tiny()));
-            return link.Tooltip(label);
+            var chip = Look.El("span", "qkg-chip qkg-chip-out");
+            var dot  = Look.El("span", "qkg-dot");
+            dot.style.background = ordinal > 0 ? ColorOf(ordinal) : ThemeColor;
+            chip.appendChild(dot);
+            chip.appendChild(Look.Ar(labelArabic));
+            if (surahs > 0) chip.appendChild(Look.El("span", "qkg-note", string.Format("{0} surahs".t(), surahs)));
+            chip.title = label ?? "";
+            return Look.OnClick(chip, () => Lists.Open(theme));
         }
 
+        /// <summary>A theme named inline, as a chip.</summary>
+        internal static IComponent ThemeLink(UID128 theme, string labelArabic, string label, int surahs)
+            => Raw(ThemeChip(theme, labelArabic, label, surahs, 0));
+
         /// <summary>
-        /// A surah at a glance: one segment per passage, as wide as its words, green where the
-        /// passage shares a theme with other surahs. Each segment opens its passage.
+        /// A surah at a glance: one segment per passage, as wide as its words, in its theme's colour
+        /// where the passage shares a theme with other surahs. Each segment opens its passage.
         /// </summary>
         internal static IComponent Strip(QK.PassageRow[] passages)
         {
-            var strip = HStack().WS().Gap(2.px()).H(22.px());
+            Look.EnsureStyles();
+            var strip = Look.El("div", "qkg-passage-strip");
+            strip.setAttribute("role", "img");
+            strip.setAttribute("aria-label", string.Format("{0} passages; {1} share a theme with other surahs".t(), passages.Length, passages.Count(x => UID128.IsNotNull(x.ThemeUid))));
             foreach (var p in passages)
             {
                 var captured = p;
-                strip.Add(TextBlock("").H(22.px())
-                             .Background(UID128.IsNotNull(captured.ThemeUid) ? ThemeColor : Unthemed)
-                             .Style(s =>
-                              {
-                                  s.setProperty("flex", captured.Words + " 1 0");
-                                  s.setProperty("border-radius", "3px");
-                                  s.setProperty("cursor", "pointer");
-                              })
-                             .OnClick((_, __) => Lists.Open(captured.Uid))
-                             .Tooltip(Range(captured) + " · " + captured.Label));
+                var seg = Look.El("i", "qkg-click");
+                seg.style.flex       = Math.Max(1, p.Words) + " 1 0";
+                seg.style.background = UID128.IsNotNull(p.ThemeUid) ? ThemeColor : Unthemed;
+                seg.title            = Range(captured) + " · " + captured.Label;
+                seg.onclick          = _ => Lists.Open(captured.Uid);
+                strip.appendChild(seg);
             }
-            return strip;
+            EnsureStyles();
+            return Raw(strip).WS();
+        }
+
+        private static bool _styled;
+
+        private static void EnsureStyles()
+        {
+            if (_styled) return;
+            _styled = true;
+            var style = document.createElement("style");
+            style.textContent = @"
+.qkg-passage { display: flex; flex-direction: column; gap: 8px; }
+.qkg-passage-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.qkg-passage-range { font-weight: 600; }
+.qkg-passage-label { font-size: 19px; color: var(--qkg-mark); }
+.qkg-passage-ar { font-family: 'Amiri Quran', 'Amiri', serif; font-size: 23px; line-height: 2; text-align: right; color: var(--qkg-ink); margin: 0; }
+.qkg-passage-en { font-size: 14px; line-height: 1.6; color: var(--qkg-ink-2); margin: 0; }
+.qkg-passage-strip { display: flex; gap: 3px; height: 14px; }
+.qkg-passage-strip > i { display: block; border-radius: 3px; min-width: 3px; }
+.qkg-passage-strip > i:hover { outline: 2px solid var(--qkg-teal); outline-offset: 1px; }
+";
+            document.head.appendChild(style);
         }
     }
 }

@@ -627,7 +627,7 @@ namespace QuranKG.FrontEnd.Components
 .qkg-reading-sepia { --qkg-bg: #f7efe0; --qkg-surface: #f1e6d1; --qkg-surface-2: #eadcc2; --qkg-raised: #fbf5ea; --qkg-line: #e3d4b8; --qkg-line-2: #d6c3a0; --qkg-ink: #3b2f1e; --qkg-ink-2: #5a4a33; --qkg-ink-3: #6f5d43; --qkg-teal: #157a7c; --qkg-teal-strong: #0f6466; --qkg-teal-tint: #e6e7d6; --qkg-teal-tint-2: #d5dcc6; --qkg-gold: #a9802f; --qkg-mark: #b0461b; --qkg-paper: #fbf3e2; --qkg-paper-ink: #3b2f1e; --qkg-paper-band: #f1e2c3; }
 .qkg-reading-dark { --qkg-bg: #121615; --qkg-surface: #1a1f1e; --qkg-surface-2: #232928; --qkg-raised: #1a1f1e; --qkg-line: #2b3331; --qkg-line-2: #3a4442; --qkg-ink: #e7eceb; --qkg-ink-2: #b9c3c0; --qkg-ink-3: #95a19d; --qkg-teal: #5cc2c2; --qkg-teal-strong: #7fd4d3; --qkg-teal-tint: #173433; --qkg-teal-tint-2: #1f4443; --qkg-gold: #d2ad5f; --qkg-mark: #ef8f62; --qkg-paper: #1d1a14; --qkg-paper-ink: #efe6d2; --qkg-paper-band: #2a2417; }
 .qkg-reader { max-width: 980px; margin: 0 auto; padding: 12px 32px 120px 32px; color: var(--qkg-ink); box-sizing: border-box; }
-@media (max-width: 700px) { .qkg-reader { padding: 8px 16px 96px 16px; } }
+@media (max-width: 700px) { .qkg-reader { padding: 8px 16px 96px 16px; } .qkg-rule { display: none; } .qkg-row { grid-template-columns: 44px minmax(0, 1fr); gap: 10px; } }
 .qkg-surah-title { text-align: center; padding: 16px 0 24px 0; }
 .qkg-surah-name-row { display: flex; align-items: center; justify-content: center; gap: 18px; }
 .qkg-rule { flex: 0 1 180px; height: 1px; background: var(--qkg-gold); opacity: .55; }
@@ -704,7 +704,7 @@ namespace QuranKG.FrontEnd.Components
 .qkg-map-label:hover { color: var(--qkg-teal-strong); }
 .qkg-map-label-ar { font-family: {FONT}; font-size: 15px; line-height: 1.2; unicode-bidi: isolate; color: var(--qkg-ink-3); }
 .qkg-map .qkg-strip { height: 14px; gap: 2px; box-sizing: border-box; }
-.qkg-map .qkg-strip-seg { border-radius: 3px; }
+.qkg-map .qkg-strip-seg { border-radius: 3px; opacity: .8; }
 .qkg-map.qkg-focus .qkg-strip-seg { opacity: .16; }
 .qkg-map.qkg-focus .qkg-strip-seg.qkg-lit { opacity: 1; }
 .qkg-map.qkg-focus .qkg-map-label { opacity: .45; }

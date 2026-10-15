@@ -13,7 +13,7 @@ Orientation for anyone — person or agent — working in this repository. The w
 | `src/QuranKG.Tools` | `fetch`, `check`, `sync-dto` | no |
 | `src/QuranKG.Connector` | the graph schema (`Schema.cs`, `Edges.cs`), the ingest (`Ingest.cs`), `--dry-run`, `--emit-schema` | yes (Library token) |
 | `src/QuranKG.Definitions` | the workspace as files — `config/` (indexes, styles, settings, schemas), `code/endpoints/qkg/`, `variants/` | imported |
-| `src/QuranKG.FrontEnd` | the home page's search (`Home/`), the dashboard (`Dashboard/`), the Quran View (`Reader/`), the Stories and themes page and its map (`Themes/`), the Hadith and the Quran page (`Hadith/`), renderers (`Renderers/`), the reader and shared components (`Components/`), the API layer | uploaded |
+| `src/QuranKG.FrontEnd` | the look (`Components/Look.cs`, `Charts.cs`), the home page and its search (`Home/`), the Patterns page (`Dashboard/`, `#/patterns`), the Quran View (`Reader/`), the Stories and themes page and its map (`Themes/`), the Hadith and the Quran page (`Hadith/`), renderers (`Renderers/`), the reader and shared components (`Components/`), the API layer | uploaded |
 | `src/QuranKG.Workspace` | `tokens`, `status`, `call`, `warm`, `clusters`, `stage-definitions`, `use-embeddings` | yes (admin sign-in) |
 | `tools/embedding-benchmark` | Python: embeds the verses with candidate models and scores them on QurSim | no |
 | `tools/embedding-server` | Python: AraModernBert-STS behind the OpenAI embeddings API — what the workspace embeds the verses' Arabic with | called by it |
@@ -27,7 +27,7 @@ Orientation for anyone — person or agent — working in this repository. The w
 `just` lists them all. The ones used daily:
 
 ```bash
-just bootstrap              # from nothing to the dashboard, on the local workspace
+just bootstrap              # from nothing to the home page, on the local workspace
 just up | down | status     # the local workspace
 just fetch && just check-data
 just ingest [local|prod] [--dry-run]
@@ -55,7 +55,7 @@ in the csproj files: Curiosity.Library 26.10.6546, Curiosity.FrontEnd* 26.10.657
 
 | Path | Returns |
 |---|---|
-| `qkg/dashboard/corpus` | everything the dashboard draws, from one pass over the words (~1.7 s, cached an hour) |
+| `qkg/dashboard/corpus` | everything the Patterns page draws (and the home page's surahs and numbers), from one pass over the words (~1.7 s, cached an hour) |
 | `qkg/surah/profile` | one surah: verse texts and lengths in order, parts of speech, top / distinctive roots, lemmas |
 | `qkg/root/profile` | one root: per-surah spread, Meccan / Medinan, lemmas, forms, verses |
 | `qkg/verse/words` | one verse: its words with morphology, roots, lemmas, and its QurSim pairs (**people only**) |

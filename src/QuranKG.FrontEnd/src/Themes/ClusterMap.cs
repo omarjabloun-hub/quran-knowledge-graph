@@ -25,6 +25,8 @@ namespace QuranKG.FrontEnd.Themes
     {
         internal enum Colouring { Themes, Groups }
 
+        private const int FOLD_AFTER = 24;
+
         private readonly IComponent  _content;
         private readonly HTMLElement _grid;
         private readonly Stack       _info;
@@ -45,14 +47,16 @@ namespace QuranKG.FrontEnd.Themes
             _colouring = colouring;
             _groups    = ((colouring == Colouring.Themes ? map.Themes : map.Groups) ?? new QK.MapGroup[0]).ToDictionary(t => t.Ordinal);
             _grid      = Div(Att("qkg-map"));
-            _info      = VStack().WS().MinHeight(64.px());
+            _info      = VStack().WS();
 
             var bySurah = (map.Passages ?? new QK.MapPassage[0]).GroupBy(p => p.SurahNumber).ToDictionary(g => g.Key, g => g.ToArray());
 
+            var folded = new List<HTMLElement>();
             foreach (var surah in map.Surahs ?? new QK.MapSurah[0])
             {
                 var number = surah.Number;
                 var label  = Div(Att("qkg-map-label"));
+                if (number > FOLD_AFTER) folded.Add(label);
                 label.appendChild(Text("span", "", number + ". " + surah.Name));
                 var ar = Text("span", "qkg-map-label-ar", surah.NameArabic);
                 ar.setAttribute("dir", "rtl");
@@ -81,6 +85,22 @@ namespace QuranKG.FrontEnd.Themes
                     }
                 }
                 _grid.appendChild(strip);
+                if (number > FOLD_AFTER) folded.Add(strip);
+            }
+
+            // The first surahs at once; the rest a click away (the map is 114 rows).
+            HTMLElement more = null;
+            if (folded.Count > 0)
+            {
+                foreach (var el in folded) el.style.display = "none";
+                var open = false;
+                more = Look.Button(string.Format("Show all {0} surahs".t(), (map.Surahs ?? new QK.MapSurah[0]).Length), null, "plain", "↓");
+                more.onclick = _ =>
+                {
+                    open = !open;
+                    foreach (var el in folded) el.style.display = open ? "" : "none";
+                    more.querySelector("span:last-child").As<HTMLElement>().textContent = open ? "Show fewer".t() : string.Format("Show all {0} surahs".t(), (map.Surahs ?? new QK.MapSurah[0]).Length);
+                };
             }
 
             ShowHint();
@@ -89,10 +109,19 @@ namespace QuranKG.FrontEnd.Themes
                 ? "Each row is a surah and each block one of its passages, as wide as its words. Blocks of one colour belong to one theme; grey blocks share their subject with no other surah. Hover a block to light its theme across the Quran, click to pin it.".t()
                 : "Each row is a surah and each block one of its passages, as wide as its words. Blocks of one colour belong to one similarity group; grey blocks are in none. Hover a block to light its group across the Quran, click to pin it.".t();
 
-            _content = VStack().WS().Gap(10.px()).Children(
-                TextBlock(legend).Small().Secondary(),
+            var keys = Look.El("div", "qkg-keys",
+                Look.Key("var(--qkg-teal)", colouring == Colouring.Themes ? "a theme, lit".t() : "a group, lit".t()),
+                Look.Key(Clusters.ColorOf(3), colouring == Colouring.Themes ? "other themes, one colour each".t() : "other groups, one colour each".t()),
+                Look.Key(Clusters.Unthemed, colouring == Colouring.Themes ? "a subject no other surah shares".t() : "in no group".t()));
+            keys.title = legend;
+
+            var foot = Look.El("div", "qkg-keys", keys);
+            if (more is object) { foot.appendChild(Look.El("span", "qkg-toolbar-spacer")); foot.appendChild(more); }
+
+            _content = VStack().WS().Gap(14.px()).Children(
                 _info,
-                Raw(_grid).WS());
+                Raw(_grid).WS(),
+                Raw(foot).WS());
         }
 
         public HTMLElement Render() => _content.Render();
@@ -147,34 +176,29 @@ namespace QuranKG.FrontEnd.Themes
             Light(p, seg);
             _info.Clear();
 
-            var read = Button(string.Format("Read {0}".t(), Range(p))).SetIcon(UIcons.BookQuran).Compact()
-                         .Tooltip("This passage in its surah, in the Quran View".t())
-                         .OnClick(() => QuranLinks.Go(p.SurahNumber, p.FirstAyah));
-            var clear = Button().SetIcon(UIcons.Cross).Compact().Tooltip("Unpin".t()).OnClick(Unpin);
 
+            var band = Look.El("div", "qkg-map-info");
             if (OrdinalOf(p) > 0 && _groups.TryGetValue(OrdinalOf(p), out var t))
             {
-                _info.Add(Card(HStack().WS().AlignItemsCenter().Gap(12.px()).Wrap().Children(
-                    Raw(Swatch(ColorOf(t.Ordinal))),
-                    Arabic.Inline(t.LabelArabic, 24),
-                    TextBlock(_colouring == Colouring.Themes ? t.Label : "").SemiBold(),
-                    TextBlock(string.Format("{0} surahs · {1} passages · {2} verses".t(), (t.SurahNumbers ?? new int[0]).Length, t.Passages, t.Verses)).Small().Secondary().Grow(),
-                    Button(_colouring == Colouring.Themes ? "Read the theme".t() : "Read the group".t()).SetIcon(UIcons.CircleNodes).Primary().Compact()
-                        .Tooltip("All its passages, surah by surah, with the words they share marked".t())
-                        .OnClick(() => Lists.Open(t.Uid)),
-                    read,
-                    clear)));
+                band.appendChild(Raw(Swatch(ColorOf(t.Ordinal))).Render());
+                band.appendChild(Look.Ar(t.LabelArabic, "qkg-arw qkg-map-info-ar"));
+                if (_colouring == Colouring.Themes) band.appendChild(Look.El("strong", "", t.Label));
+                band.appendChild(Look.El("span", "qkg-note", string.Format("{0} surahs · {1} passages · {2} verses".t(), (t.SurahNumbers ?? new int[0]).Length, t.Passages, t.Verses)));
+                band.appendChild(Look.El("span", "qkg-toolbar-spacer"));
+                band.appendChild(Look.Button(_colouring == Colouring.Themes ? "Read the theme".t() : "Read the group".t(), () => Lists.Open(t.Uid), "primary", null,
+                                             "All its passages, surah by surah, with the words they share marked".t()));
             }
             else
             {
-                _info.Add(Card(HStack().WS().AlignItemsCenter().Gap(12.px()).Wrap().Children(
-                    TextBlock(Range(p) + " · " + string.Format("passage {0}".t(), p.Ordinal)).SemiBold(),
-                    Arabic.Inline(p.LabelArabic, 22),
-                    TextBlock((_colouring == Colouring.Themes ? "Shares its subject with no other surah." : "In no similarity group.").t()).Small().Secondary().Grow(),
-                    Button("Open the passage".t()).Compact().OnClick(() => Lists.Open(p.Uid)),
-                    read,
-                    clear)));
+                band.appendChild(Look.El("strong", "", Range(p) + " · " + string.Format("passage {0}".t(), p.Ordinal)));
+                band.appendChild(Look.Ar(p.LabelArabic, "qkg-arw qkg-map-info-ar"));
+                band.appendChild(Look.El("span", "qkg-note", (_colouring == Colouring.Themes ? "Shares its subject with no other surah." : "In no similarity group.").t()));
+                band.appendChild(Look.El("span", "qkg-toolbar-spacer"));
+                band.appendChild(Look.Button("Open the passage".t(), () => Lists.Open(p.Uid), "plain"));
             }
+            band.appendChild(Look.Button(string.Format("Read {0}".t(), Range(p)), () => QuranLinks.Go(p.SurahNumber, p.FirstAyah), "ghost", "☰", "This passage in its surah, in the Quran View".t()));
+            band.appendChild(Look.IconButton("✕", "Unpin".t(), Unpin));
+            _info.Add(Raw(band).WS());
         }
 
         private void Unpin()
@@ -187,7 +211,7 @@ namespace QuranKG.FrontEnd.Themes
         private void ShowHint()
         {
             _info.Clear();
-            _info.Add(TextBlock((_colouring == Colouring.Themes ? "Pick a block to see its theme." : "Pick a block to see its group.").t()).Small().Secondary().PT(20));
+            _info.Add(Raw(Look.El("div", "qkg-map-info qkg-map-info-hint", (_colouring == Colouring.Themes ? "Hover a block to light its theme across the Quran; click to pin it." : "Hover a block to light its group across the Quran; click to pin it.").t())).WS());
         }
 
         private void Lit(HTMLElement el)

@@ -10,6 +10,7 @@ using Tesserae;
 using TNT;
 using static Mosaik.UI;
 using static Tesserae.UI;
+using static Transpose.Core.dom;
 using static TNT.T;
 using Node = Mosaik.Schema.Node;
 
@@ -44,28 +45,32 @@ namespace QuranKG.FrontEnd.Renderers
                 var p      = await QuranApi.RootProfileAsync(root.UID);
                 var corpus = await QuranApi.CorpusAsync();
                 var surahs = corpus.Overview.SurahRows.OrderBy(s => s.Number).ToArray();
+                Look.EnsureStyles();
+                EnsureStyles();
 
-                var totals = HStack().WS().Wrap().Gap(12.px()).Children(
-                    Card(Metric("Occurrences".t(), Panels.Number(p.Occurrences)).ValueFirst().SetIcon(UIcons.Seedling, Palette.Root)),
-                    Card(Metric("Verses".t(),      Panels.Number(p.Verses)).ValueFirst().SetIcon(UIcons.BookOpenReader, Theme.Colors.Blue600))
-                       .OnClick(() => Lists.ShowNodes(WordRenderer.Spaced(p.Letters) + " — " + "verses".t(), p.VerseUIDs)),
-                    Card(Metric("of 114 surahs".t(), Panels.Number(p.Surahs)).ValueFirst().SetIcon(UIcons.BookQuran, Theme.Colors.Teal700)),
-                    Card(Metric("Meccan · Medinan".t(), Panels.Number(p.Meccan) + " · " + Panels.Number(p.Medinan))
-                        .Chart(ContributionBar().Decimals(0)
-                           .Add("Meccan".t(),  p.Meccan,  Palette.Meccan)
-                           .Add("Medinan".t(), p.Medinan, Palette.Medinan))).MinWidth(320.px()));
+                var hero = Look.El("div", "qkg-root-hero");
+                hero.appendChild(Look.El("div", "qkg-root-hero-letters",
+                    Look.Ar(WordRenderer.Spaced(p.Letters), "qkg-arw qkg-root-hero-ar"),
+                    Look.El("span", "qkg-kicker", "Root".t())));
+                var stats = Look.El("div", "qkg-root-hero-stats");
+                stats.appendChild(Stat(Panels.Number(p.Occurrences), "occurrences".t(), null));
+                stats.appendChild(Stat(Panels.Number(p.Verses), "verses".t(), () => Lists.ShowNodes(WordRenderer.Spaced(p.Letters) + " — " + "verses".t(), p.VerseUIDs)));
+                stats.appendChild(Stat(Panels.Number(p.Surahs), string.Format("of {0} surahs".t(), surahs.Length), null));
+                var places = Look.El("div", "qkg-root-places");
+                places.appendChild(Look.El("span", "qkg-num",
+                    Look.El("span", "qkg-root-meccan", Panels.Number(p.Meccan)), Look.El("span", "", " · "), Look.El("span", "qkg-root-medinan", Panels.Number(p.Medinan))));
+                places.appendChild(Look.Parts(string.Format("Meccan {0}, Medinan {1}".t(), p.Meccan, p.Medinan), (p.Meccan, Palette.Meccan), (p.Medinan, Palette.Medinan)));
+                places.appendChild(Look.El("span", "qkg-note", "Meccan · Medinan".t()));
+                stats.appendChild(places);
+                hero.appendChild(stats);
 
-                var chartHost   = VStack().WS();
-                var perThousand = new ChoiceGroup.Choice("Per 1,000 words".t()).Selected();
-                var occurrences = new ChoiceGroup.Choice("Occurrences".t());
-                var mode        = ChoiceGroup().Horizontal().Choices(perThousand, occurrences);
-
-                // Swaps the one chart; the rest of the page keeps its DOM, scroll and state.
-                mode.AsObservable().Observe(choice =>
+                var chartHost = VStack().WS();
+                void ShowChart(bool perThousand)
                 {
                     chartHost.Clear();
-                    chartHost.Add(SurahChart(p, surahs, perThousand: choice != occurrences));
-                });
+                    chartHost.Add(SurahChart(p, surahs, perThousand));
+                }
+                ShowChart(false);
 
                 // Where the root is densest, relative to each surah's length — clickable, unlike the bars.
                 var densest = surahs.Select((s, i) => new QK.Counted
@@ -81,52 +86,64 @@ namespace QuranKG.FrontEnd.Renderers
                    .Take(12)
                    .ToArray();
 
-                return VStack().WS().P(16).Gap(16.px()).Children(
-                    totals,
-                    Panels.Panel("Across the 114 surahs".t(),
-                                 "Orange bars are Meccan surahs, teal Medinan. Per 1,000 words makes a short surah comparable to a long one.".t(),
-                                 VStack().WS().Children(mode, chartHost)),
-                    Panels.Row(
-                        Panels.Panel("Where it is densest".t(),
-                                     "Surahs where the root is most frequent for their length.".t(),
-                                     Lists.RankedBars(densest, Palette.Root, arabicLabels: false, value: c => c.Score, valueText: c => c.Score.ToString("0.0") + " ‰")),
-                        Panels.Panel("Lemmas".t(),
-                                     "The dictionary headwords built on this root.".t(),
-                                     Lists.RankedBars(p.Lemmas, Palette.Lemma)),
-                        Panels.Panel("Word forms".t(),
-                                     "The forms it takes in the text, without diacritics.".t(),
-                                     Lists.RankedBars((p.Forms ?? new QK.Counted[0]).Take(20).ToArray(), Theme.Colors.Neutral600))),
-                    Panels.Panel("Verses".t(),
-                                 "Every verse a word of this root occurs in.".t(),
-                                 SearchArea().WithFacets()
-                                    .SearchFor(new SearchRequest().WithTargetUIDs(p.VerseUIDs ?? new UID.UID128[0]))
-                                    .WS().H(640.px())));
+                return Renderers.VerseRenderer.Body(
+                    Raw(hero).WS(),
+                    Look.Card(null,
+                        Look.Heading(string.Format("Across the {0} surahs".t(), surahs.Length), "In the order of the book; a bar opens its surah. Per 1,000 words makes a short surah comparable to a long one.".t(),
+                            Raw(Look.Segmented(new[] { "Occurrences".t(), "Per 1,000 words".t() }, 0, i => ShowChart(i == 1), "Scale".t()))),
+                        chartHost,
+                        Raw(Look.El("div", "qkg-keys", Look.Key(Palette.Meccan, "Meccan".t()), Look.Key(Palette.Medinan, "Medinan".t())))),
+                    Look.Columns(300,
+                        Look.Panel("Where it is densest".t(), "Surahs where the root is most frequent for their length.".t(),
+                                   Charts.Bars(densest, Palette.Root, arabicLabels: false, value: c => c.Score, valueText: c => c.Score.ToString("0.0") + " ‰")),
+                        Look.Panel("Its lemmas".t(), "The dictionary headwords built on this root.".t(), Charts.Bars(p.Lemmas, Palette.Lemma)),
+                        Look.Panel("Word forms".t(), "The forms it takes in the text, without diacritics.".t(),
+                                   Charts.Bars((p.Forms ?? new QK.Counted[0]).Take(20).ToArray(), "#8a9491"))),
+                    Look.Panel("Verses".t(), "Every verse a word of this root occurs in.".t(),
+                               SearchArea().WithFacets()
+                                  .SearchFor(new SearchRequest().WithTargetUIDs(p.VerseUIDs ?? new UID.UID128[0]))
+                                  .WS().H(640.px())));
             }).S();
+        }
+
+        private static HTMLElement Stat(string value, string label, System.Action open)
+        {
+            var el = Look.El("div", "qkg-root-stat", Look.El("span", "qkg-stat-value", value), Look.El("span", "qkg-note", label));
+            return open is null ? el : Look.OnClick(el, open);
         }
 
         private static IComponent SurahChart(QK.RootProfileDto p, QK.SurahStats[] surahs, bool perThousand)
         {
-            var meccan  = new double[surahs.Length];
-            var medinan = new double[surahs.Length];
+            var values = surahs.Select((s, i) => perThousand ? (s.Words > 0 ? 1000.0 * p.PerSurah[i] / s.Words : 0) : p.PerSurah[i]).ToArray();
+            return Charts.Columns(values,
+                                  i => Palette.ForPlace(surahs[i].Place),
+                                  i => surahs[i].Number + ". " + surahs[i].Name + " — " + (perThousand ? values[i].ToString("0.0") + " ‰" : values[i].ToString("N0")),
+                                  i => Lists.Open(surahs[i].Uid),
+                                  height: 200,
+                                  xLabels: new[] { "1", "20", "40", "60", "80", "100", surahs.Length.ToString() },
+                                  yFormat: v => perThousand ? v.ToString("0.#") : v.ToString("N0"),
+                                  label: "The root in each surah".t());
+        }
 
-            for (var i = 0; i < surahs.Length; i++)
-            {
-                var value = perThousand ? (surahs[i].Words > 0 ? 1000.0 * p.PerSurah[i] / surahs[i].Words : 0) : p.PerSurah[i];
-                if (surahs[i].Place == QK.MEDINAN) medinan[i] = value; else meccan[i] = value;
-            }
+        private static bool _styled;
 
-            return BarChart()
-               .Series("Meccan".t(),  meccan,  Palette.Meccan)
-               .Series("Medinan".t(), medinan, Palette.Medinan)
-               .Stacked()
-               .XAxis(surahs.Select(s => s.Number.ToString()).ToArray())
-               .XAxisTitle("Surah".t())
-               .YAxisTitle(perThousand ? "per 1,000 words".t() : "occurrences".t())
-               .FormatValues(v => perThousand ? v.ToString("0.0") : v.ToString("N0"))
-               .Legend()
-               .Tooltips()
-               .WS()
-               .H(260.px());
+        private static void EnsureStyles()
+        {
+            if (_styled) return;
+            _styled = true;
+            var style = document.createElement("style");
+            style.textContent = @"
+.qkg-root-hero { display: flex; flex-wrap: wrap; align-items: center; gap: 24px 40px; padding: 26px 30px; border-radius: 24px; background: var(--qkg-root-tint); }
+.qkg-root-hero-letters { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 150px; }
+.qkg-root-hero-ar { font-size: 64px; line-height: 1.35; color: var(--qkg-root); }
+.qkg-root-hero-letters .qkg-kicker { color: var(--qkg-root); }
+.qkg-root-hero-stats { flex: 1 1 360px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; align-items: center; }
+.qkg-root-stat { display: flex; flex-direction: column; }
+.qkg-root-places { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.qkg-root-meccan { color: var(--qkg-meccan); }
+.qkg-root-medinan { color: var(--qkg-medinan); }
+";
+            document.head.appendChild(style);
         }
     }
 }

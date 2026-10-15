@@ -33,80 +33,86 @@ namespace QuranKG.FrontEnd.Themes
 
         public ThemesView(Parameters state)
         {
-            _content = VStack().S().ScrollY().Children(
-                Defer(async () =>
+            Look.EnsureStyles();
+            EnsureStyles();
+            _content = Look.Page(Defer(async () =>
                 {
                     var mapTask = QuranApi.ClustersMapAsync();
                     var result  = await QuranApi.ThemesAsync();
-                    var page    = VStack().WS().P(24).Gap(12.px());
-
-                    page.Add(TextBlock("Stories and themes".t()).XLarge().Bold());
+                    var page    = VStack().WS().Gap(24.px());
 
                     if (!result.Built)
-                        return page.Children(Banner("The themes have not been built yet. An administrator builds them with `just clusters` (the qkg/clusters/build endpoint); it takes a few seconds.".t()).Warning());
+                        return page.Children(
+                            Look.Title("Stories and themes".t()),
+                            Banner("The themes have not been built yet. An administrator builds them with `just clusters` (the qkg/clusters/build endpoint); it takes a few seconds.".t()).Warning());
 
                     var themes = result.Themes ?? new QK.ThemeRow[0];
 
-                    page.Add(TextBlock(string.Format("Every surah was cut into passages where its vocabulary changes — {0} passages in all — and passages of different surahs that lean on the same distinctive words were grouped. {1} groups reach across surahs: the stories the Quran tells more than once and the subjects it returns to. {2} of the {3} verses fall in one.".t(),
-                                                     Panels.Number(result.Passages), themes.Length, Panels.Number(result.VersesInThemes), Panels.Number(result.Verses))).Small());
-                    page.Add(TextBlock(result.Method + " " + "Built".t() + " " + result.RunId + ".").Tiny().Secondary());
+                    var lead = Look.El("p", "qkg-lead");
+                    AppendLead(lead, string.Format("Every surah is cut into passages where its vocabulary changes — {0} in all. Passages of different surahs that lean on the same distinctive words form a theme: {1} of them, the stories the Quran tells more than once and the subjects it returns to. {2} of the {3} verses fall in one.".t(),
+                                                   "§" + Panels.Number(result.Passages) + "§", "§" + themes.Length + "§", "§" + Panels.Number(result.VersesInThemes) + "§", Panels.Number(result.Verses)));
 
-                    // Two groupings of the same passages: the themes (this page's own, shared distinctive
-                    // words) and the similarity groups of qkg/clusters/similar-build (Arabic meaning +
-                    // lemmas + roots). The switch redraws the map and the list for the one chosen.
+                    page.Add(VStack().WS().Gap(10.px()).Children(
+                        Raw(Look.El("h1", "qkg-h1", "Stories and themes".t())),
+                        Raw(lead),
+                        Raw(Look.El("p", "qkg-note", result.Method + " " + "Built".t() + " " + result.RunId + "."))));
+
                     var map    = await mapTask;
-                    var host   = VStack().WS().Gap(12.px());
+                    var host   = VStack().WS().Gap(24.px());
                     var groups = (map.Groups ?? new QK.MapGroup[0]).Length > 0;
 
                     void Show(ClusterMap.Colouring colouring)
                     {
                         host.Clear();
-                        host.Add(Grouping(map, colouring));
-                    }
-
-                    if (groups)
-                    {
-                        var byThemes = Button("Themes — shared distinctive words".t()).Primary();
-                        var byGroups = Button("Similarity groups — meaning, lemmas and roots".t());
-                        byThemes.OnClick(() => { byThemes.IsPrimary = true; byGroups.IsPrimary = false; Show(ClusterMap.Colouring.Themes); });
-                        byGroups.OnClick(() => { byGroups.IsPrimary = true; byThemes.IsPrimary = false; Show(ClusterMap.Colouring.Groups); });
-                        page.Add(HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().PT(8).Children(
-                            TextBlock("Group the passages by".t()).SemiBold().PR(4), byThemes, byGroups));
+                        host.Add(Grouping(map, colouring, groups));
                     }
 
                     Show(ClusterMap.Colouring.Themes);
                     page.Add(host);
                     return page;
-                }, TextBlock("Grouping the passages…".t()).Secondary().P(24)).WS());
+                }, Raw(Look.El("p", "qkg-note", "Grouping the passages…".t()))));
         }
 
         public HTMLElement Render() => _content.Render();
 
-        /// <summary>One grouping: its map, then its groups widest first, with a filter that also lights the map.</summary>
-        private static IComponent Grouping(QK.ClusterMapDto data, ClusterMap.Colouring colouring)
+        /// <summary>The lead sentence, its numbers (between §) in the ink colour.</summary>
+        private static void AppendLead(HTMLElement into, string text)
+        {
+            var parts = text.Split('§');
+            for (var i = 0; i < parts.Length; i++)
+            {
+                if (i % 2 == 1) into.appendChild(Look.El("strong", "qkg-lead-num", parts[i]));
+                else into.appendChild(document.createTextNode(parts[i]));
+            }
+        }
+
+        /// <summary>One grouping: the switch and the filter, its map, then its groups widest first; the filter also lights the map.</summary>
+        private static IComponent Grouping(QK.ClusterMapDto data, ClusterMap.Colouring colouring, bool hasGroups)
         {
             var isThemes = colouring == ClusterMap.Colouring.Themes;
             var groups   = ((isThemes ? data.Themes : data.Groups) ?? new QK.MapGroup[0])
                               .OrderByDescending(g => (g.SurahNumbers ?? new int[0]).Length).ThenByDescending(g => g.Passages).ThenBy(g => g.Ordinal).ToArray();
             var surahs   = (data.Surahs ?? new QK.MapSurah[0]).ToDictionary(x => x.Number);
             var map      = new ClusterMap(data, colouring);
-            var section  = VStack().WS().Gap(12.px());
+            var section  = VStack().WS().Gap(24.px());
 
-            if (!isThemes)
-                section.Add(TextBlock(data.GroupsMethod + " " + "Built".t() + " " + data.GroupsRunId + ". " +
-                                      "Scored against Ibn Kathir's related verses (QurSim) at the same share of verses grouped, the two groupings come out alike — see tools/cluster-benchmark.".t()).Tiny().Secondary());
+            // The cards are built once; the filter shows and hides them in place.
+            var cards = groups.Select(g => GroupCard(g, surahs, map.ColorOf(g.Ordinal))).ToArray();
 
-            section.Add(Panels.Panel("The Quran in passages".t(), null, map));
-            section.Add(Panels.Heading(isThemes ? string.Format("All {0} themes".t(), groups.Length) : string.Format("All {0} similarity groups".t(), groups.Length),
-                                       "Widest first. The filter lights the ones it matches on the map.".t()));
+            var field = Look.El("label", "qkg-field qkg-themes-filter");
+            field.appendChild(Look.El("span", "", "⌕"));
+            var input = document.createElement("input").As<HTMLInputElement>();
+            input.type = "search";
+            input.placeholder = "Filter: Moses, موسى, a surah…".t();
+            input.setAttribute("aria-label", "Filter the themes".t());
+            field.appendChild(input);
+            var count = Look.El("span", "qkg-note");
 
-            // The cards are built once; the filter shows and collapses them in place.
-            var cards  = groups.Select(g => GroupCard(g, surahs, map.ColorOf(g.Ordinal))).ToArray();
-            var search = SearchBox("Filter: Moses, موسى, a surah…".t()).SearchAsYouType();
-            search.OnSearch((_, query) =>
+            void Filter()
             {
-                var q       = (query ?? "").Trim();
+                var q       = (input.value ?? "").Trim();
                 var matched = new HashSet<int>();
+                var shown   = 0;
                 for (var i = 0; i < groups.Length; i++)
                 {
                     var g     = groups[i];
@@ -114,74 +120,125 @@ namespace QuranKG.FrontEnd.Themes
                              || (g.Label ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0
                              || (g.LabelArabic ?? "").Contains(q)
                              || (g.SurahNumbers ?? new int[0]).Any(n => surahs.TryGetValue(n, out var s) && ((s.Name ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0 || (s.NameArabic ?? "").Contains(q)));
-                    if (match) { cards[i].Show(); matched.Add(g.Ordinal); } else cards[i].Collapse();
+                    cards[i].style.display = match ? "" : "none";
+                    if (match) { matched.Add(g.Ordinal); shown++; }
                 }
+                count.textContent = q.Length == 0 ? "" : string.Format("{0} of {1}".t(), shown, groups.Length);
                 map.Filter(q.Length == 0 ? null : matched);
-            });
+            }
+            input.oninput = _ => Filter();
 
-            section.Add(search.WS().MaxWidth(420.px()));
-            foreach (var card in cards) section.Add(card);
+            var controls = Look.El("div", "qkg-themes-controls");
+            if (hasGroups)
+                controls.appendChild(Look.Segmented(new[] { "Themes · shared distinctive words".t(), "Similarity groups · meaning, lemmas, roots".t() },
+                    isThemes ? 0 : 1,
+                    i =>
+                    {
+                        var host = section.Render().parentElement;
+                        var next = Grouping(data, i == 0 ? ClusterMap.Colouring.Themes : ClusterMap.Colouring.Groups, hasGroups);
+                        if (host is object) { host.innerHTML = ""; host.appendChild(next.Render()); }
+                    }, "Group the passages by".t()));
+            controls.appendChild(Look.El("span", "qkg-toolbar-spacer"));
+            controls.appendChild(count);
+            controls.appendChild(field);
+            section.Add(Raw(controls).WS());
+
+            if (!isThemes)
+                section.Add(Raw(Look.El("p", "qkg-note", data.GroupsMethod + " " + "Built".t() + " " + data.GroupsRunId + ". " +
+                                      "Scored against Ibn Kathir's related verses (QurSim) at the same share of verses grouped, the two groupings come out alike — see tools/cluster-benchmark.".t())));
+
+            section.Add(Look.Card(null,
+                Look.Heading("The Quran in passages".t(), "Each row a surah, each block a passage as wide as its words.".t()),
+                map));
+
+            var grid = Look.El("div", "qkg-theme-grid");
+            foreach (var card in cards) grid.appendChild(card);
+            section.Add(VStack().WS().Gap(14.px()).Children(
+                Look.Heading(isThemes ? string.Format("All {0} themes".t(), groups.Length) : string.Format("All {0} similarity groups".t(), groups.Length),
+                             "Widest first. The filter lights the ones it matches on the map.".t()),
+                Raw(grid).WS()));
             return section;
         }
 
         /// <summary>A theme or a similarity group: its labels, how far it reaches, and the surahs it spans.</summary>
-        private static IComponent GroupCard(QK.MapGroup g, Dictionary<int, QK.MapSurah> surahs, string color)
+        private static HTMLElement GroupCard(QK.MapGroup g, Dictionary<int, QK.MapSurah> surahs, string color)
         {
-            var header = HStack().WS().AlignItemsCenter().Gap(12.px()).Wrap().Children(
-                Raw(ClusterMap.Swatch(color)),
-                Arabic.Inline(g.LabelArabic, 24),
-                TextBlock(g.Kind == QK.THEME ? g.Label : "").SemiBold(),
-                Badge(string.Format("{0} surahs".t(), (g.SurahNumbers ?? new int[0]).Length)).Success().Outline(),
-                Badge(string.Format("{0} passages · {1} verses".t(), g.Passages, g.Verses)).Neutral());
-
-            var row = HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap().PT(6);
-            foreach (var n in g.SurahNumbers ?? new int[0])
-            {
-                if (!surahs.TryGetValue(n, out var s)) continue;
-                var uid = s.Uid;
-                row.Add(TextBlock(n + ". " + s.Name).Small()
-                           .OnClick((_, e) => { e.stopPropagation(); Lists.Open(uid); })
-                           .Style(st => st.setProperty("cursor", "pointer")));
-            }
-
-            return Card(VStack().WS().Children(header, row)).OnClick(() => Lists.Open(g.Uid)).MB(8);
+            var names = (g.SurahNumbers ?? new int[0]).Where(surahs.ContainsKey).Select(n => (Number: n, Surah: surahs[n])).ToArray();
+            return Card(color, g.LabelArabic, g.Kind == QK.THEME ? g.Label : "", names.Length, g.Passages, g.Verses,
+                        names.Select(x => (x.Number + ". " + x.Surah.Name, x.Surah.Uid)).ToArray(), () => Lists.Open(g.Uid));
         }
 
-        /// <summary>The widest few themes and a way to the rest — the home page's section.</summary>
+        /// <summary>The card of a theme: a dot of its colour, its Arabic words, how far it reaches, its English words, the surahs that tell it.</summary>
+        private static HTMLElement Card(string color, string labelArabic, string label, int surahCount, int passages, int verses, (string Name, UID128 Uid)[] surahs, Action open)
+        {
+            var card = Look.El("div", "qkg-card qkg-theme-card");
+            var head = Look.El("div", "qkg-theme-head");
+            var dot  = Look.El("span", "qkg-dot qkg-theme-dot");
+            dot.style.background = color;
+            head.appendChild(dot);
+            head.appendChild(Look.Ar(labelArabic, "qkg-arw qkg-theme-ar"));
+            head.appendChild(Look.Badge(string.Format("{0} surahs".t(), surahCount), "teal"));
+            card.appendChild(head);
+            if (!string.IsNullOrEmpty(label)) card.appendChild(Look.El("span", "qkg-theme-en", label));
+            card.appendChild(Look.El("span", "qkg-note", string.Format("{0} passages · {1} verses".t(), passages, verses)));
+
+            var chips = Look.El("div", "qkg-theme-surahs");
+            foreach (var (name, uid) in surahs)
+            {
+                var captured = uid;
+                var chip = Look.Chip(name, () => Lists.Open(captured));
+                chip.classList.add("qkg-theme-surah");
+                chips.appendChild(chip);
+            }
+            card.appendChild(chips);
+            return Look.OnClick(card, open);
+        }
+
+        /// <summary>The widest few themes and a way to the rest — the Patterns page's section.</summary>
         internal static IComponent Preview(int count)
         {
+            EnsureStyles();
             return Defer(async () =>
             {
                 var result = await QuranApi.ThemesAsync();
-                if (!result.Built) return TextBlock("The themes have not been built yet (`just clusters`).".t()).Small().Secondary();
+                if (!result.Built) return Raw(Look.El("p", "qkg-note", "The themes have not been built yet (`just clusters`).".t()));
 
-                var list = VStack().WS();
-                foreach (var t in (result.Themes ?? new QK.ThemeRow[0]).Take(count)) list.Add(ThemeCard(t));
-                list.Add(Button(string.Format("All {0} themes".t(), (result.Themes ?? new QK.ThemeRow[0]).Length)).SetIcon(UIcons.CircleNodes).OnClick(() => Router.Navigate(Route)));
-                return list;
-            }, TextBlock("Grouping the passages…".t()).Small().Secondary());
+                var grid = Look.El("div", "qkg-theme-grid");
+                foreach (var t in (result.Themes ?? new QK.ThemeRow[0]).Take(count))
+                {
+                    var surahs = new List<(string, UID128)>();
+                    for (var i = 0; i < (t.SurahUIDs ?? new UID128[0]).Length; i++) surahs.Add((t.SurahNumbers[i] + ". " + t.SurahNames[i], t.SurahUIDs[i]));
+                    var uid = t.Uid;
+                    grid.appendChild(Card(Clusters.ColorOf(t.Ordinal), t.LabelArabic, t.Label, (t.SurahNumbers ?? new int[0]).Length, t.Passages, t.Verses, surahs.ToArray(), () => Lists.Open(uid)));
+                }
+                return Raw(grid).WS();
+            }, Raw(Look.El("p", "qkg-note", "Grouping the passages…".t())));
         }
 
-        /// <summary>A theme: its Arabic and English labels, how far it reaches, and the surahs that tell it.</summary>
-        private static IComponent ThemeCard(QK.ThemeRow t)
+        private static bool _styled;
+
+        private static void EnsureStyles()
         {
-            var header = HStack().WS().AlignItemsCenter().Gap(12.px()).Wrap().Children(
-                Raw(ClusterMap.Swatch(Clusters.ColorOf(t.Ordinal))),
-                Arabic.Inline(t.LabelArabic, 24),
-                TextBlock(t.Label).SemiBold(),
-                Badge(string.Format("{0} surahs".t(), (t.SurahNumbers ?? new int[0]).Length)).Success().Outline(),
-                Badge(string.Format("{0} passages · {1} verses".t(), t.Passages, t.Verses)).Neutral());
-
-            var surahs = HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap().PT(6);
-            for (var i = 0; i < (t.SurahUIDs ?? new UID128[0]).Length; i++)
-            {
-                var uid = t.SurahUIDs[i];
-                surahs.Add(TextBlock(t.SurahNumbers[i] + ". " + t.SurahNames[i]).Small()
-                              .OnClick((_, e) => { e.stopPropagation(); Lists.Open(uid); })
-                              .Style(s => s.setProperty("cursor", "pointer")));
-            }
-
-            return Card(VStack().WS().Children(header, surahs)).OnClick(() => Lists.Open(t.Uid)).MB(8);
+            if (_styled) return;
+            _styled = true;
+            var style = document.createElement("style");
+            style.textContent = @"
+.qkg-lead-num { color: var(--qkg-ink); font-weight: 600; }
+.qkg-themes-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.qkg-themes-filter { width: 340px; max-width: 100%; height: 44px; }
+.qkg-theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); gap: 14px; align-items: start; }
+.qkg-theme-card { display: flex; flex-direction: column; gap: 8px; }
+.qkg-theme-head { display: flex; align-items: center; gap: 12px; }
+.qkg-theme-dot { width: 10px; height: 10px; }
+.qkg-theme-ar { flex: 1 1 auto; font-size: 26px; line-height: 1.5; text-align: left; }
+.qkg-theme-en { font-weight: 600; }
+.qkg-theme-surahs { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 2px; }
+.qkg-theme-surah { min-height: 26px; padding: 0 10px; font-size: 12px; }
+.qkg-map-info { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 48px; padding: 10px 14px; border-radius: 12px; background: var(--qkg-teal-tint); box-sizing: border-box; }
+.qkg-map-info-hint { background: var(--qkg-surface); color: var(--qkg-ink-3); font-size: 13px; }
+.qkg-map-info-ar { font-size: 22px; color: var(--qkg-teal-strong); }
+";
+            document.head.appendChild(style);
         }
     }
 }
