@@ -13,10 +13,13 @@ using static Transpose.Core.dom;
 namespace QuranKG.FrontEnd.Components
 {
     /// <summary>
-    /// A text to read with what a reader needs around it: a toolbar (text size, passages, English,
-    /// key words), a strip of the passages to jump between them, the text itself (<see cref="QuranReader"/>),
-    /// and the panel a clicked verse opens on the right (<see cref="VerseDetails"/>). The Quran View,
-    /// a surah's Read tab, a passage and a theme all read through it, so they read alike.
+    /// A text to read with what a reader needs around it: a toolbar (text size, how the text is laid
+    /// out — flowing, verse by verse, or as the mushaf's pages —, passages, English, key words, and
+    /// where the reader is: page, juz, hizb), a strip of the passages to jump between them, the text
+    /// itself (<see cref="QuranReader"/>), the panel a clicked verse opens on the right
+    /// (<see cref="VerseDetails"/>) and, for a surah, its recitation (<see cref="RecitationPlayer"/>),
+    /// which marks the verse being recited and keeps it in view. The Quran View, a surah's Read tab,
+    /// a passage and a theme all read through it, so they read alike.
     /// </summary>
     internal sealed class ReadingPane : IComponent
     {
@@ -35,6 +38,8 @@ namespace QuranKG.FrontEnd.Components
             internal Action<UID128, string> GoToVerseElsewhere { get; set; }
             /// <summary>Offer "Read in the Quran" on a verse (everywhere but the Quran View).</summary>
             internal bool   ReadInQuran       { get; set; }
+            /// <summary>Start the surah's recitation as soon as the text is drawn, at <see cref="InitialAyah"/>.</summary>
+            internal bool   ListenOnOpen      { get; set; }
             /// <summary>Called with the verse selected, or null when the panel closes.</summary>
             internal Action<QK.ReadingVerse> OnSelected { get; set; }
         }
@@ -49,6 +54,9 @@ namespace QuranKG.FrontEnd.Components
         private QK.ReadingDto _text;
         private QuranReader   _reader;
         private UID128        _selected;
+        private UID128        _playing;
+        private RecitationPlayer _player;
+        private TextBlock     _location;
 
         public ReadingPane(Settings settings)
         {
@@ -72,13 +80,38 @@ namespace QuranKG.FrontEnd.Components
                     foreach (var verse in section.Verses ?? new QK.ReadingVerse[0])
                         _byUid[verse.Uid.ToString()] = (verse, section);
 
+                if (_text.Kind == "Surah")
+                    _player = new RecitationPlayer(new RecitationPlayer.Settings
+                    {
+                        Surah          = settings.Uid,
+                        VerseKeyPrefix = (_text.Sections ?? new QK.ReadingSection[0]).Select(x => x.SurahNumber + ":").FirstOrDefault() ?? "",
+                        OnVerse        = Recited,
+                    });
+
                 var left = VStack().S().Grow().Style(s => s.setProperty("min-width", "0"));
                 if (settings.Header is object) left.Add(settings.Header(_text));
-                left.Add(Toolbar());
-                if (_text.PassagesBuilt && (_text.Sections ?? new QK.ReadingSection[0]).Length > 1) left.Add(Strip().PL(16).PR(16).PB(6));
+
+                // The toolbar and the strip depend on the layout: rebuilt with the text when it changes.
+                var toolbar = VStack().WS();
+                var strip   = VStack().WS();
+                Rebuild = () =>
+                {
+                    toolbar.Clear();
+                    toolbar.Add(Toolbar());
+                    strip.Clear();
+                    if (_text.PassagesBuilt && (_text.Sections ?? new QK.ReadingSection[0]).Length > 1 && _options.Layout != ReaderOptions.PAGES) strip.Add(Strip().PL(16).PR(16).PB(6));
+                };
+                Rebuild();
+                left.Add(toolbar);
+                left.Add(strip);
                 left.Add(Raw(_scroll));
+                if (_player is object) left.Add(_player);
+
+                _scroll.onscroll = _ => Locate();
 
                 Draw();
+
+                if (settings.ListenOnOpen && _player is object) _player.PlayFrom(settings.InitialAyah);
 
                 if (settings.InitialAyah > 0)
                 {
@@ -107,6 +140,32 @@ namespace QuranKG.FrontEnd.Components
 
         internal bool Contains(UID128 verse) => _byUid.ContainsKey(verse.ToString());
 
+        /// <summary>Starts the surah's recitation at a verse (0: from the start) — a surah's text only.</summary>
+        internal void Listen(int ayah) => _player?.PlayFrom(ayah);
+
+        /// <summary>The verse being recited: marked in the text and, if the player follows, brought into view.</summary>
+        private void Recited(QK.RecitedVerseRow row)
+        {
+            _playing = row is null ? default(UID128) : row.Uid;
+            _reader?.MarkPlaying(_playing);
+            if (row is null || _player is null || !_player.Follow) return;
+
+            var el = _reader?.ElementOf(row.Uid);
+            if (el is null) return;
+            var rect = el.getBoundingClientRect().As<DOMRect>();
+            var view = _scroll.getBoundingClientRect().As<DOMRect>();
+            if (rect.top < view.top + 20 || rect.bottom > view.bottom - 20) ScrollTo(el);
+        }
+
+        /// <summary>Where the reader is: the page, juz and hizb of the verse at the top of the view.</summary>
+        private void Locate()
+        {
+            if (_location is null || _reader is null) return;
+            var view  = _scroll.getBoundingClientRect().As<DOMRect>();
+            var verse = _reader.VerseAt(view.top + 24);
+            _location.Text = verse is null || verse.Page == 0 ? "" : string.Format("Page {0} · Juz {1} · Hizb {2}".t(), verse.Page, verse.Juz, verse.Hizb);
+        }
+
         // -----------------------------------------------------------------------------------
 
         private void Draw()
@@ -116,9 +175,12 @@ namespace QuranKG.FrontEnd.Components
             _reader = new QuranReader(_text, _options, new QuranReader.Callbacks
             {
                 OnVerse = (v, _) => Select(v.Uid, scroll: false),
+                OnListen = _player is null ? null : (Action<QK.ReadingVerse>)(v => _player.PlayFrom(v.Ayah)),
                 OnSurah = _text.Kind == "Surah" ? null : (Action<QK.ReadingSection>)(s => QuranLinks.Go(s.SurahNumber, (s.Verses ?? new QK.ReadingVerse[0]).Select(x => x.Ayah).FirstOrDefault())),
             });
             _scroll.appendChild(_reader.Render());
+            if (UID128.IsNotNull(_playing)) _reader.MarkPlaying(_playing);
+            window.setTimeout(_ => Locate(), 60);
 
             if (_selected != default(UID128))
             {
@@ -134,7 +196,7 @@ namespace QuranKG.FrontEnd.Components
         private void ShowDetails(QK.ReadingVerse v, QK.ReadingSection s)
         {
             _details.Clear();
-            _details.Add(VerseDetails.Create(v, s, CloseDetails, GoToVerse, _settings.ReadInQuran));
+            _details.Add(VerseDetails.Create(v, s, CloseDetails, GoToVerse, _settings.ReadInQuran, _player is null ? null : (Action<QK.ReadingVerse>)(x => _player.PlayFrom(x.Ayah))));
             _details.Show();
             _settings.OnSelected?.Invoke(v);
         }
@@ -170,12 +232,24 @@ namespace QuranKG.FrontEnd.Components
             larger.OnClick(() =>  { _options.FontSize = Math.Min(ReaderOptions.MAX_SIZE, _options.FontSize + 2); Changed(); });
 
             var bar = HStack().WS().AlignItemsCenter().Gap(16.px()).Wrap().PL(16).PR(16).PT(8).PB(8).Children(
-                HStack().AlignItemsCenter().Gap(4.px()).Children(smaller, TextBlock("Text".t()).Small().Secondary(), larger));
+                HStack().AlignItemsCenter().Gap(4.px()).Children(smaller, TextBlock("Text".t()).Small().Secondary(), larger),
+                Layouts());
 
-            if (_text.PassagesBuilt)
+            if (_player is object)
+                bar.Add(Button("Listen".t()).SetIcon(UIcons.PlayAlt).Compact()
+                              .Tooltip("The surah recited, the verse being recited marked and followed — from the verse selected, or from the start".t())
+                              .OnClick(() =>
+                              {
+                                  var from = UID128.IsNotNull(_selected) && _byUid.TryGetValue(_selected.ToString(), out var sel) ? sel.Verse.Ayah : 0;
+                                  _player.PlayFrom(from);
+                              }));
+
+            var pages = _options.Layout == ReaderOptions.PAGES;
+            if (_text.PassagesBuilt && !pages)
                 bar.Add(Option("Passages".t(), "Mark where the clusters build cuts the text, with each passage's words and theme".t(), _options.Passages, on => _options.Passages = on));
 
-            bar.Add(Option("English".t(), "Saheeh International beside the Arabic, passage by passage".t(), _options.Translation, on => _options.Translation = on));
+            if (!pages)
+                bar.Add(Option("English".t(), _options.Layout == ReaderOptions.VERSES ? "Saheeh International under each verse".t() : "Saheeh International beside the Arabic, passage by passage".t(), _options.Translation, on => _options.Translation = on));
 
             if ((_text.Sections ?? new QK.ReadingSection[0]).Any(s => (s.Verses ?? new QK.ReadingVerse[0]).Any(v => (v.Highlights ?? new int[0]).Length > 0)))
                 bar.Add(Option("Key words".t(),
@@ -198,8 +272,38 @@ namespace QuranKG.FrontEnd.Components
                 bar.Add(legend);
             }
 
+            _location = TextBlock("").Small().Secondary().NoWrap();
+            bar.Add(_location.Grow().Style(st => st.setProperty("text-align", "right")).Tooltip("Where the top of the text is in the Madinah mushaf".t()));
+
             return bar.Style(s => s.setProperty("border-bottom", "1px solid var(--tss-default-border-color)"));
         }
+
+        /// <summary>The three ways to lay the text out, as a segmented switch.</summary>
+        private IComponent Layouts()
+        {
+            var group = HStack().AlignItemsCenter().Gap(0.px());
+            void Add(string layout, string label, UIcons icon, string tooltip)
+            {
+                var button = Button(label).SetIcon(icon).Compact().Tooltip(tooltip);
+                if (_options.Layout == layout) button.Primary();
+                button.OnClick(() =>
+                {
+                    if (_options.Layout == layout) return;
+                    _options.Layout = layout;
+                    _options.Save();
+                    Rebuild?.Invoke();
+                    Draw();
+                });
+                group.Add(button);
+            }
+            Add(ReaderOptions.FLOW,   "Flowing".t(),           UIcons.AlignJustify,  "The verses flowing one after another, passage by passage".t());
+            Add(ReaderOptions.VERSES, "Verse by verse".t(), UIcons.RectangleList,        "One verse to a row, with its key — and its translation if English is on".t());
+            Add(ReaderOptions.PAGES,  "Mushaf".t(),         UIcons.BookOpenCover, "The pages of the Madinah mushaf (604), each closed by its number".t());
+            return group;
+        }
+
+        /// <summary>Set by the pane: rebuilds the toolbar and the text when the layout changes.</summary>
+        private Action Rebuild;
 
         private IComponent Option(string label, string tooltip, bool on, Action<bool> set)
         {

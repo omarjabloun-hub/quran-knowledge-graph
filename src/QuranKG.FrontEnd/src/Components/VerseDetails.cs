@@ -8,6 +8,7 @@ using TNT;
 using UID;
 using static Tesserae.UI;
 using static TNT.T;
+using static Transpose.Core.dom;
 
 namespace QuranKG.FrontEnd.Components
 {
@@ -26,11 +27,14 @@ namespace QuranKG.FrontEnd.Components
 
         /// <param name="goToVerse">Where a related verse leads: in the Quran View, to the verse in the text; elsewhere, to its page.</param>
         /// <param name="readInQuran">Whether to offer to read the verse in its surah (not in the Quran View itself).</param>
-        internal static IComponent Create(QK.ReadingVerse v, QK.ReadingSection s, Action close, Action<UID128, string> goToVerse, bool readInQuran)
+        /// <param name="listen">Listen to the surah's recitation from this verse; null when there is none (a passage, a theme).</param>
+        internal static IComponent Create(QK.ReadingVerse v, QK.ReadingSection s, Action close, Action<UID128, string> goToVerse, bool readInQuran, Action<QK.ReadingVerse> listen = null)
         {
             goToVerse = goToVerse ?? ((uid, _) => Lists.Open(uid));
 
             var actions = HStack().AlignItemsCenter().Gap(4.px());
+            if (listen is object)
+                actions.Add(Button("Listen".t()).SetIcon(UIcons.PlayAlt).Compact().Tooltip("The recitation, from this verse".t()).OnClick(() => listen(v)));
             if (readInQuran)
                 actions.Add(Button("Read in the Quran".t()).SetIcon(UIcons.BookQuran).Compact().Tooltip("This verse in its surah, in the Quran View".t()).OnClick(() => QuranLinks.Go(v.VerseKey)));
             actions.Add(Button().SetIcon(UIcons.ArrowUpRightFromSquare).Compact().Tooltip("Open the verse's page".t()).OnClick(() => Lists.Open(v.Uid)));
@@ -177,6 +181,28 @@ namespace QuranKG.FrontEnd.Components
         {
             var parts = (verseKey ?? "").Split(':');
             if (parts.Length == 2 && int.TryParse(parts[0], out var surah) && int.TryParse(parts[1], out var ayah)) Go(surah, ayah);
+        }
+
+        /// <summary>Set before going to a surah: the Quran View starts its recitation when it opens.</summary>
+        internal static bool ListenOnArrival { get; set; }
+
+        private const string LAST_KEY = "qkg-last-read";
+
+        /// <summary>Where the reader was last: a surah and a verse of it (0: its start), or (0, 0).</summary>
+        internal static (int Surah, int Ayah) LastRead()
+        {
+            try
+            {
+                var parts = (localStorage.getItem(LAST_KEY) ?? "").Split(':');
+                if (parts.Length == 2 && int.TryParse(parts[0], out var s) && int.TryParse(parts[1], out var a) && s >= 1 && s <= 114) return (s, a);
+            }
+            catch { /* storage blocked: nothing remembered */ }
+            return (0, 0);
+        }
+
+        internal static void Remember(int surah, int ayah)
+        {
+            try { localStorage.setItem(LAST_KEY, surah + ":" + ayah); } catch { /* nothing to keep it in */ }
         }
 
         internal static void Go(int surah, int ayah = 0)

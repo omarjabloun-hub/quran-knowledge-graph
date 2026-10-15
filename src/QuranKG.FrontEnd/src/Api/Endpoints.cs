@@ -24,6 +24,8 @@ namespace QuranKG.FrontEnd.Api
         public const string VerseWords = "qkg/verse/words";
         /// <summary>The tafsirs on a verse, Arabic and English — for people, never an AI tool.</summary>
         public const string VerseTafsir = "qkg/verse/tafsir";
+        public const string SurahRecitation = "qkg/surah/recitation";
+        public const string QuickSearch     = "qkg/search/quick";
         public const string VerseHadith    = "qkg/verse/hadith";
         public const string HadithProfile  = "qkg/hadith/profile";
         public const string HadithOverview = "qkg/hadith/overview";

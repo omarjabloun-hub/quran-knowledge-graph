@@ -18,7 +18,8 @@ using static Transpose.Core.dom;
 namespace QuranKG.FrontEnd.Dashboard
 {
     /// <summary>
-    /// The home page: patterns anyone can see, counted live from the graph. One call
+    /// The home page: a search box in the middle and the ways into the text (<see cref="Home.HomeSearch"/>),
+    /// then patterns anyone can see, counted live from the graph. One call
     /// (<c>qkg/dashboard/corpus</c>) feeds every panel, so no two numbers on the page can disagree.
     /// Everything that counts a node opens it — a root's label, a heat-map cell (the verses where
     /// that root occurs in that juz), a surah's row.
@@ -34,6 +35,7 @@ namespace QuranKG.FrontEnd.Dashboard
         public PatternDashboard(Parameters state)
         {
             _content = VStack().S().ScrollY().Children(
+                Home.HomeSearch.Hero(),
                 Defer(async () =>
                 {
                     var corpus = await QuranApi.CorpusAsync();
@@ -83,8 +85,7 @@ namespace QuranKG.FrontEnd.Dashboard
                     TextBlock("Patterns in the Quran".t()).XLarge().Bold(),
                     TextBlock(string.Format("Every number on this page is counted live from the knowledge graph: the Arabic text of the {0} verses, and the root, lemma and part of speech of each of its {1} words.".t(),
                                             Panels.Number(o.Verses), Panels.Number(o.Words))).Small().Secondary().PT(4),
-                    TextBlock(string.Format("Computed in {0} s, cached for an hour.".t(), (c.Milliseconds / 1000).ToString("0.0"))).Tiny().Secondary().PT(2)),
-                Arabic.Inline("القرآن الكريم", 40).NoShrink());
+                    TextBlock(string.Format("Computed in {0} s, cached for an hour.".t(), (c.Milliseconds / 1000).ToString("0.0"))).Tiny().Secondary().PT(2)));
         }
 
         private static IComponent Totals(QK.OverviewDto o)

@@ -40,6 +40,8 @@ namespace QuranKG.FrontEnd.Reader
 
             _content = Defer(async () =>
             {
+                var listen = QuranLinks.ListenOnArrival;
+                QuranLinks.ListenOnArrival = false;
                 var corpus = await QuranApi.CorpusAsync();
                 var surahs = corpus.Overview.SurahRows.OrderBy(r => r.Number).ToArray();
                 var current = surahs.First(r => r.Number == _surah);
@@ -50,10 +52,17 @@ namespace QuranKG.FrontEnd.Reader
                     OptionsKey         = "quran",
                     KeyWordsByDefault  = false,
                     InitialAyah        = ayah,
+                    ListenOnOpen       = listen,
                     Header             = text => Header(current, text),
                     GoToVerseElsewhere = (uid, key) => QuranLinks.Go(key),
-                    OnSelected         = v => window.history.replaceState(null, "", QuranLinks.For(_surah, v?.Ayah ?? 0)),
+                    OnSelected         = v =>
+                    {
+                        window.history.replaceState(null, "", QuranLinks.For(_surah, v?.Ayah ?? 0));
+                        if (v is object) QuranLinks.Remember(_surah, v.Ayah);
+                    },
                 });
+
+                QuranLinks.Remember(_surah, ayah);
 
                 return HStack().S().Children(Index(surahs), pane.S().Grow().Style(st => st.setProperty("min-width", "0")));
             }, TextBlock("Opening the Quran…".t()).Secondary().P(24)).S();

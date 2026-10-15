@@ -13,13 +13,20 @@ using static Transpose.Core.dom;
 namespace QuranKG.FrontEnd.Components
 {
     /// <summary>
-    /// How a reader likes the text: its size, whether the passages are marked, whether the English
-    /// runs beside the Arabic, whether the key words are marked. Kept per reader in the browser
-    /// (the Quran View, a passage, a theme), so each opens the way it was left.
+    /// How a reader likes the text: its size, how it is laid out, whether the passages are marked,
+    /// whether the English runs beside the Arabic, whether the key words are marked. Kept per reader
+    /// in the browser (the Quran View, a passage, a theme), so each opens the way it was left.
     /// </summary>
     internal sealed class ReaderOptions
     {
         internal const int MIN_SIZE = 20, MAX_SIZE = 48;
+
+        /// <summary>The verses flowing in a paragraph, passage by passage — how the text reads.</summary>
+        internal const string FLOW   = "flow";
+        /// <summary>One verse to a row, its key and its translation under it — how a verse is studied.</summary>
+        internal const string VERSES = "verses";
+        /// <summary>The pages of the Madinah mushaf (604), each closed by its number — how the book is held.</summary>
+        internal const string PAGES  = "pages";
 
         private readonly string _key;
 
@@ -27,6 +34,7 @@ namespace QuranKG.FrontEnd.Components
         internal bool Passages    { get; set; } = true;
         internal bool Translation { get; set; }
         internal bool KeyWords    { get; set; }
+        internal string Layout    { get; set; } = FLOW;
 
         private ReaderOptions(string key) => _key = "qkg-reader-" + key;
 
@@ -39,12 +47,13 @@ namespace QuranKG.FrontEnd.Components
                 if (!string.IsNullOrEmpty(saved))
                 {
                     var parts = saved.Split('|');
-                    if (parts.Length == 4)
+                    if (parts.Length >= 4)
                     {
                         if (int.TryParse(parts[0], out var size)) o.FontSize = Math.Max(MIN_SIZE, Math.Min(MAX_SIZE, size));
                         o.Passages    = parts[1] == "1";
                         o.Translation = parts[2] == "1";
                         o.KeyWords    = parts[3] == "1";
+                        if (parts.Length >= 5 && (parts[4] == VERSES || parts[4] == PAGES)) o.Layout = parts[4];
                     }
                 }
             }
@@ -52,9 +61,17 @@ namespace QuranKG.FrontEnd.Components
             return o;
         }
 
+        /// <summary>Sets one reader's layout before it opens: "page 50" on the home page opens the Quran View as the mushaf.</summary>
+        internal static void Remember(string key, string layout)
+        {
+            var o = Load(key, false);
+            o.Layout = layout;
+            o.Save();
+        }
+
         internal void Save()
         {
-            try { localStorage.setItem(_key, FontSize + "|" + (Passages ? 1 : 0) + "|" + (Translation ? 1 : 0) + "|" + (KeyWords ? 1 : 0)); }
+            try { localStorage.setItem(_key, FontSize + "|" + (Passages ? 1 : 0) + "|" + (Translation ? 1 : 0) + "|" + (KeyWords ? 1 : 0) + "|" + Layout); }
             catch { /* nothing to keep it in */ }
         }
     }
@@ -68,6 +85,13 @@ namespace QuranKG.FrontEnd.Components
     /// <para>A verse is one span: hovering it marks it, clicking it selects it and tells the page,
     /// which opens its translation and what is related to it. With the translation on, the English
     /// runs beside the Arabic, passage by passage, and a verse is marked on both sides.</para>
+    ///
+    /// <para>Three layouts (<see cref="ReaderOptions.Layout"/>): the verses flowing in a paragraph;
+    /// verse by verse, one row each with its key and translation; or the mushaf's pages, each verse
+    /// on the page of the Madinah mushaf it is printed on, the page closed by its number. The page
+    /// breaks are the mushaf's; the lines within a page are the browser's.</para>
+    ///
+    /// <para>While a recitation plays, the verse being recited is marked (<see cref="MarkPlaying"/>).</para>
     ///
     /// <para>Plain DOM rather than a component per verse: Al-Baqarah is 286 verses and 6,100 words,
     /// and the browser lays out one paragraph of spans far faster than 286 cards.</para>
@@ -83,19 +107,23 @@ namespace QuranKG.FrontEnd.Components
             internal Action<QK.ReadingSection>                  OnSurah   { get; set; }
             internal Action<UID128>                             OnTheme   { get; set; } = Lists.Open;
             internal Action<UID128>                             OnPassage { get; set; } = Lists.Open;
+            /// <summary>Listen from this verse: offered on each verse row when a recitation is there; null hides it.</summary>
+            internal Action<QK.ReadingVerse>                    OnListen  { get; set; }
         }
 
         private readonly HTMLElement                            _root;
         private readonly Dictionary<string, List<HTMLElement>> _verses   = new Dictionary<string, List<HTMLElement>>();
         private readonly Dictionary<string, HTMLElement>       _sections = new Dictionary<string, HTMLElement>();
         private string _selected;
+        private string _playing;
+        private readonly List<(HTMLElement Element, QK.ReadingVerse Verse)> _order = new List<(HTMLElement, QK.ReadingVerse)>();
 
         public QuranReader(QK.ReadingDto text, ReaderOptions options, Callbacks callbacks)
         {
             EnsureStyles();
             Arabic.EnsureFonts();
 
-            _root = Div(Att("qkg-reader"));
+            _root = Div(Att("qkg-reader qkg-layout-" + options.Layout));
             _root.style.setProperty("--qkg-size", options.FontSize + "px");
             if (options.KeyWords) _root.classList.add("qkg-keywords");
 
@@ -114,6 +142,13 @@ namespace QuranKG.FrontEnd.Components
                 _root.appendChild(title);
             }
 
+            if (options.Layout == ReaderOptions.PAGES)
+            {
+                Pages(sections, isSurah, callbacks);
+                return;
+            }
+
+            var byRow = options.Layout == ReaderOptions.VERSES;
             HTMLElement arabic = null, english = null;
             var lastSurah = -1;
 
@@ -142,6 +177,14 @@ namespace QuranKG.FrontEnd.Components
 
                 var marked = options.Passages && UID128.IsNotNull(section.PassageUid);
                 if (marked) block.appendChild(Header(section, callbacks));
+
+                if (byRow)
+                {
+                    foreach (var verse in section.Verses ?? new QK.ReadingVerse[0])
+                        block.appendChild(VerseRow(verse, section, callbacks, options.Translation));
+                    _root.appendChild(block);
+                    continue;
+                }
 
                 // Without the passage marks a surah reads as one paragraph: a run only breaks the
                 // text where it starts a new surah.
@@ -183,6 +226,31 @@ namespace QuranKG.FrontEnd.Components
         internal HTMLElement ElementOf(UID128 verse)
             => _verses.TryGetValue(verse.ToString(), out var els) ? els.FirstOrDefault() : null;
 
+        /// <summary>The verse at the top of the reader's view: what the page, juz and hizb shown above it are of.</summary>
+        internal QK.ReadingVerse VerseAt(double top)
+        {
+            QK.ReadingVerse last = null;
+            foreach (var entry in _order)
+            {
+                var rect = entry.Element.getBoundingClientRect().As<DOMRect>();
+                if (rect.bottom > top) return entry.Verse;
+                last = entry.Verse;
+            }
+            return last;
+        }
+
+        /// <summary>Marks the verse being recited (on both sides), unmarking the last; default unmarks.</summary>
+        internal void MarkPlaying(UID128 verse)
+        {
+            if (_playing is object && _verses.TryGetValue(_playing, out var previous))
+                foreach (var el in previous) el.classList.remove("qkg-play");
+
+            _playing = UID128.IsNull(verse) ? null : verse.ToString();
+
+            if (_playing is object && _verses.TryGetValue(_playing, out var current))
+                foreach (var el in current) el.classList.add("qkg-play");
+        }
+
         internal HTMLElement SectionOf(UID128 passage)
             => _sections.TryGetValue(passage.ToString(), out var el) ? el : null;
 
@@ -199,6 +267,91 @@ namespace QuranKG.FrontEnd.Components
         }
 
         // -----------------------------------------------------------------------------------
+
+        /// <summary>
+        /// The text as the mushaf's pages: the verses of each page in one justified block, closed by
+        /// the page's number and its juz and hizb. A theme's verses keep their surah headings.
+        /// </summary>
+        private void Pages(QK.ReadingSection[] sections, bool isSurah, Callbacks callbacks)
+        {
+            var verses = sections.SelectMany(s => (s.Verses ?? new QK.ReadingVerse[0]).Select(v => (Verse: v, Section: s))).ToList();
+            var lastSurah = isSurah && sections.Length > 0 ? sections[0].SurahNumber : -1;
+
+            foreach (var page in verses.GroupBy(x => x.Verse.Page))
+            {
+                var sheet = Div(Att("qkg-page"));
+                HTMLElement text = null;
+
+                foreach (var entry in page)
+                {
+                    var verse   = entry.Verse;
+                    var section = entry.Section;
+                    if (section.SurahNumber != lastSurah)
+                    {
+                        lastSurah = section.SurahNumber;
+                        var heading = Text("div", "qkg-surah-heading", "", rtl: false);
+                        heading.appendChild(Text("span", "qkg-surah-heading-ar", "سورة " + section.SurahNameArabic, rtl: true));
+                        heading.appendChild(Text("span", "qkg-surah-heading-latin", section.SurahNumber + ". " + section.SurahName));
+                        if (callbacks.OnSurah is object)
+                        {
+                            heading.classList.add("qkg-clickable");
+                            var captured = section;
+                            heading.onclick = _ => callbacks.OnSurah(captured);
+                        }
+                        sheet.appendChild(heading);
+                        text = null;
+                    }
+
+                    if (text is null)
+                    {
+                        text = Div(Att("qkg-ar qkg-page-text"));
+                        text.setAttribute("dir", "rtl");
+                        text.setAttribute("lang", "ar");
+                        sheet.appendChild(text);
+                    }
+
+                    text.appendChild(VerseArabic(verse, section, callbacks));
+                    text.appendChild(document.createTextNode(" "));
+                }
+
+                var first = page.First().Verse;
+                var foot  = Div(Att("qkg-page-foot"));
+                foot.appendChild(Text("span", "qkg-page-n", Panels.ArabicDigits(page.Key), rtl: true));
+                foot.appendChild(Text("span", "qkg-page-where", string.Format("Page {0} · Juz {1} · Hizb {2}".t(), page.Key, first.Juz, first.Hizb)));
+                sheet.appendChild(foot);
+
+                _root.appendChild(sheet);
+            }
+        }
+
+        /// <summary>One verse as a row: its key, a way to listen from it, the Arabic, and — if asked — its translation.</summary>
+        private HTMLElement VerseRow(QK.ReadingVerse v, QK.ReadingSection s, Callbacks callbacks, bool translation)
+        {
+            var row  = Div(Att("qkg-row"));
+            var head = Div(Att("qkg-row-head"));
+            head.appendChild(Text("span", "qkg-row-key", v.VerseKey));
+            if (!string.IsNullOrEmpty(v.Sajda)) head.appendChild(Text("span", "qkg-row-sajda", string.Format("prostration ({0})".t(), v.Sajda)));
+            if (callbacks.OnListen is object)
+            {
+                var listen = Text("span", "qkg-row-listen qkg-clickable", "▶ " + "Listen".t());
+                listen.title   = "Listen from this verse".t();
+                listen.onclick = e => { e.stopPropagation(); callbacks.OnListen(v); };
+                head.appendChild(listen);
+            }
+            row.appendChild(head);
+
+            var arabic = Div(Att("qkg-row-ar"));
+            arabic.setAttribute("dir", "rtl");
+            arabic.setAttribute("lang", "ar");
+            AppendWords(arabic, v);
+            arabic.appendChild(Text("span", "qkg-ayah", "۝" + Panels.ArabicDigits(v.Ayah)));
+            row.appendChild(arabic);
+
+            if (translation) row.appendChild(Text("div", "qkg-row-en", v.Translation ?? ""));
+
+            Wire(row, v, s, callbacks);
+            return row;
+        }
 
         /// <summary>The line a passage opens with: where it is, its distinctive words, and the theme it shares.</summary>
         private static HTMLElement Header(QK.ReadingSection s, Callbacks callbacks)
@@ -275,7 +428,11 @@ namespace QuranKG.FrontEnd.Components
         private void Wire(HTMLElement span, QK.ReadingVerse v, QK.ReadingSection s, Callbacks callbacks)
         {
             var key = v.Uid.ToString();
-            if (!_verses.TryGetValue(key, out var els)) _verses[key] = els = new List<HTMLElement>();
+            if (!_verses.TryGetValue(key, out var els))
+            {
+                _verses[key] = els = new List<HTMLElement>();
+                _order.Add((span, v));
+            }
             els.Add(span);
 
             span.title        = v.VerseKey;
@@ -389,6 +546,26 @@ namespace QuranKG.FrontEnd.Components
 .qkg-v.qkg-hover { background-color: var(--tss-default-background-hover-color); }
 .qkg-v.qkg-on { background-color: rgba(59, 130, 246, .16); box-shadow: 0 0 0 2px rgba(59, 130, 246, .16); }
 .qkg-ayah { font-family: {FONT}; color: #15803d; padding: 0 4px; white-space: nowrap; }
+.qkg-v.qkg-play { color: #0369a1; }
+.qkg-v.qkg-play .qkg-ayah { color: #0369a1; }
+.qkg-row { padding: 14px 12px 16px 12px; border-bottom: 1px solid var(--tss-default-border-color); border-radius: 6px; }
+.qkg-row-head { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--tss-secondary-foreground-color); }
+.qkg-row-key { font-weight: 600; min-width: 48px; }
+.qkg-row-sajda { color: #15803d; }
+.qkg-row-listen { color: var(--tss-primary-background-color); }
+.qkg-row-ar { font-family: {FONT}; font-size: var(--qkg-size); line-height: 2.2; text-align: right; padding: 6px 0 2px 0; }
+.qkg-row-en { font-size: 15px; line-height: 1.7; padding-top: 4px; }
+.qkg-row { cursor: pointer; transition: background-color .12s; }
+.qkg-row.qkg-hover { background-color: var(--tss-default-background-hover-color); }
+.qkg-row.qkg-on { background-color: rgba(59, 130, 246, .10); }
+.qkg-row.qkg-play { box-shadow: inset 3px 0 0 #0369a1; }
+.qkg-row.qkg-play .qkg-row-ar, .qkg-row.qkg-play .qkg-ayah { color: #0369a1; }
+.qkg-layout-pages { max-width: 760px; }
+.qkg-page { margin: 18px auto 26px auto; padding: 18px 34px 10px 34px; border: 1px solid var(--tss-default-border-color); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.06); background: var(--tss-default-background-color); }
+.qkg-page-text { text-align: justify; text-align-last: center; line-height: 2.25; }
+.qkg-page .qkg-surah-heading { margin: 10px 0 6px 0; }
+.qkg-page-foot { display: flex; justify-content: center; align-items: baseline; gap: 12px; padding: 10px 0 2px 0; margin-top: 8px; border-top: 1px dashed var(--tss-default-border-color); font-size: 12px; color: var(--tss-secondary-foreground-color); }
+.qkg-page-n { font-family: {FONT}; font-size: 18px; color: var(--tss-default-foreground-color); }
 .qkg-sajda { color: #15803d; padding-left: 2px; }
 .qkg-keywords .qkg-kw { color: #c2410c; }
 .qkg-strip { display: flex; gap: 2px; height: 14px; width: 100%; flex: 0 0 auto; }
