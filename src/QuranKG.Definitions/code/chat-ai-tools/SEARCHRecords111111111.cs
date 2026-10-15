@@ -1,6 +1,6 @@
 [tools: Curiosity.ChatAITools.UID("SEARCHRecords111111111")]
 [tools: Curiosity.ChatAITools.DisplayName("Search Records")]
-[tools: Curiosity.ChatAITools.Description("Searches the Quran graph by text - a verse's Arabic or a phrase of its translation, a surah's name, a root, a lemma, a passage or theme - and returns each match's id, type and label. Use it to find a verse or a record you do not have the id of, then consult the id to read it in full. It ranks by text match: to COUNT occurrences use the Quran tools (CountTerm), not this.")]
+[tools: Curiosity.ChatAITools.Description("Searches the Quran graph by text - a verse's Arabic or a phrase of its translation, a surah's name, a root, a lemma, a passage or theme, a hadith of Bukhari or Muslim by its words or reference - and returns each match's id, type and label. Use it to find a verse or a record you do not have the id of, then consult the id to read it in full. It ranks by text match: to COUNT occurrences use the Quran tools (CountTerm), not this.")]
 [tools: Curiosity.ChatAITools.Icon("fi-rr-search")]
 [tools: Curiosity.ChatAITools.AccessMode("AllUsers")]
 
@@ -16,7 +16,7 @@ public class RecordSearchTools
 {
     private const int DEFAULT_LIMIT = 15;
 
-    private static readonly string[] Types = { N.Verse.Type, N.Surah.Type, N.Root.Type, N.Lemma.Type, N.Cluster.Type, N.Juz.Type };
+    private static readonly string[] Types = { N.Verse.Type, N.Surah.Type, N.Root.Type, N.Lemma.Type, N.Cluster.Type, N.Juz.Type, N.Hadith.Type };
 
     [Tool("Searches the Quran graph by text and returns up to `limit` matches, best first, each with its id, type and label. Arabic search ignores diacritics. Pass `nodeType` (Verse, Surah, Root, Lemma, Cluster, Juz) to search one type. Then consult a returned id to read the record in full. Do not count with it: a search ranks, it does not enumerate - CountTerm and FindVerses count.")]
     public static async Task<string> SearchRecords(ToolScope scope,
@@ -64,6 +64,7 @@ public class RecordSearchTools
         if (node.Type == N.Lemma.Type)   return node.GetString(N.Lemma.LemmaText) + " (" + node.GetString(N.Lemma.PartOfSpeech) + ", root " + node.GetString(N.Lemma.RootLetters) + ")";
         if (node.Type == N.Cluster.Type) return node.GetString(N.Cluster.Kind) + ": " + node.GetString(N.Cluster.LabelArabic) + " / " + node.GetString(N.Cluster.Label);
         if (node.Type == N.Juz.Type)     return "Juz " + node.GetInt(N.Juz.Number);
+        if (node.Type == N.Hadith.Type)  return node.GetString(N.Hadith.Reference) + " " + Cut(node.GetString(N.Hadith.Matn));
         return "";
     }
 }

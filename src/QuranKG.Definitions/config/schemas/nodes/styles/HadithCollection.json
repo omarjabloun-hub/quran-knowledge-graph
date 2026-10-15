@@ -1,0 +1,13 @@
+﻿{
+  "UID": "6KzKBjeCeGz2GkLzMJPyu8",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "HadithCollection",
+  "DisplayName": "Hadith collection",
+  "Description": "Sahih al-Bukhari or Sahih Muslim.",
+  "Color": "#134e4a",
+  "Icon": "fi-rr-books",
+  "LabelField": "CollectionName",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

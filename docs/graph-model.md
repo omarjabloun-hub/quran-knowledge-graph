@@ -1,6 +1,6 @@
 # The graph model
 
-Twelve node types, written by [`src/QuranKG.Connector`](../src/QuranKG.Connector) from the sources in
+Sixteen node types, written by [`src/QuranKG.Connector`](../src/QuranKG.Connector) from the sources in
 [data-sources.md](data-sources.md). The connector's schema (`Schema.cs`, `Edges.cs`) is the
 contract for everything above it: `just emit-schema` generates the `N`/`E` constants the front end
 uses, and the workspace injects the same constants into every endpoint.
@@ -25,6 +25,11 @@ flowchart LR
     Verse -- InQurSimPair --> QurSimPair[QurSimPair<br/>7,295 · answer key]
     Verse -- HasTafsirEntry --> TafsirEntry[TafsirEntry<br/>28,486]
     TafsirEntry -- EntryOfTafsir --> Tafsir[Tafsir<br/>6 editions]
+    Hadith[Hadith<br/>14,940] -- HasQuranQuote --> QuranQuote[QuranQuote<br/>2,385]
+    QuranQuote -- QuoteOfVerse --> Verse
+    Hadith -- HadithQuotesVerse --> Verse
+    Hadith -- InHadithBook --> HadithBook[HadithBook<br/>154]
+    HadithBook -- BookOfCollection --> HadithCollection[HadithCollection<br/>Bukhari · Muslim]
     Passage[Cluster: Passage<br/>561] -- HasMember --> Verse
     Passage -- ClusterOfSurah --> Surah
     Theme[Cluster: Theme<br/>119] -- HasPassage --> Passage
@@ -46,6 +51,10 @@ traversal reads in the direction it goes.
 | **QurSimPair** | `a~b` | two verses Ibn Kathir relates, with the degree (0–2). **The answer key** |
 | **Tafsir** | `mukhtasar-ar` … | a tafsir in one language — al-Mukhtasar, al-Jalalayn, Ibn Kathir, each in Arabic and English: names, author, attribution, `Rank` (the order a reader is offered them) |
 | **TafsirEntry** | `ibn-kathir-ar:2:1-5` | one commentary, on a verse or on the run of verses it explains together (Ibn Kathir: up to 20); linked to **every** verse it covers. For people only: Ibn Kathir's text is what QurSim was drawn from |
+| **HadithCollection** | `bukhari`, `muslim` | the collection: names, compiler, English translator |
+| **HadithBook** | `bukhari:65` | a book (kitab), its English and Arabic names |
+| **Hadith** | `bukhari:6018`, `muslim:93` | one hadith: `Reference` as cited (Bukhari 6018, Muslim 8a), the Arabic with its chain, `Matn` (the text without the chain — a heuristic; what the embeddings and the assistant read), the English, `IsVariant` (only a chain pointing to the hadith before), the translator's bracketed citations, `Keywords` (its distinctive words against the other hadith) |
+| **QuranQuote** | `bukhari:4500>15:90` | where a hadith meets a verse: `Kind` quotation (braces, six words or more, a whole short verse), phrase (four to seven unmarked words, or a formula many hadith share) or translator (only the English cites it); the words quoted, the `RunId` of the ingest that found it. Quotations and phrases also link the hadith to the verse directly (`HadithQuotesVerse`) |
 | **Cluster** | `P:7:103-126` · `T:{hash}` | written by `qkg/clusters/build` (`just clusters`), two kinds. A **Passage** is a run of consecutive verses of one surah — its sections (`SurahNumber`, `Ordinal`, `FirstVerseKey`, `LastVerseKey`). A **Theme** groups passages of several surahs that tell the same story or treat the same subject. Both carry an Arabic label (distinctive lemmas), an English one (a reading aid), the `Method` and the `RunId`. A third kind, **SimilarGroup** (`S:{hash}`), is written by `qkg/clusters/similar-build`: passages grouped by Arabic meaning, lemmas and roots, with `HasPassage` edges only (a passage does not name its group); `qkg/clusters/build` leaves them alone |
 
 ## Why it is shaped this way

@@ -1,7 +1,7 @@
 # Writes the graph: schema, then every node and edge (QuranKG.Connector). Idempotent - re-run
 # it after changing the connector; nothing is deleted. `--dry-run` maps the corpus and prints the
 # counters without contacting the workspace. `--only tafsir` runs only those steps (comma-separated:
-# structure, language, verses, words, topics, qursim, tafsir) and leaves the rest of the graph as it is.
+# structure, language, verses, words, topics, qursim, tafsir, hadith) and leaves the rest of the graph as it is.
 #
 # Usage: scripts/ingest.ps1 [--target local|prod] [--dry-run] [--only <steps>]
 . (Join-Path $PSScriptRoot "lib.ps1")
@@ -30,3 +30,10 @@ try {
     else      { Invoke-Checked "ingest" { dotnet run --project $script:ConnectorCsproj -c Release -- @only } }
 }
 finally { Pop-Location }
+
+# The connector only adds and updates: the hadith-verse links an earlier run found and this one did
+# not are deleted in the workspace (qkg/hadith/prune-quotes), when this run wrote the hadith.
+if (-not $dry -and ($only.Count -eq 0 -or ("," + $only[1] + ",") -like "*,hadith,*")) {
+    Write-Step "Pruning the hadith-verse links this run did not find"
+    Invoke-Workspace call qkg/hadith/prune-quotes "{}" --target $target
+}

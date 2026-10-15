@@ -1,0 +1,13 @@
+﻿{
+  "UID": "NxymKTvvH6WJK6e4MNiaNS",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Hadith",
+  "DisplayName": "Hadith",
+  "Description": "A hadith of Sahih al-Bukhari or Sahih Muslim: the Arabic (chain and text), the text without its chain, the English.",
+  "Color": "#0f766e",
+  "Icon": "fi-rr-comment-quote",
+  "LabelField": "Reference|HadithKey",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

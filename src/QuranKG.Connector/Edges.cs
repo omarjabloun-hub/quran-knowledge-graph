@@ -70,6 +70,26 @@ internal static class Edges
     public const string TafsirHasEntry      = nameof(TafsirHasEntry);      // Tafsir → TafsirEntry
     public const string EntryOfTafsir       = nameof(EntryOfTafsir);       // TafsirEntry → Tafsir
 
+    // --- hadith: the collections, and where they meet the Quran -------------------------------
+    public const string InCollection        = nameof(InCollection);        // Hadith → HadithCollection
+    public const string CollectionHasHadith = nameof(CollectionHasHadith); // HadithCollection → Hadith
+
+    public const string InHadithBook        = nameof(InHadithBook);        // Hadith → HadithBook
+    public const string HadithBookHasHadith = nameof(HadithBookHasHadith); // HadithBook → Hadith
+
+    public const string BookOfCollection    = nameof(BookOfCollection);    // HadithBook → HadithCollection
+    public const string CollectionHasBook   = nameof(CollectionHasBook);   // HadithCollection → HadithBook
+
+    public const string HasQuranQuote       = nameof(HasQuranQuote);       // Hadith → QuranQuote
+    public const string QuoteInHadith       = nameof(QuoteInHadith);       // QuranQuote → Hadith
+
+    public const string QuoteOfVerse        = nameof(QuoteOfVerse);        // QuranQuote → Verse
+    public const string VerseHasQuote       = nameof(VerseHasQuote);       // Verse → QuranQuote
+
+    // The same fact one hop shorter, for "the hadith that quote this verse" (quotations and phrases, not the translator's notes).
+    public const string HadithQuotesVerse   = nameof(HadithQuotesVerse);   // Hadith → Verse
+    public const string VerseQuotedInHadith = nameof(VerseQuotedInHadith); // Verse → Hadith
+
     // --- clusters: written by the Clusters work inside the workspace, never by the connector --
     public const string HasMember           = nameof(HasMember);           // Cluster → Verse
     public const string InCluster           = nameof(InCluster);           // Verse → Cluster

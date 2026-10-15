@@ -1,0 +1,13 @@
+﻿{
+  "UID": "hWuQQ9C55tbeLJpaEXjmW9",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "HadithBook",
+  "DisplayName": "Hadith book",
+  "Description": "A book (kitab) of a hadith collection.",
+  "Color": "#115e59",
+  "Icon": "fi-rr-book-bookmark",
+  "LabelField": "${BookName} ({CollectionId})",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

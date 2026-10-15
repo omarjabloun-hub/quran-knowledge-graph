@@ -1,6 +1,6 @@
 [tools: Curiosity.ChatAITools.UID("ConsuLt111111111111111")]
 [tools: Curiosity.ChatAITools.DisplayName("Consult")]
-[tools: Curiosity.ChatAITools.Description("Reads one record of the Quran graph in full by its id - a verse, surah, word, root, lemma, juz, passage or theme - attached to this conversation, found by Search Records or listed by the Quran tools.")]
+[tools: Curiosity.ChatAITools.Description("Reads one record of the Quran graph in full by its id - a verse, surah, word, root, lemma, juz, passage, theme or hadith - attached to this conversation, found by Search Records or listed by the Quran and Hadith tools.")]
 [tools: Curiosity.ChatAITools.Icon("fi-rr-book-open-cover")]
 [tools: Curiosity.ChatAITools.AccessMode("AllUsers")]
 
@@ -217,5 +217,28 @@ object ConsultCluster(ToolScope scope, UID128 uid)
             I("surah", N.Cluster.SurahNumber), S("from", N.Cluster.FirstVerseKey), S("to", N.Cluster.LastVerseKey), S("method", N.Cluster.Method)),
         related,
         note = "Passages and themes are computed by the clusters build from the words and the embeddings, not from a tradition: the labels are the passage's most distinctive lemmas.",
+    };
+}
+
+object ConsultHadith(ToolScope scope, UID128 uid)
+{
+    if (!scope.Graph.TryGet(uid, out var h)) return Missing("hadith");
+    scope.SetToolCallDisplayName("Reading " + h.GetString(N.Hadith.Reference));
+
+    var quotes = scope.Q().StartAt(uid).Out(N.QuranQuote.Type, E.HasQuranQuote).AsEnumerable()
+                      .Select(q => new { verse = q.GetString(N.QuranQuote.VerseKey), kind = q.GetString(N.QuranQuote.Kind), quoted = q.GetString(N.QuranQuote.Quoted) })
+                      .ToArray();
+
+    return new
+    {
+        type      = "Hadith",
+        id        = uid.ToString(),
+        reference = h.GetString(N.Hadith.Reference),
+        book      = h.GetString(N.Hadith.BookName),
+        fields    = Fields(h, S("text (Arabic, without the chain of narrators)", N.Hadith.Matn), S("english", N.Hadith.TextEnglish)),
+        quran     = quotes,
+        related   = new { collection = Refs(scope, uid, N.HadithCollection.Type, E.InCollection, c => c.GetString(N.HadithCollection.CollectionName), 1),
+                          book       = Refs(scope, uid, N.HadithBook.Type, E.InHadithBook, b => b.GetString(N.HadithBook.BookName), 1) },
+        note      = "For the verses closest to it in meaning, use the Hadith tools' ReadHadith.",
     };
 }

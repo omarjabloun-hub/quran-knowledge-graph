@@ -139,6 +139,10 @@ models-pull:
 benchmark *args:
     @{{run}}benchmark{{ext}} "$@"
 
+# How well a hadith's "closest verses" find the verse its translator cites (Python, no packages; needs the workspace): see tools/hadith-benchmark.
+benchmark-hadith:
+    @{{ if os_family() == "windows" { "python" } else { "python3" } }} tools/hadith-benchmark/evaluate.py
+
 # Score the passages, themes and similar surahs against the ruku' and QurSim (Python + numpy): see tools/cluster-benchmark.
 [positional-arguments]
 benchmark-clusters *args:

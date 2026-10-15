@@ -274,3 +274,87 @@ internal static class TafsirIngest
         await ctx.CommitAsync();
     }
 }
+
+internal static class HadithIngest
+{
+    public static async Task RunAsync(ConnectorContext ctx)
+    {
+        var c = ctx.Corpus;
+        if (c.Hadiths.Count == 0) return;
+
+        foreach (var col in c.HadithCollections)
+            ctx.Write(new HadithCollection
+            {
+                CollectionId         = col.Id,
+                CollectionName       = col.Name,
+                CollectionNameArabic = col.NameArabic,
+                Compiler             = col.Compiler,
+                Translator           = col.Translator,
+            }, col.Id);
+
+        var bookName = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var b in c.HadithBooks)
+        {
+            bookName[b.Key] = b.Name;
+            var node = ctx.Write(new HadithBook
+            {
+                BookKey        = b.Key,
+                CollectionId   = b.Collection,
+                BookNumber     = b.Number,
+                BookName       = b.Name,
+                BookNameArabic = b.NameArabic,
+            }, b.Key);
+            ctx.Link(node, nameof(HadithCollection), b.Collection, Edges.BookOfCollection, Edges.CollectionHasBook);
+        }
+
+        foreach (var h in c.Hadiths)
+        {
+            var bookKey = h.Collection + ":" + h.Book.ToString(CultureInfo.InvariantCulture);
+            var node = ctx.Write(new Hadith
+            {
+                HadithKey       = h.Key,
+                CollectionId    = h.Collection,
+                Number          = h.Number,
+                Sequence        = h.Sequence,
+                Reference       = h.Reference,
+                BookNumber      = h.Book,
+                BookName        = bookName.GetValueOrDefault(bookKey, ""),
+                NumberInBook    = h.NumberInBook,
+                TextArabic      = h.TextArabic,
+                Matn            = h.Matn,
+                IsVariant       = h.IsVariant,
+                TextEnglish     = h.TextEnglish,
+                TranslatorCites = string.Join(", ", h.TranslatorCites.Select(v => v.Key)),
+                Keywords        = string.Join(" ", h.Keywords),
+            }, h.Key);
+
+            ctx.Link(node, nameof(HadithCollection), h.Collection, Edges.InCollection, Edges.CollectionHasHadith);
+            if (bookName.ContainsKey(bookKey)) ctx.Link(node, nameof(HadithBook), bookKey, Edges.InHadithBook, Edges.HadithBookHasHadith);
+        }
+
+        // Every link carries this run's id: a link an older detector found and this one does not is
+        // deleted afterwards by qkg/hadith/prune-quotes (scripts/ingest runs it).
+        var runId = DateTime.UtcNow.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+        foreach (var q in c.QuranQuotes)
+        {
+            var node = ctx.Write(new QuranQuote
+            {
+                QuoteKey   = q.Key,
+                HadithKey  = q.HadithKey,
+                VerseKey   = q.Verse.Key,
+                Kind       = q.Kind,
+                Words      = q.Words,
+                VerseWords = q.VerseWords,
+                Quoted     = q.Quoted,
+                RunId      = runId,
+            }, q.Key);
+
+            ctx.Link(node, nameof(Hadith), q.HadithKey, Edges.QuoteInHadith, Edges.HasQuranQuote);
+            ctx.Link(node, nameof(Verse),  q.Verse.Key, Edges.QuoteOfVerse,  Edges.VerseHasQuote);
+            if (q.Kind != "translator")
+                ctx.Link(Curiosity.Library.Node.FromKey(nameof(Hadith), q.HadithKey), nameof(Verse), q.Verse.Key, Edges.HadithQuotesVerse, Edges.VerseQuotedInHadith);
+        }
+
+        await ctx.CommitAsync();
+    }
+}

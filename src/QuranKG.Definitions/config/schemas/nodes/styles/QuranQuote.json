@@ -1,0 +1,13 @@
+﻿{
+  "UID": "6jNUWGzbmCfVw1DD2PaJd7",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "QuranQuote",
+  "DisplayName": "Quran in a hadith",
+  "Description": "Where a hadith's words meet a verse: a quotation, a shared phrase, or the translator's citation.",
+  "Color": "#0d9488",
+  "Icon": "fi-rr-quote-right",
+  "LabelField": "${HadithKey} → {VerseKey}",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

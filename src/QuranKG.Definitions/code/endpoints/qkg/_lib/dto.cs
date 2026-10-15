@@ -563,6 +563,165 @@ public static class QK
         public UID128 GroupUid     { get; set; }
     }
 
+    // --- hadith (qkg/hadith/*, qkg/verse/hadith) ---------------------------------------------
+
+    /// <summary>qkg/hadith/profile: a hadith; the two weights only to measure them (tools/hadith-benchmark), null for the defaults.</summary>
+    public class HadithProfileRequest
+    {
+        public UID128  Uid      { get; set; }
+        public double? Semantic { get; set; }
+        public double? Lexical  { get; set; }
+    }
+
+    /// <summary>A hadith in a list: how it is cited, where it is, the opening of its text.</summary>
+    public class HadithRow
+    {
+        public UID128   Uid          { get; set; }
+        public string   Reference    { get; set; }
+        public string   CollectionId { get; set; }
+        public string   BookName     { get; set; }
+        /// <summary>The text without its chain, cut to a few lines.</summary>
+        public string   Matn         { get; set; }
+        public string   English      { get; set; }
+        /// <summary>"quotation", "phrase", "translator", or "" when it is listed for its meaning.</summary>
+        public string   Kind         { get; set; }
+        /// <summary>The verses it quotes, "2:255".</summary>
+        public string[] VerseKeys    { get; set; }
+        /// <summary>For a hadith listed by meaning: the cosine of its text and the verse's.</summary>
+        public double   Score        { get; set; }
+    }
+
+    /// <summary>Where a hadith's words meet a verse.</summary>
+    public class HadithQuoteRow
+    {
+        public UID128 Uid         { get; set; }
+        public UID128 VerseUid    { get; set; }
+        public string VerseKey    { get; set; }
+        public string Kind        { get; set; }
+        public int    Words       { get; set; }
+        public int    VerseWords  { get; set; }
+        public string Quoted      { get; set; }
+        public string VerseText   { get; set; }
+        public string Translation { get; set; }
+    }
+
+    /// <summary>A verse close to a hadith: meaning (embeddings) and shared rare words, each standardised.</summary>
+    public class HadithVerseRow
+    {
+        public UID128 Uid         { get; set; }
+        public string VerseKey    { get; set; }
+        public string Text        { get; set; }
+        public string Translation { get; set; }
+        public double Score       { get; set; }
+        public double Semantic    { get; set; }
+        public double Lexical     { get; set; }
+        /// <summary>The words they share, in the matching spelling.</summary>
+        public string[] Shared    { get; set; }
+        public bool   Quoted      { get; set; }
+    }
+
+    public class HadithProfileDto
+    {
+        public UID128           Uid                  { get; set; }
+        public string           Key                  { get; set; }
+        public string           Reference            { get; set; }
+        public UID128           CollectionUid        { get; set; }
+        public string           CollectionId         { get; set; }
+        public string           CollectionName       { get; set; }
+        public string           CollectionNameArabic { get; set; }
+        public UID128           BookUid              { get; set; }
+        public int              BookNumber           { get; set; }
+        public string           BookName             { get; set; }
+        public string           BookNameArabic       { get; set; }
+        public int              NumberInBook         { get; set; }
+        public string           TextArabic           { get; set; }
+        public string           Matn                 { get; set; }
+        public string           TextEnglish          { get; set; }
+        public bool             IsVariant            { get; set; }
+        public string           TranslatorCites      { get; set; }
+        public HadithQuoteRow[] Quotes               { get; set; }
+        public HadithVerseRow[] Closest              { get; set; }
+        /// <summary>False until the hadith's text has been embedded: Closest is then by shared words only.</summary>
+        public bool             SemanticReady        { get; set; }
+        /// <summary>The hadith before and after it in its book.</summary>
+        public UID128           Previous             { get; set; }
+        public UID128           Next                 { get; set; }
+    }
+
+    public class VerseHadithDto
+    {
+        public UID128      Uid           { get; set; }
+        public string      VerseKey      { get; set; }
+        /// <summary>The hadith whose Arabic quotes the verse or shares a phrase with it, and those whose translator cites it.</summary>
+        public HadithRow[] Quoting       { get; set; }
+        /// <summary>The hadith closest to the verse in meaning, variants and quoting hadith left out.</summary>
+        public HadithRow[] Closest       { get; set; }
+        public bool        SemanticReady { get; set; }
+    }
+
+    public class HadithCollectionStats
+    {
+        public UID128 Uid             { get; set; }
+        public string Id              { get; set; }
+        public string Name            { get; set; }
+        public string NameArabic      { get; set; }
+        public int    Hadith          { get; set; }
+        /// <summary>Hadith that quote a verse (a quotation).</summary>
+        public int    Quoting         { get; set; }
+        /// <summary>Hadith that only share a phrase with a verse.</summary>
+        public int    Phrase          { get; set; }
+        public int    Variants        { get; set; }
+        /// <summary>Hadith whose English translator cites a verse, and of those, the ones whose Arabic quotes it — the detector's measured recall.</summary>
+        public int    TranslatorCited { get; set; }
+        public int    TranslatorFound { get; set; }
+        /// <summary>Hadith whose text has been embedded.</summary>
+        public int    Embedded        { get; set; }
+    }
+
+    public class HadithBookStats
+    {
+        public UID128 Uid          { get; set; }
+        public string CollectionId { get; set; }
+        public int    Number       { get; set; }
+        public string Name         { get; set; }
+        public string NameArabic   { get; set; }
+        public int    Hadith       { get; set; }
+        public int    Quoting      { get; set; }
+    }
+
+    public class HadithOverviewDto
+    {
+        public HadithCollectionStats[] Collections { get; set; }
+        /// <summary>The verses quoted by the most hadith (quotations and phrases).</summary>
+        public Counted[]               TopVerses   { get; set; }
+        /// <summary>Every surah, with how many hadith quote one of its verses.</summary>
+        public Counted[]               Surahs      { get; set; }
+        public HadithBookStats[]       Books       { get; set; }
+        public double                  Milliseconds { get; set; }
+    }
+
+    /// <summary>qkg/hadith/list: hadith that quote the Quran, or that match a search.</summary>
+    public class HadithListRequest
+    {
+        /// <summary>"bukhari", "muslim" or empty for both.</summary>
+        public string Collection { get; set; }
+        public UID128 BookUid    { get; set; }
+        /// <summary>A surah: only hadith quoting one of its verses; 0 for any.</summary>
+        public int    Surah      { get; set; }
+        /// <summary>"quotation", "phrase", "any" (both), "all" (every hadith, quoting or not).</summary>
+        public string Kind       { get; set; }
+        /// <summary>Words to find in the Arabic (any spelling) or the English, or a reference ("Bukhari 6018").</summary>
+        public string Text       { get; set; }
+        public int    Skip       { get; set; }
+        public int    Take       { get; set; }
+    }
+
+    public class HadithListDto
+    {
+        public int         Total { get; set; }
+        public HadithRow[] Rows  { get; set; }
+    }
+
     // --- shared reads -------------------------------------------------------------------------
 
     /// <summary>The Lemma node key the connector writes: lemma|root|coarse tag.</summary>
@@ -593,5 +752,53 @@ public static class QK
     {
         if (string.IsNullOrEmpty(key)) return;
         counts[key] = counts.TryGetValue(key, out var c) ? c + 1 : 1;
+    }
+
+    /// <summary>
+    /// The words of an Arabic text in the spelling a hadith and a verse are compared in — the same
+    /// rule as the corpus's quotation detector (QuranKG.Dataset Arabic.MatchTokens): no diacritics,
+    /// every alef form as ا, ى as ي, ة as ه, ؤ as و, ئ as ي.
+    /// </summary>
+    public static List<string> MatchTokens(string text)
+    {
+        var sb = new System.Text.StringBuilder((text ?? "").Length);
+        foreach (var c in text ?? "")
+        {
+            if ((c >= '\u0610' && c <= '\u061A') || (c >= '\u064B' && c <= '\u065F') || c == '\u0670' || (c >= '\u06D6' && c <= '\u06ED') || c == '\u0640' || (c >= '\u200C' && c <= '\u200F')) continue;
+            var d = c == 'أ' || c == 'إ' || c == 'آ' || c == 'ٱ' ? 'ا' : c == 'ى' ? 'ي' : c == 'ة' ? 'ه' : c == 'ؤ' ? 'و' : c == 'ئ' ? 'ي' : c;
+            sb.Append(d >= '\u0621' && d <= '\u064A' ? d : ' ');
+        }
+        return sb.ToString().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+    }
+
+    private static readonly string[] StemSuffixes = { "هما", "كما", "هم", "هن", "كم", "كن", "نا", "ها", "ه", "ك", "ي" };
+
+    /// <summary>
+    /// A word without و/ف, the article and an attached pronoun, so جاره and الجار count as one —
+    /// for counting shared words. The same rule as QuranKG.Dataset Arabic.Stem, which writes
+    /// Hadith.Keywords: change both.
+    /// </summary>
+    public static string Stem(string word)
+    {
+        var w = word ?? "";
+        if (w == "الله" || w == "لله" || w == "بالله" || w == "والله" || w == "فالله" || w == "تالله") return "الله";
+        if (w.Length > 3 && (w[0] == 'و' || w[0] == 'ف')) w = w.Substring(1);
+        if (w.Length > 4 && (w.StartsWith("بال", StringComparison.Ordinal) || w.StartsWith("كال", StringComparison.Ordinal))) w = w.Substring(3);
+        else if (w.Length > 3 && w.StartsWith("ال", StringComparison.Ordinal)) w = w.Substring(2);
+        else if (w.Length > 4 && w.StartsWith("لل", StringComparison.Ordinal)) w = w.Substring(2);
+        foreach (var suffix in StemSuffixes)
+            if (w.Length - suffix.Length >= 3 && w.EndsWith(suffix, StringComparison.Ordinal)) { w = w.Substring(0, w.Length - suffix.Length); break; }
+        return w;
+    }
+
+    /// <summary>"Muslim 8a", "bukhari 6018", "B6018" → the collection id and the cited number, or (null, null).</summary>
+    public static (string Collection, string Number) ParseReference(string text)
+    {
+        var t = (text ?? "").Trim().ToLowerInvariant().Replace("sahih", "").Replace("al-", "").Replace("#", " ").Trim();
+        string collection = t.StartsWith("bukhari") || t.StartsWith("b ") || (t.StartsWith("b") && t.Length > 1 && char.IsDigit(t[1])) ? "bukhari"
+                          : t.StartsWith("muslim")  || t.StartsWith("m ") || (t.StartsWith("m") && t.Length > 1 && char.IsDigit(t[1])) ? "muslim" : null;
+        if (collection is null) return (null, null);
+        var number = new string(t.SkipWhile(ch => !char.IsDigit(ch)).TakeWhile(ch => char.IsLetterOrDigit(ch) || ch == '.').ToArray());
+        return number.Length == 0 ? (null, null) : (collection, number);
     }
 }

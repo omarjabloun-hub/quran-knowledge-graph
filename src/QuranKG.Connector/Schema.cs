@@ -187,6 +187,74 @@ internal static class Nodes
         [Property] public string Text          { get; set; } = "";
     }
 
+    /// <summary>A hadith collection. Key: "bukhari", "muslim".</summary>
+    [Node]
+    internal sealed class HadithCollection
+    {
+        [Key]      public string CollectionId   { get; set; } = "";
+        [Property] public string CollectionName { get; set; } = "";
+        [Property] public string CollectionNameArabic { get; set; } = "";
+        [Property] public string Compiler       { get; set; } = "";
+        [Property] public string Translator     { get; set; } = "";
+    }
+
+    /// <summary>A book (kitab) of a collection. Key: "bukhari:65" (65 is Bukhari's Book of Tafsir).</summary>
+    [Node]
+    internal sealed class HadithBook
+    {
+        [Key]      public string BookKey        { get; set; } = "";
+        [Property] public string CollectionId   { get; set; } = "";
+        [Property] public int    BookNumber     { get; set; }
+        [Property] public string BookName       { get; set; } = "";
+        [Property] public string BookNameArabic { get; set; } = "";
+    }
+
+    /// <summary>
+    /// One hadith. Key: "bukhari:6018"; <c>Reference</c> is how it is cited ("Bukhari 6018",
+    /// "Muslim 8a"). The Arabic is the text — <c>Matn</c>, without the chain of narrators, is what
+    /// the embeddings and the assistant read; the English is a reading aid.
+    /// </summary>
+    [Node]
+    internal sealed class Hadith
+    {
+        [Key]      public string HadithKey     { get; set; } = "";
+        [Property] public string CollectionId  { get; set; } = "";
+        [Property] public string Number        { get; set; } = "";
+        [Property] public int    Sequence      { get; set; }
+        [Property] public string Reference     { get; set; } = "";
+        [Property] public int    BookNumber    { get; set; }
+        [Property] public string BookName      { get; set; } = "";
+        [Property] public int    NumberInBook  { get; set; }
+        [Property] public string TextArabic    { get; set; } = "";
+        [Property] public string Matn          { get; set; } = "";
+        /// <summary>Only a chain pointing to the hadith before it ("بهذا الإسناد مثله").</summary>
+        [Property] public bool   IsVariant     { get; set; }
+        [Property] public string TextEnglish   { get; set; } = "";
+        /// <summary>The verses the English translator cites in brackets, "15:90, 2:196" — his note.</summary>
+        [Property] public string TranslatorCites { get; set; } = "";
+        /// <summary>Its distinctive words, stemmed, most distinctive first, space-separated: what shared words with a verse are counted on.</summary>
+        [Property] public string Keywords      { get; set; } = "";
+    }
+
+    /// <summary>
+    /// Where a hadith's words meet a verse. Kind: "quotation" (six words or more, or a whole short
+    /// verse), "phrase" (four or five), "translator" (only the English translator cites it).
+    /// Key: "bukhari:4500>15:90".
+    /// </summary>
+    [Node]
+    internal sealed class QuranQuote
+    {
+        [Key]      public string QuoteKey   { get; set; } = "";
+        [Property] public string HadithKey  { get; set; } = "";
+        [Property] public string VerseKey   { get; set; } = "";
+        [Property] public string Kind       { get; set; } = "";
+        [Property] public int    Words      { get; set; }
+        [Property] public int    VerseWords { get; set; }
+        [Property] public string Quoted     { get; set; } = "";
+        /// <summary>The ingest that wrote it (UTC, yyyyMMddHHmmss): qkg/hadith/prune-quotes deletes the links an older run found and this one did not.</summary>
+        [Property] public string RunId      { get; set; } = "";
+    }
+
     /// <summary>
     /// A group of verses found by clustering. Written by the qkg/clusters/build endpoint inside the
     /// workspace, never by this connector, which only registers the type so the schema and N.cs are
