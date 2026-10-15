@@ -101,7 +101,7 @@ namespace QuranKG.FrontEnd.Components
 
         internal static void Open(UID128 uid)
         {
-            if (uid == default(UID128)) return;
+            if (UID128.IsNull(uid)) return;
             NodePreview.For(uid, ignoreNotFound: true);
         }
 

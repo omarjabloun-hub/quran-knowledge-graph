@@ -16,7 +16,8 @@ the questions below are answered from the Arabic, with translations as reading a
 | Which roots and words carry the text? Where in the Quran does each root live? | dashboard: vocabulary, the root map (a cell opens its verses) |
 | What is one surah about — which roots does it use far more than the rest? | the surah page, Profile tab |
 | How is one verse built, word by word? | the verse page, Verse tab |
-| Where else does the Quran say this? | the verse page: Similar verses (Arabic meaning + shared lemmas + roots), Tafsir links (Ibn Kathir) |
+| What does this verse mean? | the verse panel and the verse page: al-Mukhtasar, al-Jalalayn and Ibn Kathir, each in Arabic and English |
+| Where else does the Quran say this? | the verse page: Similar verses (Arabic meaning + shared lemmas + roots), Ibn Kathir links (QurSim) |
 | Where does a root occur, in which forms, under which lemmas? | the root page |
 | I want to read the Quran, and see what a verse says and what it is tied to | the Quran View (Read the Quran): click a verse |
 | What are the Quran's stories, and where does it tell each one? | the Stories and themes page — the map lights a theme across the surahs; a theme's page reads its passages one after another |

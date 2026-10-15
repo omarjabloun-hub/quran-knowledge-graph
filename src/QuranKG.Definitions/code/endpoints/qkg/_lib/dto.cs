@@ -218,6 +218,58 @@ public static class QK
         public RelatedVerse[] TafsirRelated { get; set; }
     }
 
+    /// <summary>qkg/verse/tafsir: a verse, and the tafsir work to read on it ("mukhtasar" when empty).</summary>
+    public class VerseTafsirRequest
+    {
+        public UID128 Uid  { get; set; }
+        public string Work { get; set; }
+    }
+
+    /// <summary>
+    /// What the tafsirs say on one verse: every work, and the chosen one's text in Arabic and in
+    /// English. For people only — no AI tool calls qkg/verse/tafsir (Ibn Kathir's text is where
+    /// QurSim, the similarity answer key, was drawn from).
+    /// </summary>
+    public class VerseTafsirDto
+    {
+        public UID128       Uid      { get; set; }
+        public string       VerseKey { get; set; }
+        /// <summary>Every work, in the order a reader is offered them; only <see cref="Work"/> carries its text.</summary>
+        public TafsirWork[] Works    { get; set; }
+        /// <summary>The work whose text is in <see cref="Works"/>.</summary>
+        public string       Work     { get; set; }
+    }
+
+    public class TafsirWork
+    {
+        /// <summary>"mukhtasar", "jalalayn", "ibn-kathir".</summary>
+        public string     Work        { get; set; }
+        public string     Name        { get; set; }
+        public string     NameArabic  { get; set; }
+        public string     Author      { get; set; }
+        public string     Description { get; set; }
+        /// <summary>Null when the work says nothing on this verse in that language (al-Jalalayn passes over some verses).</summary>
+        public TafsirText Arabic      { get; set; }
+        public TafsirText English     { get; set; }
+    }
+
+    /// <summary>One edition's commentary covering the verse — on it alone, or on a run of verses with it.</summary>
+    public class TafsirText
+    {
+        /// <summary>The TafsirEntry.</summary>
+        public UID128 Uid           { get; set; }
+        /// <summary>The Tafsir (edition) it belongs to.</summary>
+        public UID128 TafsirUid     { get; set; }
+        public string Language      { get; set; }
+        public string FirstVerseKey { get; set; }
+        public string LastVerseKey  { get; set; }
+        public int    FirstAyah     { get; set; }
+        public int    LastAyah      { get; set; }
+        /// <summary>Plain text, paragraphs separated by a blank line; empty unless this is the requested work.</summary>
+        public string Text          { get; set; }
+        public string Attribution   { get; set; }
+    }
+
     /// <summary>One candidate verse and why it was ranked: each signal's standardised contribution.</summary>
     public class SimilarVerse
     {

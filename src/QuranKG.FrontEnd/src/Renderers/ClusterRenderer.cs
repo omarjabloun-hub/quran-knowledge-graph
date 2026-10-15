@@ -101,19 +101,19 @@ namespace QuranKG.FrontEnd.Renderers
                 {
                     var section = (text.Sections ?? new QK.ReadingSection[0]).FirstOrDefault();
                     var where   = HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().PL(16).PR(16).PT(12);
-                    if (text.Previous != default(UID128))
+                    if (UID128.IsNotNull(text.Previous))
                         where.Add(Button("Previous".t()).SetIcon(UIcons.AngleLeft).Compact().OnClick(() => Lists.Open(text.Previous)));
                     if (section is object)
                     {
                         where.Add(TextBlock(string.Format("{0}. {1} · {2} · passage {3}".t(), section.SurahNumber, section.SurahName, QuranReader.Range(section), section.Ordinal)).SemiBold());
                         where.Add(Arabic.Inline(text.LabelArabic, 22));
-                        if (section.ThemeUid != default(UID128))
+                        if (UID128.IsNotNull(section.ThemeUid))
                             where.Add(Clusters.ThemeLink(section.ThemeUid, section.ThemeLabelArabic, section.ThemeLabel, section.ThemeSurahs));
                         where.Add(Button("Read in its surah".t()).SetIcon(UIcons.BookQuran).Compact()
                                      .OnClick(() => QuranLinks.Go(section.SurahNumber, (section.Verses ?? new QK.ReadingVerse[0]).Select(v => v.Ayah).FirstOrDefault())));
                     }
                     where.Add(TextBlock("").Grow());
-                    if (text.Next != default(UID128))
+                    if (UID128.IsNotNull(text.Next))
                         where.Add(Button("Next".t()).SetIcon(UIcons.AngleRight, afterText: true).Compact().OnClick(() => Lists.Open(text.Next)));
                     return where;
                 },
@@ -166,19 +166,19 @@ namespace QuranKG.FrontEnd.Renderers
 
                 // Previous and next walk the surah passage by passage; the title opens the surah.
                 var where = HStack().WS().AlignItemsCenter().Gap(8.px());
-                if (profile.Previous != default(UID128))
+                if (UID128.IsNotNull(profile.Previous))
                     where.Add(Button("Previous".t()).SetIcon(UIcons.AngleLeft).Compact().OnClick(() => Lists.Open(profile.Previous)));
                 where.Add(TextBlock(string.Format("{0}. {1} · {2} · passage {3}".t(), row.SurahNumber, row.SurahName, Clusters.Range(row), row.Ordinal)).SemiBold().Grow()
                              .OnClick((_, __) => Lists.Open(row.SurahUid))
                              .Style(s => s.setProperty("cursor", "pointer")));
-                if (profile.Next != default(UID128))
+                if (UID128.IsNotNull(profile.Next))
                     where.Add(Button("Next".t()).SetIcon(UIcons.AngleRight, afterText: true).Compact().OnClick(() => Lists.Open(profile.Next)));
 
                 page.Add(where);
                 page.Add(Arabic.Text(profile.LabelArabic, 26));
                 page.Add(TextBlock(profile.Label).Secondary());
 
-                if (row.ThemeUid != default(UID128))
+                if (UID128.IsNotNull(row.ThemeUid))
                     page.Add(HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().Children(
                         TextBlock("Part of a theme the Quran tells in several surahs:".t()).Small(),
                         Clusters.ThemeLink(row.ThemeUid, row.ThemeLabelArabic, row.ThemeLabel, row.ThemeSurahs)));

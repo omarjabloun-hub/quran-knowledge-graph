@@ -51,6 +51,13 @@ namespace QuranKG.FrontEnd.Components
             return Raw(host);
         }
 
+        /// <summary>Links the verse references in an element whose text will not change.</summary>
+        internal static void LinkifyNow(HTMLElement element)
+        {
+            EnsureStyles();
+            ScanAsync(element).FireAndForget();
+        }
+
         /// <summary>"21:30" → the reader on that verse; false when it names no verse.</summary>
         internal static bool Open(string verseKey)
         {

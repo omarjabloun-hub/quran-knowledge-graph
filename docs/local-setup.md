@@ -71,7 +71,7 @@ Where to look:
 
 | | |
 |---|---|
-| **Read the Quran** (sidebar) | the Quran View: a surah as continuous text in its passages; click a verse for its translations, words, passage, theme and related verses. `#/read/2/255` opens on a verse |
+| **Read the Quran** (sidebar) | the Quran View: a surah as continuous text in its passages; click a verse for its translations, its tafsir (Arabic and English), words, passage, theme and related verses. `#/read/2/255` opens on a verse |
 | **Stories and themes** (sidebar) | the 119 themes — passages of several surahs that tell the same story or treat the same subject — widest first, with a filter — under a map of every surah in its passages, coloured by theme |
 | a surah → **Passages** | its sections in order, each with the theme it shares; a strip shows the whole surah at a glance |
 | a surah → **Similar surahs** | the surahs that lean on the same distinctive words, and the themes both tell |

@@ -12,6 +12,8 @@
 // THE ANSWER KEYS HAVE NO READER AND NO READER RETURNS THEM (CLAUDE.md, non-negotiable 2):
 //   QurSimPair       no reader; the verse reader does not follow InQurSimPair
 //   Topic            no reader; the verse reader does not follow HasTopic / InTopicBranch
+//   Tafsir, TafsirEntry  no reader; the verse reader does not follow HasTafsirEntry (Ibn Kathir's
+//                    tafsir is the text QurSim was drawn from)
 //   Verse.Ruku       not among the verse's fields — the ruku' score the passages
 //   Surah.RukuCount  not among the surah's fields
 // A type with no reader is "not consultable" to the model, which is the point.

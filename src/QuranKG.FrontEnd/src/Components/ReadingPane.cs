@@ -220,14 +220,14 @@ namespace QuranKG.FrontEnd.Components
             var strip = Div(Att("qkg-strip"));
             foreach (var section in _text.Sections ?? new QK.ReadingSection[0])
             {
-                if (section.PassageUid == default(UID128)) continue;
+                if (UID128.IsNull(section.PassageUid)) continue;
                 var captured = section;
                 var words    = (section.Verses ?? new QK.ReadingVerse[0]).Sum(v => Math.Max(1, v.Words));
                 var seg      = Div(Att("qkg-strip-seg"));
                 seg.style.flex       = words + " 1 0";
                 seg.style.background = Clusters.ColorOf(section.ThemeOrdinal);
                 seg.title            = (_text.Kind == "Theme" ? section.SurahName + " · " : "") + QuranReader.Range(section) + " · " + section.LabelArabic
-                                     + (section.ThemeUid != default(UID128) ? " — " + section.ThemeLabelArabic : "");
+                                     + (UID128.IsNotNull(section.ThemeUid) ? " — " + section.ThemeLabelArabic : "");
                 seg.onclick          = _ =>
                 {
                     if (!_options.Passages) { _options.Passages = true; Changed(); }

@@ -47,7 +47,7 @@ namespace QuranKG.FrontEnd.Components
                 Arabic.Text(p.OpeningText + " …", 22).PT(6),
                 TextBlock(p.OpeningTranslation ?? "").Small().Secondary());
 
-            if (showTheme && p.ThemeUid != default(UID128))
+            if (showTheme && UID128.IsNotNull(p.ThemeUid))
                 body.Add(HStack().WS().AlignItemsCenter().Gap(8.px()).PT(6).Children(
                     TextBlock("Theme shared with other surahs:".t()).Tiny().Secondary(),
                     ThemeLink(p.ThemeUid, p.ThemeLabelArabic, p.ThemeLabel, p.ThemeSurahs)));
@@ -87,7 +87,7 @@ namespace QuranKG.FrontEnd.Components
             {
                 var captured = p;
                 strip.Add(TextBlock("").H(22.px())
-                             .Background(captured.ThemeUid != default(UID128) ? ThemeColor : Unthemed)
+                             .Background(UID128.IsNotNull(captured.ThemeUid) ? ThemeColor : Unthemed)
                              .Style(s =>
                               {
                                   s.setProperty("flex", captured.Words + " 1 0");

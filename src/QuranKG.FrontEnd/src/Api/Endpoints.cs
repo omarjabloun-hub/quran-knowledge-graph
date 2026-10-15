@@ -22,6 +22,8 @@ namespace QuranKG.FrontEnd.Api
 
         /// <summary>One verse's words with their morphology, and the verses Ibn Kathir relates to it. Body: <c>{ "Uid": … }</c>.</summary>
         public const string VerseWords = "qkg/verse/words";
+        /// <summary>The tafsirs on a verse, Arabic and English — for people, never an AI tool.</summary>
+        public const string VerseTafsir = "qkg/verse/tafsir";
 
         /// <summary>Verses similar to one verse, Arabic first. Body: <c>{ "Uid": …, "Count": 20 }</c>.</summary>
         public const string VerseSimilar = "qkg/verse/similar";

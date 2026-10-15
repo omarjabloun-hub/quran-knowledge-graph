@@ -86,7 +86,7 @@ namespace QuranKG.FrontEnd.Renderers
                     return page.Children(Banner("The passages have not been built yet. An administrator builds them with `just clusters` (the qkg/clusters/build endpoint); it takes a few seconds.".t()).Warning());
 
                 var passages = result.Passages ?? new QK.PassageRow[0];
-                var themed   = passages.Count(p => p.ThemeUid != default(UID128));
+                var themed   = passages.Count(p => UID128.IsNotNull(p.ThemeUid));
 
                 page.Add(TextBlock(string.Format("{0} passages, cut where the vocabulary changes; {1} of them tell a story or treat a subject that other surahs share — in green.".t(), passages.Length, themed)).Small());
                 page.Add(Clusters.Strip(passages));

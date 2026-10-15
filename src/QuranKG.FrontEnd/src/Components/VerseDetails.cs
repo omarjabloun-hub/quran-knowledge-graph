@@ -13,7 +13,7 @@ namespace QuranKG.FrontEnd.Components
 {
     /// <summary>
     /// The side panel a verse opens in a reader: the verse, its translations and transliteration,
-    /// the passage and theme it sits in, its words with their roots, the verses closest to it in
+    /// its tafsir in Arabic and English (<see cref="TafsirView"/>), the passage and theme it sits in, its words with their roots, the verses closest to it in
     /// the Arabic, and the verses Ibn Kathir relates to it. Each part loads on its own, so the
     /// translation shows at once and the similarity ranking follows.
     /// </summary>
@@ -55,18 +55,20 @@ namespace QuranKG.FrontEnd.Components
                     TextBlock(string.Format("Juz {0} · page {1} · {2}".t(), node.GetInt(N.Verse.Juz), node.GetInt(N.Verse.Page), node.GetString(N.Verse.RevelationPlace))).Tiny().Secondary());
             }, Translation("Saheeh International", v.Translation)));
 
-            if (s.PassageUid != default(UID128))
+            page.Add(TafsirView.Create(v.Uid));
+
+            if (UID128.IsNotNull(s.PassageUid))
             {
                 var passage = VStack().WS().Gap(4.px()).Children(
                     Heading("Passage".t()),
                     HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap().Children(
                         Link(string.Format("Passage {0} of {1} · {2}".t(), s.Ordinal, s.SurahName, QuranReader.Range(s)), () => Lists.Open(s.PassageUid)),
                         Arabic.Inline(s.LabelArabic, 17).Foreground(Palette.Lemma)));
-                if (s.ThemeUid != default(UID128))
+                if (UID128.IsNotNull(s.ThemeUid))
                     passage.Add(HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().Children(
                         TextBlock("Theme shared with other surahs:".t()).Tiny().Secondary(),
                         Clusters.ThemeLink(s.ThemeUid, s.ThemeLabelArabic, s.ThemeLabel, s.ThemeSurahs)));
-                if (s.GroupUid != default(UID128))
+                if (UID128.IsNotNull(s.GroupUid))
                     passage.Add(HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().Children(
                         TextBlock("Similarity group:".t()).Tiny().Secondary(),
                         Clusters.ThemeLink(s.GroupUid, s.GroupLabelArabic, "Passages close in Arabic meaning, lemmas and roots".t(), s.GroupSurahs)));

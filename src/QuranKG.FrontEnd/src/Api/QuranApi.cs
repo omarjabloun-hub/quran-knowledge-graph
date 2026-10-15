@@ -38,6 +38,9 @@ namespace QuranKG.FrontEnd.Api
         internal static Task<QK.VerseWordsDto> VerseWordsAsync(UID128 verseUID)
             => Mosaik.API.Endpoints.CallAsync<QK.VerseWordsDto>(Endpoints.VerseWords, new QK.UidRequest { Uid = verseUID }, readOnlyCompatible: true);
 
+        internal static Task<QK.VerseTafsirDto> VerseTafsirAsync(UID128 verseUID, string work)
+            => Mosaik.API.Endpoints.CallAsync<QK.VerseTafsirDto>(Endpoints.VerseTafsir, new QK.VerseTafsirRequest { Uid = verseUID, Work = work }, readOnlyCompatible: true);
+
         internal static Task<QK.SimilarDto> SimilarVersesAsync(UID128 verseUID, int count)
             => Mosaik.API.Endpoints.CallAsync<QK.SimilarDto>(Endpoints.VerseSimilar, new QK.SimilarRequest { Uid = verseUID, Count = count }, readOnlyCompatible: true);
 

@@ -69,7 +69,7 @@ namespace QuranKG.FrontEnd.Reader
             if (_surah <= 1)   previous.Disabled();
             if (_surah >= 114) next.Disabled();
 
-            var passages = (text.Sections ?? new QK.ReadingSection[0]).Count(x => x.PassageUid != default(UID128));
+            var passages = (text.Sections ?? new QK.ReadingSection[0]).Count(x => UID128.IsNotNull(x.PassageUid));
 
             return HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap().PL(16).PR(16).PT(12).Children(
                 previous,

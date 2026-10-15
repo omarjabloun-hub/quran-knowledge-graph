@@ -123,7 +123,7 @@ namespace QuranKG.FrontEnd.Components
                 lastSurah    = section.SurahNumber;
 
                 var block = Div(Att("qkg-pas"));
-                if (section.PassageUid != default(UID128)) _sections[section.PassageUid.ToString()] = block;
+                if (UID128.IsNotNull(section.PassageUid)) _sections[section.PassageUid.ToString()] = block;
 
                 if (!isSurah && newSurah)
                 {
@@ -140,7 +140,7 @@ namespace QuranKG.FrontEnd.Components
                     block.appendChild(heading);
                 }
 
-                var marked = options.Passages && section.PassageUid != default(UID128);
+                var marked = options.Passages && UID128.IsNotNull(section.PassageUid);
                 if (marked) block.appendChild(Header(section, callbacks));
 
                 // Without the passage marks a surah reads as one paragraph: a run only breaks the
@@ -192,7 +192,7 @@ namespace QuranKG.FrontEnd.Components
             if (_selected is object && _verses.TryGetValue(_selected, out var previous))
                 foreach (var el in previous) el.classList.remove("qkg-on");
 
-            _selected = verse == default(UID128) ? null : verse.ToString();
+            _selected = UID128.IsNull(verse) ? null : verse.ToString();
 
             if (_selected is object && _verses.TryGetValue(_selected, out var current))
                 foreach (var el in current) el.classList.add("qkg-on");
@@ -218,7 +218,7 @@ namespace QuranKG.FrontEnd.Components
                 head.appendChild(label);
             }
 
-            if (s.ThemeUid != default(UID128))
+            if (UID128.IsNotNull(s.ThemeUid))
             {
                 var chip = Text("span", "qkg-pas-theme qkg-clickable", "");
                 chip.style.setProperty("--qkg-chip", Clusters.ColorOf(s.ThemeOrdinal));
@@ -230,7 +230,7 @@ namespace QuranKG.FrontEnd.Components
                 head.appendChild(chip);
             }
 
-            if (s.GroupUid != default(UID128))
+            if (UID128.IsNotNull(s.GroupUid))
             {
                 var chip = Text("span", "qkg-pas-theme qkg-pas-group qkg-clickable", "");
                 chip.style.setProperty("--qkg-chip", Clusters.GroupColorOf(s.GroupOrdinal));

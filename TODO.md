@@ -31,6 +31,11 @@ closes it.
       passages, the English beside it on demand, a clicked verse opening its translations, words,
       passage, theme, closest verses and tafsir links. A surah's Read tab, a passage and a theme read
       through the same pane, with each passage's or the theme's key words marked
+- [x] **Tafsir** (`TafsirSource`, `TafsirIngest`, `qkg/verse/tafsir`, `Components/TafsirView.cs`):
+      al-Mukhtasar, al-Jalalayn and Ibn Kathir, each in Arabic and English (QUL via spa5k/tafsir_api,
+      pinned), as `Tafsir` / `TafsirEntry` nodes linked to every verse they explain. In the verse
+      panel and the verse page's Tafsir tab; a long commentary opens whole, Arabic beside English.
+      Out of the AI's reach (Ibn Kathir is QurSim's source)
 - [x] **The clusters map** (`qkg/clusters/map`, `Themes/ClusterMap.cs`): every surah in its passages,
       coloured by theme or by similarity group, on the Stories and themes page; hover lights a group
       across the Quran
@@ -107,8 +112,10 @@ closes it.
 
 ## Later
 
-- [ ] Tafsir texts (al-Muyassar, al-Jalalayn, Ibn Kathir) as reading context, after their licences
-      are checked — and kept out of the similarity signals QurSim measures.
+- [ ] Tafsir, next: search inside the tafsirs for people (a full-text index on `TafsirEntry.Text`,
+      kept out of Search Records); more works (al-Sa'di, al-Tabari, al-Qurtubi — Arabic only in QUL);
+      decide whether al-Mukhtasar may become an AI reader (Ibn Kathir never: QurSim's source); check
+      the English licences (Darussalam, Royal Aal al-Bayt) before a public deployment.
 - [ ] Named entities from the Quranic Arabic Corpus ontology (persons, places, peoples) as nodes:
       the backbone of the stories.
 - [ ] Word-by-word English gloss (QUL) in the verse view.
