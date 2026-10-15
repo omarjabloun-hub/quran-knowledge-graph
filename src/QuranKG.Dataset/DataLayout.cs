@@ -17,6 +17,7 @@ public sealed class DataLayout(string rawDir)
     public string Morphology         => Path.Combine(rawDir, "morphology", "quran-morphology.txt");
     public string QurSim             => Path.Combine(rawDir, "qursim", "ibn_kathir_similarity.csv");
     public string QulTopics          => Path.Combine(rawDir, "qul", "topics.db");
+    public string TafsirDir          => Path.Combine(rawDir, "tafsir");
 
     /// <summary>Finds <c>data/raw</c> by walking up from <paramref name="start"/> to the repository root.</summary>
     public static DataLayout Discover(string? start = null)

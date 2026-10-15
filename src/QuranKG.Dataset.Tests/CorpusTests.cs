@@ -92,4 +92,38 @@ public class CorpusTests
         Assert.StartsWith("The surah that mentions the story of The Cow", baqarah.Introduction);
         Assert.Equal(86, Corpus.Surahs.Count(s => s.RevelationPlace == "Meccan"));
     }
+
+    [Fact]
+    public void Every_verse_has_al_mukhtasar_in_arabic_and_english()
+    {
+        foreach (var edition in new[] { "mukhtasar-ar", "mukhtasar-en" })
+        {
+            var covered = Corpus.TafsirEntries.Where(e => e.Edition == edition).SelectMany(e => e.Verses).ToList();
+            Assert.Equal(6_236, covered.Count);
+            Assert.Equal(6_236, covered.Distinct().Count());
+        }
+
+        var ikhlas = Corpus.TafsirEntries.Single(e => e.Edition == "mukhtasar-en" && e.First.Key == "112:1");
+        Assert.StartsWith("Say, O Messenger: He is Allah", ikhlas.Text);
+    }
+
+    [Fact]
+    public void Ibn_kathir_explains_runs_of_verses_once_without_the_editors_notes()
+    {
+        var entries = Corpus.TafsirEntries.Where(e => e.Edition == "ibn-kathir-ar").ToList();
+        Assert.Equal(6_236, entries.Sum(e => e.Verses.Count()));
+        Assert.Contains(entries, e => e.Last.Ayah - e.First.Ayah >= 10);
+        Assert.DoesNotContain(entries, e => e.Text.Contains("[["));
+
+        // An entry never crosses into the next surah.
+        Assert.All(entries, e => Assert.Equal(e.First.Surah, e.Last.Surah));
+    }
+
+    [Fact]
+    public void Al_jalalayn_passes_over_some_verses_and_that_is_not_an_error()
+    {
+        var arabic = Corpus.TafsirEntries.Where(e => e.Edition == "jalalayn-ar").SelectMany(e => e.Verses).ToHashSet();
+        Assert.DoesNotContain(new VerseRef(2, 82), arabic);
+        Assert.Contains(new VerseRef(2, 83), arabic);
+    }
 }

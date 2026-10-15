@@ -14,6 +14,8 @@ public sealed class Corpus
     public required IReadOnlyList<Juz>        Juzs        { get; init; }
     public required IReadOnlyList<Topic>      Topics      { get; init; }
     public required IReadOnlyList<QurSimPair> QurSimPairs { get; init; }
+    public required IReadOnlyList<TafsirEdition> TafsirEditions { get; init; }
+    public required IReadOnlyList<TafsirEntry>   TafsirEntries  { get; init; }
     /// <summary>What the loader cleaned, and the optional sources it did without.</summary>
     public required IReadOnlyList<string>     Notes       { get; init; }
 
@@ -181,6 +183,24 @@ public static class CorpusLoader
             notes.Add($"QUL topics not found at {layout.QulTopics} — Topic nodes are skipped. See data/manifest.json for the manual download.");
         }
 
+        // ---- tafsir: commentary for people to read ------------------------------------------------
+        var editions = new List<TafsirEdition>();
+        var entries  = new List<TafsirEntry>();
+        foreach (var edition in TafsirSource.Editions)
+        {
+            if (!Directory.Exists(Path.Combine(layout.TafsirDir, edition.Directory)))
+            {
+                notes.Add($"Tafsir {edition.Id} not found under {layout.TafsirDir} — run `just fetch`; it is skipped.");
+                continue;
+            }
+
+            var read = TafsirSource.Read(layout.RawDir, edition, order, problems);
+            editions.Add(edition);
+            entries.AddRange(read.Entries);
+            var ranges = read.Entries.Count(e => e.First != e.Last);
+            notes.Add($"Tafsir {edition.Id}: {read.Entries.Count:N0} entries ({ranges:N0} over several verses){(read.Uncommented.Count > 0 ? $", {read.Uncommented.Count} verses without commentary (e.g. {string.Join(", ", read.Uncommented.Take(3))})" : "")}.");
+        }
+
         if (problems.Count > 0) throw new CorpusException(problems);
 
         return new Corpus
@@ -193,6 +213,8 @@ public static class CorpusLoader
             Juzs        = juzs,
             Topics      = topics,
             QurSimPairs = qursim.Pairs,
+            TafsirEditions = editions,
+            TafsirEntries  = entries,
             Notes       = notes,
         };
     }

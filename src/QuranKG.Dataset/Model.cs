@@ -149,3 +149,36 @@ public sealed class QurSimPair
     public required int      Degree { get; init; }
     public string Key => $"{A.Key}~{B.Key}";
 }
+
+/// <summary>A tafsir in one language — an edition. Key: "mukhtasar-ar", "ibn-kathir-en" ….</summary>
+public sealed class TafsirEdition
+{
+    public required string Id          { get; init; }
+    /// <summary>The work, shared by its editions: "mukhtasar", "jalalayn", "ibn-kathir".</summary>
+    public required string Work        { get; init; }
+    /// <summary>"ar" or "en".</summary>
+    public required string Language    { get; init; }
+    /// <summary>Its directory under data/raw/tafsir/.</summary>
+    public required string Directory   { get; init; }
+    public required string Name        { get; init; }
+    public required string NameArabic  { get; init; }
+    public required string Author      { get; init; }
+    public required string Description { get; init; }
+    public required string Attribution { get; init; }
+}
+
+/// <summary>
+/// One commentary of an edition, on one verse or on a run of verses it explains together. Text for
+/// people to read: never a similarity signal, and never handed to the AI — Ibn Kathir's is where
+/// QurSim, the similarity answer key, was drawn from.
+/// </summary>
+public sealed class TafsirEntry
+{
+    public required string   Edition { get; init; }
+    public required VerseRef First   { get; init; }
+    public required VerseRef Last    { get; set; }
+    /// <summary>Plain text, paragraphs separated by a blank line.</summary>
+    public required string   Text    { get; init; }
+    public string Key => First == Last ? $"{Edition}:{First.Key}" : $"{Edition}:{First.Key}-{Last.Ayah}";
+    public IEnumerable<VerseRef> Verses => Enumerable.Range(First.Ayah, Last.Ayah - First.Ayah + 1).Select(a => new VerseRef(First.Surah, a));
+}

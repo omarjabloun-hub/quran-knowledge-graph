@@ -9,6 +9,10 @@ namespace QuranKG.Tools;
 /// Downloads every source in data/manifest.json into data/raw/, checks its SHA-256 and unzips
 /// what needs unzipping. Idempotent: a file already present with the right checksum is kept.
 /// A source marked "manual" (it needs a login) is not downloaded; its steps are printed.
+///
+/// A source with "parts" is one file per part (a tafsir: one per surah): "{part}" in its url is
+/// replaced by 1…parts, each saved as {target}/{part}.json, and its sha256 is the checksum of the
+/// parts' bytes concatenated in order.
 /// </summary>
 internal static class Fetch
 {
@@ -26,6 +30,7 @@ internal static class Fetch
         [JsonPropertyName("sha256")]  public string?      Sha256  { get; set; }
         [JsonPropertyName("unzipTo")] public string?      UnzipTo { get; set; }
         [JsonPropertyName("manual")]  public bool         Manual  { get; set; }
+        [JsonPropertyName("parts")]   public int          Parts   { get; set; }
         [JsonPropertyName("steps")]   public List<string> Steps   { get; set; } = [];
         [JsonPropertyName("licence")] public string       Licence { get; set; } = "";
     }
@@ -51,6 +56,12 @@ internal static class Fetch
                 Console.WriteLine("    needs a manual download (login required):");
                 foreach (var step in source.Steps) Console.WriteLine("      - " + step);
                 Console.WriteLine("    (optional: everything else works without it)");
+                continue;
+            }
+
+            if (source.Parts > 0)
+            {
+                if (!await FetchPartsAsync(http, source, target, force)) failures++;
                 continue;
             }
 
@@ -98,6 +109,53 @@ internal static class Fetch
 
         Console.WriteLine(failures == 0 ? "\nAll sources present. Next: just check-data" : $"\n{failures} source(s) failed.");
         return failures == 0 ? 0 : 1;
+    }
+
+    /// <summary>A source in parts: the missing parts downloaded, then the whole checked at once.</summary>
+    private static async Task<bool> FetchPartsAsync(HttpClient http, Source source, string dir, bool force)
+    {
+        var parts = Enumerable.Range(1, source.Parts).Select(i => (Index: i, Path: Path.Combine(dir, i + ".json"))).ToList();
+
+        if (!force && parts.All(p => File.Exists(p.Path)) && (source.Sha256 is null || Sha256Of(parts.Select(p => p.Path)) == source.Sha256))
+        {
+            Console.WriteLine($"    present: data/raw/{source.Target}/ ({source.Parts} parts)");
+            return true;
+        }
+
+        Directory.CreateDirectory(dir);
+        Console.WriteLine($"    downloading {source.Parts} parts of {source.Url}");
+
+        var missing = parts.Where(p => force || !File.Exists(p.Path)).ToList();
+        using var gate = new SemaphoreSlim(8);
+        await Task.WhenAll(missing.Select(async p =>
+        {
+            await gate.WaitAsync();
+            try
+            {
+                var bytes = await http.GetByteArrayAsync(source.Url.Replace("{part}", p.Index.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                await File.WriteAllBytesAsync(p.Path, bytes);
+            }
+            finally { gate.Release(); }
+        }));
+
+        var actual = Sha256Of(parts.Select(p => p.Path));
+        if (source.Sha256 is not null && actual != source.Sha256)
+        {
+            Console.Error.WriteLine($"    CHECKSUM MISMATCH for {source.Name}: expected {source.Sha256}, got {actual}.");
+            Console.Error.WriteLine($"    The source changed upstream. Inspect data/raw/{source.Target}/; if it is fine, update sha256 in data/manifest.json.");
+            return false;
+        }
+
+        var size = parts.Sum(p => new FileInfo(p.Path).Length);
+        Console.WriteLine($"    saved data/raw/{source.Target}/ ({source.Parts} parts, {size / 1024:N0} KB, sha256 {(source.Sha256 is null ? actual + " — not pinned yet" : "ok")})");
+        return true;
+    }
+
+    private static string Sha256Of(IEnumerable<string> paths)
+    {
+        using var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        foreach (var path in paths) sha.AppendData(File.ReadAllBytes(path));
+        return Convert.ToHexStringLower(sha.GetHashAndReset());
     }
 
     private static string Sha256Of(string path)

@@ -78,6 +78,60 @@
         "Save (or unzip) the .db / .sqlite file as data/raw/qul/topics.db, then run `just check-data`."
       ],
       "licence": "QUL resources, per the resource card on qul.tarteel.ai"
+    },
+    {
+      "name": "tafsir-mukhtasar-ar",
+      "title": "Tafsir: Al-Mukhtasar in Interpreting the Noble Quran (Tafsir Center for Quranic Studies, Riyadh) — Arabic",
+      "url": "https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/ar-tafsir-al-mukhtasar/{part}.json",
+      "target": "tafsir/mukhtasar-ar",
+      "parts": 114,
+      "sha256": "f7eda10df0726e9e9a04087cfd920d73024b0fa6bb950af5ef9516c9ebba28a9",
+      "licence": "QUL resource 251 (qul.tarteel.ai/resources/tafsir/251), via spa5k/tafsir_api (MIT, data from QUL). Tafsir Center for Quranic Studies — free to use with attribution, text unaltered (quranenc.com terms)"
+    },
+    {
+      "name": "tafsir-mukhtasar-en",
+      "title": "Tafsir: Al-Mukhtasar in Interpreting the Noble Quran (Tafsir Center for Quranic Studies, Riyadh) — English translation",
+      "url": "https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/en-tafsir-al-mukhtasar/{part}.json",
+      "target": "tafsir/mukhtasar-en",
+      "parts": 114,
+      "sha256": "9da25e55aeeb7e408e040dd16b016b329576228f3b0c9216d0ed2c79c3b912cc",
+      "licence": "QUL resource 266, via spa5k/tafsir_api. Tafsir Center for Quranic Studies — free to use with attribution, text unaltered (quranenc.com terms)"
+    },
+    {
+      "name": "tafsir-jalalayn-ar",
+      "title": "Tafsir al-Jalalayn (al-Mahalli and al-Suyuti, 15th century) — Arabic",
+      "url": "https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/ar-tafsir-al-jalalayn/{part}.json",
+      "target": "tafsir/jalalayn-ar",
+      "parts": 114,
+      "sha256": "3e50c50860cd1624d74eb9a9c6d3478a27618f5d61426811582106540deec182",
+      "licence": "QUL resource 523, via spa5k/tafsir_api. The Arabic work is in the public domain"
+    },
+    {
+      "name": "tafsir-jalalayn-en",
+      "title": "Tafsir al-Jalalayn — English translation by Feras Hamza",
+      "url": "https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/tafsir-al-jalalayn/{part}.json",
+      "target": "tafsir/jalalayn-en",
+      "parts": 114,
+      "sha256": "3e4ceccc1b732b5ebb1010281ee06b225c797eeefde18df3576871a268cb2f55",
+      "licence": "QUL resource 573, via spa5k/tafsir_api. Translation © Royal Aal al-Bayt Institute for Islamic Thought (altafsir.com): non-commercial use, with attribution"
+    },
+    {
+      "name": "tafsir-ibn-kathir-ar",
+      "title": "Tafsir Ibn Kathir (Tafsir al-Quran al-Azim, 14th century) — Arabic. NB: QurSim was drawn from this text",
+      "url": "https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/ar-tafsir-ibn-kathir/{part}.json",
+      "target": "tafsir/ibn-kathir-ar",
+      "parts": 114,
+      "sha256": "841f59ca557d929971160fb252b7a39406cf72e2fc96a3ff9ee922219eb64a74",
+      "licence": "QUL resource 22, via spa5k/tafsir_api. The Arabic work is in the public domain"
+    },
+    {
+      "name": "tafsir-ibn-kathir-en",
+      "title": "Tafsir Ibn Kathir — English, abridged (Darussalam)",
+      "url": "https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/en-tafisr-ibn-kathir/{part}.json",
+      "target": "tafsir/ibn-kathir-en",
+      "parts": 114,
+      "sha256": "fddbcb18e4c13f09232a6e11ae02e8d37b01b65aa7eea65e6f2ac7c5d5ca0557",
+      "licence": "QUL resource 35, via spa5k/tafsir_api. Abridgement © Darussalam: non-commercial use, with attribution"
     }
   ]
 }

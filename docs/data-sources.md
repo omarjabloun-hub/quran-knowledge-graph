@@ -15,6 +15,9 @@ does not add up (6,236 verses in every text, every word's verse present, …).
 | **Ali Quli Qara'i** (Tanzil copy, without footnotes) | a second English gloss | as above |
 | **Quranic Arabic Corpus morphology** (v0.4, the `mustafa0x/quran-morphology` Arabic-script fork with root and lemma fixes) | every word's segments, part of speech, features, **root** and **lemma** — the backbone of the lexical layer | GNU GPL (corpus.quran.com) — attribution, verbatim |
 | **QurSim** (Sharaf & Atwell, LREC 2012) | 7,295 verse pairs related by Ibn Kathir's tafsir, graded 0–2 — **the answer key** for similarity | research data; cite the paper |
+| **Tafsir al-Mukhtasar** (Tafsir Center for Quranic Studies), Arabic and its English translation — QUL resources 251 / 266 | one short explanation per verse, the same work in both languages: the default tafsir in the verse panel | free to use with attribution, text unaltered |
+| **Tafsir al-Jalalayn** (al-Mahalli, al-Suyuti), Arabic and Feras Hamza's English — QUL 523 / 573 | a classical gloss of the verse's words, with grammar and readings | Arabic: public domain. English: © Royal Aal al-Bayt Institute (altafsir.com) — non-commercial, with attribution |
+| **Tafsir Ibn Kathir**, Arabic and the abridged English (Darussalam) — QUL 22 / 35 | the classical tafsir by narration, passage by passage. **QurSim was drawn from it**, so it is for people only | Arabic: public domain. English: © Darussalam — non-commercial, with attribution |
 | **QUL ayah topics** (Tarteel) — *manual download* | ~2,500 topics in a hierarchy, including the stories — the reference for clustering | per the resource card on qul.tarteel.ai |
 
 The Kaggle dataset was the starting point; it is kept for what only it has (names, revelation
@@ -32,11 +35,18 @@ footnotes (so the clean Tanzil copy of Qara'i is used).
   carries a root.
 - QurSim: 28 malformed or out-of-range rows and self-pairs are dropped; pairs are undirected and
   keep the highest degree given to them.
+- Tafsir: the six editions come from QUL through [spa5k/tafsir_api](https://github.com/spa5k/tafsir_api),
+  one file per surah, pinned to a commit (the manifest's `parts`: the checksum covers the 114 files
+  in order). A commentary repeated over consecutive verses is one entry over that range. The editor's
+  manuscript notes in Ibn Kathir's Arabic (`[[في م، أ: …]]`) are removed. Al-Jalalayn's Arabic passes
+  over 226 verses it holds need no explanation; they have no entry, which the loader reports.
 
 ## Answer keys stay out of the AI's reach
 
 QurSim is how the similarity ranking is measured, and the QUL topics are how clusters will be. Both
-are in the graph so people can read them and so scores can be computed — but no similarity signal,
+are in the graph so people can read them and so scores can be computed. The tafsirs are in the same
+position: QurSim was drawn from Ibn Kathir's, so `Tafsir` and `TafsirEntry` have no consult reader,
+Search Records cannot reach them and `qkg/verse/tafsir` is no AI tool — but no similarity signal,
 no AI tool, no index the AI can query and no document handed to a model may read them. The only
 endpoint that returns QurSim pairs (`qkg/verse/words`, for the verse page) must never be exposed as
 an AI tool.
@@ -45,7 +55,7 @@ an AI tool.
 
 | Dataset | Would add | Notes |
 |---|---|---|
-| Tafsir texts (Ibn Kathir, al-Jalalayn, al-Muyassar) — Tanzil / QUL | commentary per verse, for people and as context for the assistant | check each tafsir's licence; keep out of the similarity signals that QurSim measures |
+| More tafsirs — al-Sa'di, al-Tabari, al-Qurtubi, al-Muyassar (QUL, Arabic) | more voices on a verse | the same `parts` source in the manifest and one line in `TafsirSource.Editions` |
 | QUL word-by-word translations | an English gloss per word in the word-by-word view | QUL licence per resource |
 | Asbab al-nuzul (occasions of revelation) | why a verse was revealed — a link from verses to events and people | needs a clean digital edition |
 | Named entities (prophets, places, peoples) — the Quranic Arabic Corpus ontology | `Person` / `Place` nodes linked to verses: the backbone of the stories | the corpus ontology covers ~300 concepts |
