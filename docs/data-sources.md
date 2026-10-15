@@ -20,6 +20,8 @@ does not add up (6,236 verses in every text, every word's verse present, …).
 | **Tafsir Ibn Kathir**, Arabic and the abridged English (Darussalam) — QUL 22 / 35 | the classical tafsir by narration, passage by passage. **QurSim was drawn from it**, so it is for people only | Arabic: public domain. English: © Darussalam — non-commercial, with attribution |
 | **Sahih al-Bukhari** and **Sahih Muslim**, Arabic and English ([fawazahmed0/hadith-api](https://github.com/fawazahmed0/hadith-api), pinned to a commit) | 14,940 hadith with their standard numbers (Bukhari 6018; Muslim's Abdul Baqi number, 8a) and books; the English of Muhsin Khan (Bukhari) and Abdul Hamid Siddiqui (Muslim) | hadith-api: Unlicense. The Arabic is in the public domain; the translations are their translators' and publishers' — non-commercial use, with attribution |
 | **The books' Arabic names** ([AhmedBaset/hadith-json](https://github.com/AhmedBaset/hadith-json) v1.2.0, from sunnah.com) | كتاب الإيمان … for the 154 books (only the names are read; its hadith numbering is not the standard one) | sunnah.com content |
+| **Sheikh Mohamed (Hamadi) Latrech's recitation**, Qalun from Nafi' ([qaloun.app](https://qaloun.app/en/reciters/mohamed-latrech)) | each surah's recording (streamed from the site's host, never copied) and where each of its verses starts — the fetcher keeps only those marks from each page | qaloun.app: sharing and quoting with attribution, no commercial use without permission — ask before a public deployment |
+| **The Qalun text** (King Fahd Glorious Quran Printing Complex, v10, via [thetruetruth/quran-data-kfgqpc](https://github.com/thetruetruth/quran-data-kfgqpc), pinned) | the Quran in Qalun's reading with its own verse numbering (6,214, the Madani count) — read only to carry a Qalun recording's verse marks over to the corpus's verses | KFGQPC: free to use, text unaltered |
 | **QUL ayah topics** (Tarteel) — *manual download* | ~2,500 topics in a hierarchy, including the stories — the reference for clustering | per the resource card on qul.tarteel.ai |
 
 The Kaggle dataset was the starting point; it is kept for what only it has (names, revelation
@@ -54,6 +56,16 @@ footnotes (so the clean Tanzil copy of Qara'i is used).
   inside a longer run; six or more, or a whole verse, is a quotation unless it recurs in more than
   10 hadith (then a phrase). Measured against the translators' bracketed citations, which the
   detector never reads: 94% of Bukhari's cited hadith quote the cited verse, 82% of Muslim's.
+
+- A recitation (`Sources/Recitation.cs`): a Qalun recording counts its verses the Madani way —
+  Al-Fatiha without the Bismillah, «الم» not a verse of its own, Al-Baqarah 285 verses — so its
+  marks are not the corpus's verses. The Qalun text (same numbering) and the corpus's Simple-Clean
+  are aligned word by word (longest shared runs, a vocative joined to its word, an unmatched first
+  word placed at the most alike); each recorded verse's start becomes a word of the corpus. A
+  corpus verse starting there takes the recording's time (6,156); one starting inside a recorded
+  verse is placed by the letters recited before it (80 — `Recitation.EstimatedAyahs`). Checked on
+  the audio: the quietest moment of the recitation falls about half a second after each mark —
+  the pause between two verses.
 
 ## Answer keys stay out of the AI's reach
 

@@ -13,7 +13,7 @@ Orientation for anyone — person or agent — working in this repository. The w
 | `src/QuranKG.Tools` | `fetch`, `check`, `sync-dto` | no |
 | `src/QuranKG.Connector` | the graph schema (`Schema.cs`, `Edges.cs`), the ingest (`Ingest.cs`), `--dry-run`, `--emit-schema` | yes (Library token) |
 | `src/QuranKG.Definitions` | the workspace as files — `config/` (indexes, styles, settings, schemas), `code/endpoints/qkg/`, `variants/` | imported |
-| `src/QuranKG.FrontEnd` | the dashboard (`Dashboard/`), the Quran View (`Reader/`), the Stories and themes page and its map (`Themes/`), the Hadith and the Quran page (`Hadith/`), renderers (`Renderers/`), the reader and shared components (`Components/`), the API layer | uploaded |
+| `src/QuranKG.FrontEnd` | the home page's search (`Home/`), the dashboard (`Dashboard/`), the Quran View (`Reader/`), the Stories and themes page and its map (`Themes/`), the Hadith and the Quran page (`Hadith/`), renderers (`Renderers/`), the reader and shared components (`Components/`), the API layer | uploaded |
 | `src/QuranKG.Workspace` | `tokens`, `status`, `call`, `warm`, `clusters`, `stage-definitions`, `use-embeddings` | yes (admin sign-in) |
 | `tools/embedding-benchmark` | Python: embeds the verses with candidate models and scores them on QurSim | no |
 | `tools/embedding-server` | Python: AraModernBert-STS behind the OpenAI embeddings API — what the workspace embeds the verses' Arabic with | called by it |
@@ -60,6 +60,8 @@ in the csproj files: Curiosity.Library 26.10.6546, Curiosity.FrontEnd* 26.10.657
 | `qkg/root/profile` | one root: per-surah spread, Meccan / Medinan, lemmas, forms, verses |
 | `qkg/verse/words` | one verse: its words with morphology, roots, lemmas, and its QurSim pairs (**people only**) |
 | `qkg/verse/tafsir` | one verse: every tafsir work, and the chosen one's text in Arabic and English (**people only**) |
+| `qkg/surah/recitation` | one surah: each recitation's audio and every verse's start and end in it (exact, or estimated where the recording counts the verses another way) |
+| `qkg/search/quick` | the home page's search box: what the query names (a verse, a surah, a page, a juz, a hadith), then the verses whose words match |
 | `qkg/verse/hadith` | one verse: the hadith that quote it, and those closest to it in meaning |
 | `qkg/hadith/profile` | one hadith: its texts, the verses it quotes, the ten verses closest to it (meaning + distinctive words) |
 | `qkg/hadith/list` | hadith filtered by collection, book, surah, how they meet the Quran, words or reference |

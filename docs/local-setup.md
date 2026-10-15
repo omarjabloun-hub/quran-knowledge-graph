@@ -65,13 +65,14 @@ just bootstrap      # everything below, in order
 
 Then open <http://localhost:8080>, sign in with `WORKSPACE_ADMIN_USER` / `WORKSPACE_ADMIN_PASSWORD`
 (admin / admin unless you changed `.env` **before** the first `just up`). The first sign-in opens a
-setup assistant — *Finish later* skips it. The home page is the pattern dashboard.
+setup assistant — *Finish later* skips it. The home page opens with a search box (a verse, a
+surah, a page, words in Arabic or English), then the pattern dashboard.
 
 Where to look:
 
 | | |
 |---|---|
-| **Read the Quran** (sidebar) | the Quran View: a surah as continuous text in its passages; click a verse for its translations, its tafsir (Arabic and English), words, passage, theme and related verses. `#/read/2/255` opens on a verse |
+| **Read the Quran** (sidebar) | the Quran View: a surah flowing in its passages, verse by verse, or as the mushaf's pages; click a verse for its translations, its tafsir (Arabic and English), words, passage, theme and related verses. **Listen** plays Sheikh Latrech's recitation from the start or from the verse selected, the verse being recited marked and kept in view. `#/read/2/255` opens on a verse |
 | **Hadith and the Quran** (sidebar) | Bukhari and Muslim against the text: how many hadith quote a verse (measured), the verses and surahs quoted most, the books, and every hadith to read — by collection, by how it meets the Quran, by surah, by words or reference. A hadith's page shows its text, the verses it quotes and the verses closest to it; every verse has a Hadith tab |
 | **Stories and themes** (sidebar) | the 119 themes — passages of several surahs that tell the same story or treat the same subject — widest first, with a filter — under a map of every surah in its passages, coloured by theme |
 | a surah → **Passages** | its sections in order, each with the theme it shares; a strip shows the whole surah at a glance |

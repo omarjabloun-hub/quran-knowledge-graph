@@ -122,6 +122,12 @@ just status                     # after an import: "Code compiles", counts as ex
   removed: `QuranQuote.RunId` and `qkg/hadith/prune-quotes` (run by `just ingest`) do it for hadith.
 - The editions of Bukhari and Muslim set a quoted verse in braces `{…}`: the strongest evidence of a
   quotation, stronger than any length or frequency rule.
+- A recitation in another reading counts its verses its own way (Qalun: 6,214, the Madani count —
+  Al-Fatiha without the Bismillah, «الم» not a verse): never read its verse marks as the corpus's
+  ayahs. `RecitationSource` carries them over through the KFGQPC Qalun text; `Recitation.VerseStartsMs`
+  is already per corpus verse.
+- A source that is a web page: the manifest's `extract` keeps only the regex's group 1 of each part
+  (after unescaping `\"`), and the checksum is over what was kept; `partNames` addresses parts by name.
 - The sandbox has no `query` command on purpose: the query engine emits whole nodes, and a verse
   node carries its ruku'.
 

@@ -16,6 +16,8 @@ the questions below are answered from the Arabic, with translations as reading a
 | Which roots and words carry the text? Where in the Quran does each root live? | dashboard: vocabulary, the root map (a cell opens its verses) |
 | What is one surah about — which roots does it use far more than the rest? | the surah page, Profile tab |
 | How is one verse built, word by word? | the verse page, Verse tab |
+| Where is this verse — 2:255, Al-Kahf, page 50? Which verses say «الرحمن», or "mercy"? | the search box on the home page |
+| How does this surah sound? Follow the text while it is recited | the Quran View's Listen: Sheikh Latrech, Qalun from Nafi', the verse being recited marked |
 | What does this verse mean? | the verse panel and the verse page: al-Mukhtasar, al-Jalalayn and Ibn Kathir, each in Arabic and English |
 | Which hadith quote this verse, or speak to it? Is this hadith backed by the Quran? | the verse's Hadith tab; a hadith's page (the verses it quotes, the closest verses); the assistant argues the relation verse by verse |
 | Where else does the Quran say this? | the verse page: Similar verses (Arabic meaning + shared lemmas + roots), Ibn Kathir links (QurSim) |

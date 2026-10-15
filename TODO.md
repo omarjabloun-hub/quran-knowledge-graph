@@ -43,6 +43,23 @@ closes it.
       distinctive words (`just benchmark-hadith`: 28% top-10 on the hard cases, chance 0.2%);
       a study page, hadith pages, a Hadith tab on verses; the assistant's Hadith tools and its
       method for the relation (quotes / agrees / explains / adds / apparent tension)
+- [x] **Recitation, reading modes, the home search** (`RecitationSource`, `RecitationIngest`,
+      `qkg/surah/recitation`, `Components/RecitationPlayer.cs`, `qkg/search/quick`, `Home/HomeSearch.cs`):
+      Sheikh Mohamed Latrech (Qalun), every verse of the text timed through a Qalun–Hafs word
+      alignment (6,156 exact, 80 estimated); the reader flowing, verse by verse or as the mushaf's
+      pages, with page/juz/hizb; a search box in the middle of the home page
+- [ ] **Recitation, next**:
+  - the 80 estimated starts snapped to the nearest pause in the audio (the marks sit at the
+    pauses; a pause within ±1.5 s of an estimate is very likely the verse's start);
+  - the Qalun text shown beside the recording (KFGQPC, already fetched; needs its font), so the
+    words heard are the words read («ملك يوم الدين», not «مالك»);
+  - a Hafs reciter with timings (QUL publishes surah-level segments for several), and a choice of
+    reciter in the player;
+  - word by word: follow the word being recited, not only the verse (QUL word segments);
+  - ask qaloun.app before any public deployment: its terms allow sharing with attribution, not
+    commercial use;
+  - the mushaf's own lines: QUL's page layouts give each page's 15 lines, so a page could break
+    where the printed one does (with the KFGQPC page fonts).
 - [ ] **Hadith, next**:
   - the relation as data: run the assistant's method over the hadith that quote a verse (1,137)
     and store each verdict, its verses and its argument as a node, labelled as the model's

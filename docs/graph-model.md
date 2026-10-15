@@ -30,6 +30,8 @@ flowchart LR
     Hadith -- HadithQuotesVerse --> Verse
     Hadith -- InHadithBook --> HadithBook[HadithBook<br/>154]
     HadithBook -- BookOfCollection --> HadithCollection[HadithCollection<br/>Bukhari · Muslim]
+    Recitation[Recitation<br/>114] -- RecitesSurah --> Surah
+    Recitation -- RecitedBy --> Reciter[Reciter<br/>Latrech · Qalun]
     Passage[Cluster: Passage<br/>561] -- HasMember --> Verse
     Passage -- ClusterOfSurah --> Surah
     Theme[Cluster: Theme<br/>119] -- HasPassage --> Passage
@@ -55,6 +57,8 @@ traversal reads in the direction it goes.
 | **HadithBook** | `bukhari:65` | a book (kitab), its English and Arabic names |
 | **Hadith** | `bukhari:6018`, `muslim:93` | one hadith: `Reference` as cited (Bukhari 6018, Muslim 8a), the Arabic with its chain, `Matn` (the text without the chain — a heuristic; what the embeddings and the assistant read), the English, `IsVariant` (only a chain pointing to the hadith before), the translator's bracketed citations, `Keywords` (its distinctive words against the other hadith) |
 | **QuranQuote** | `bukhari:4500>15:90` | where a hadith meets a verse: `Kind` quotation (braces, six words or more, a whole short verse), phrase (four to seven unmarked words, or a formula many hadith share) or translator (only the English cites it); the words quoted, the `RunId` of the ingest that found it. Quotations and phrases also link the hadith to the verse directly (`HadithQuotesVerse`) |
+| **Reciter** | `mohamed-latrech` | a reciter: names, the reading he recites in (`Riwaya`), country, style, the source and its attribution |
+| **Recitation** | `mohamed-latrech:2` | one surah recited: the `AudioUrl` it is streamed from, `DurationMs`, `RecordedVerses` (its own count), `VerseStartsMs` (one per verse of the corpus) and `EstimatedAyahs` (the verses that start inside a recorded verse) |
 | **Cluster** | `P:7:103-126` · `T:{hash}` | written by `qkg/clusters/build` (`just clusters`), two kinds. A **Passage** is a run of consecutive verses of one surah — its sections (`SurahNumber`, `Ordinal`, `FirstVerseKey`, `LastVerseKey`). A **Theme** groups passages of several surahs that tell the same story or treat the same subject. Both carry an Arabic label (distinctive lemmas), an English one (a reading aid), the `Method` and the `RunId`. A third kind, **SimilarGroup** (`S:{hash}`), is written by `qkg/clusters/similar-build`: passages grouped by Arabic meaning, lemmas and roots, with `HasPassage` edges only (a passage does not name its group); `qkg/clusters/build` leaves them alone |
 
 ## Why it is shaped this way
