@@ -102,6 +102,34 @@ namespace QuranKG.FrontEnd.Schema
             public const string RunId = "RunId";
         }
 
+        public static class Recitation
+        {
+            public const string Type = "Recitation";
+            public const string RecitationKey = "RecitationKey";
+            public const string ReciterId = "ReciterId";
+            public const string SurahNumber = "SurahNumber";
+            public const string AudioUrl = "AudioUrl";
+            public const string DurationMs = "DurationMs";
+            public const string RecordedVerses = "RecordedVerses";
+            public const string VerseStartsMs = "VerseStartsMs";
+            public const string EstimatedAyahs = "EstimatedAyahs";
+        }
+
+        public static class Reciter
+        {
+            public const string Type = "Reciter";
+            public const string ReciterId = "ReciterId";
+            public const string ReciterName = "ReciterName";
+            public const string ReciterNameArabic = "ReciterNameArabic";
+            public const string Riwaya = "Riwaya";
+            public const string RiwayaArabic = "RiwayaArabic";
+            public const string Country = "Country";
+            public const string Style = "Style";
+            public const string Source = "Source";
+            public const string SourceUrl = "SourceUrl";
+            public const string Attribution = "Attribution";
+        }
+
         public static class Revelation
         {
             public const string Type = "Revelation";
@@ -218,7 +246,7 @@ namespace QuranKG.FrontEnd.Schema
 
     public static class Groups
     {
-        public static readonly string[] AllTypes = { "Cluster", "Hadith", "HadithBook", "HadithCollection", "Juz", "Lemma", "QurSimPair", "QuranQuote", "Revelation", "Root", "Surah", "Tafsir", "TafsirEntry", "Topic", "Verse", "Word" };
+        public static readonly string[] AllTypes = { "Cluster", "Hadith", "HadithBook", "HadithCollection", "Juz", "Lemma", "QurSimPair", "QuranQuote", "Recitation", "Reciter", "Revelation", "Root", "Surah", "Tafsir", "TafsirEntry", "Topic", "Verse", "Word" };
     }
 
     public static class E
@@ -271,6 +299,10 @@ namespace QuranKG.FrontEnd.Schema
         public const string VerseHasQuote = "VerseHasQuote";
         public const string HadithQuotesVerse = "HadithQuotesVerse";
         public const string VerseQuotedInHadith = "VerseQuotedInHadith";
+        public const string RecitesSurah = "RecitesSurah";
+        public const string SurahRecitedIn = "SurahRecitedIn";
+        public const string RecitedBy = "RecitedBy";
+        public const string ReciterOf = "ReciterOf";
         public const string HasMember = "HasMember";
         public const string InCluster = "InCluster";
         public const string ClusterOfSurah = "ClusterOfSurah";

@@ -79,7 +79,7 @@ static async Task<int> Tokens(Settings settings, Target target, int days)
 // indexes have got — the semantic part of "similar verses" waits for Verse.TextSimple.
 static async Task<int> Status(Target target)
 {
-    string[] types = { "Surah", "Verse", "Word", "Root", "Lemma", "Juz", "Revelation", "Topic", "QurSimPair", "Cluster", "TafsirEntry", "Hadith", "QuranQuote" };
+    string[] types = { "Surah", "Verse", "Word", "Root", "Lemma", "Juz", "Revelation", "Topic", "QurSimPair", "Cluster", "TafsirEntry", "Hadith", "QuranQuote", "Recitation" };
 
     using var client = await WorkspaceClient.SignInAsync(target);
 

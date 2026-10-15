@@ -1,0 +1,13 @@
+﻿{
+  "UID": "WCh4f1pwdda9RADccbWUjJ",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Reciter",
+  "DisplayName": "Reciter",
+  "Description": "A reciter of the Quran and the reading he recites in (Sheikh Mohamed Latrech, Qalun from Nafi').",
+  "Color": "#7c3aed",
+  "Icon": "fi-rr-microphone",
+  "LabelField": "ReciterName|ReciterId",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

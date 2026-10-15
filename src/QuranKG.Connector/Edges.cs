@@ -90,6 +90,13 @@ internal static class Edges
     public const string HadithQuotesVerse   = nameof(HadithQuotesVerse);   // Hadith → Verse
     public const string VerseQuotedInHadith = nameof(VerseQuotedInHadith); // Verse → Hadith
 
+    // --- recitations ---------------------------------------------------------------------
+    public const string RecitesSurah        = nameof(RecitesSurah);        // Recitation → Surah
+    public const string SurahRecitedIn      = nameof(SurahRecitedIn);      // Surah → Recitation
+
+    public const string RecitedBy           = nameof(RecitedBy);           // Recitation → Reciter
+    public const string ReciterOf           = nameof(ReciterOf);           // Reciter → Recitation
+
     // --- clusters: written by the Clusters work inside the workspace, never by the connector --
     public const string HasMember           = nameof(HasMember);           // Cluster → Verse
     public const string InCluster           = nameof(InCluster);           // Verse → Cluster

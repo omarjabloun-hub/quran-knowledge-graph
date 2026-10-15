@@ -103,6 +103,9 @@ QK.ReadingVerse[] Lines(List<ReadOnlyNode> verses, Dictionary<string, List<int>>
                Words       = Q().StartAt(v.UID).Out(N.Word.Type, E.HasWord).AsUIDEnumerable().Count(),
                Highlights  = hits.TryGetValue(key, out var p) ? p.Distinct().OrderBy(x => x).ToArray() : new int[0],
                Sajda       = v.GetString(N.Verse.SajdaType) ?? "",
+               Page        = v.GetInt(N.Verse.Page),
+               Juz         = v.GetInt(N.Verse.Juz),
+               Hizb        = v.GetInt(N.Verse.Hizb),
            };
        }).ToArray();
 

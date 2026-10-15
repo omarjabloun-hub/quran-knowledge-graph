@@ -1,0 +1,13 @@
+﻿{
+  "UID": "6Q2gPC43fHUi3VqDX2UsC6",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Recitation",
+  "DisplayName": "Recitation",
+  "Description": "One surah recited: the recording (streamed from its source) and where each verse starts in it.",
+  "Color": "#7c3aed",
+  "Icon": "fi-rr-headphones",
+  "LabelField": "RecitationKey",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

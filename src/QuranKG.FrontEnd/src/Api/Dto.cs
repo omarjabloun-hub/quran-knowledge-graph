@@ -493,6 +493,10 @@ namespace QuranKG.FrontEnd.Api
             public int[]  Highlights  { get; set; }
             /// <summary>"recommended" / "obligatory" on a verse of prostration, else empty.</summary>
             public string Sajda       { get; set; }
+            /// <summary>Where it is in the Madinah mushaf: its page (1–604), juz (1–30) and hizb (1–60).</summary>
+            public int    Page        { get; set; }
+            public int    Juz         { get; set; }
+            public int    Hizb        { get; set; }
         }
 
         /// <summary>
@@ -712,6 +716,91 @@ namespace QuranKG.FrontEnd.Api
         {
             public int         Total { get; set; }
             public HadithRow[] Rows  { get; set; }
+        }
+
+        // --- recitations (qkg/surah/recitation) ------------------------------------------------
+
+        /// <summary>Where a verse is in a recording, in seconds. Exact: it starts where a verse of the recording starts; otherwise its start is estimated from the letters before it.</summary>
+        public class RecitedVerseRow
+        {
+            public UID128 Uid   { get; set; }
+            public int    Ayah  { get; set; }
+            public double Start { get; set; }
+            public double End   { get; set; }
+            public bool   Exact { get; set; }
+        }
+
+        /// <summary>One surah recited by one reciter: the recording to stream and every verse's place in it.</summary>
+        public class RecitationDto
+        {
+            public UID128 Uid               { get; set; }
+            public UID128 ReciterUid        { get; set; }
+            public string ReciterName       { get; set; }
+            public string ReciterNameArabic { get; set; }
+            public string Riwaya            { get; set; }
+            public string RiwayaArabic      { get; set; }
+            public string Country           { get; set; }
+            public string Style             { get; set; }
+            public string Attribution       { get; set; }
+            public string SourceUrl         { get; set; }
+            public string AudioUrl          { get; set; }
+            /// <summary>Seconds.</summary>
+            public double Duration          { get; set; }
+            /// <summary>How many verses the recording's own reading counts in the surah (Qalun: 285 in Al-Baqarah).</summary>
+            public int    RecordedVerses    { get; set; }
+            public RecitedVerseRow[] Verses { get; set; }
+        }
+
+        public class SurahRecitationDto
+        {
+            public UID128          SurahUid    { get; set; }
+            public int             SurahNumber { get; set; }
+            public RecitationDto[] Recitations { get; set; }
+        }
+
+        // --- the home page's search (qkg/search/quick) -----------------------------------------
+
+        public class QuickSearchRequest
+        {
+            public string Text { get; set; }
+            /// <summary>How many verses to return (default 8).</summary>
+            public int    Take { get; set; }
+        }
+
+        /// <summary>A place the query names: a verse ("2:255"), a surah ("Kahf", "الكهف", "18"), a page ("page 50"), a juz ("juz 30"), a hadith ("Bukhari 6018").</summary>
+        public class QuickTarget
+        {
+            /// <summary>"verse", "surah", "page", "juz", "hadith".</summary>
+            public string Kind        { get; set; }
+            public UID128 Uid         { get; set; }
+            public string Label       { get; set; }
+            public string LabelArabic { get; set; }
+            public string Detail      { get; set; }
+            /// <summary>Where it opens in the reader: a surah and a verse of it (0: its start); 0 for a hadith.</summary>
+            public int    SurahNumber { get; set; }
+            public int    Ayah        { get; set; }
+        }
+
+        /// <summary>A verse whose words match the query: in its Arabic (any spelling, diacritics ignored) or its Saheeh International gloss.</summary>
+        public class QuickVerse
+        {
+            public UID128 Uid         { get; set; }
+            public string VerseKey    { get; set; }
+            public int    SurahNumber { get; set; }
+            public int    Ayah        { get; set; }
+            public string SurahName   { get; set; }
+            public string Text        { get; set; }
+            public string Translation { get; set; }
+            /// <summary>"arabic" or "english": where the words were found.</summary>
+            public string Matched     { get; set; }
+        }
+
+        public class QuickSearchDto
+        {
+            public QuickTarget[] Targets { get; set; }
+            public QuickVerse[]  Verses  { get; set; }
+            /// <summary>Every verse that matches, of which <see cref="Verses"/> are the first.</summary>
+            public int           Total   { get; set; }
         }
     }
 }

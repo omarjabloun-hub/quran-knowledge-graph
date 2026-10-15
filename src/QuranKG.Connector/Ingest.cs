@@ -358,3 +358,50 @@ internal static class HadithIngest
         await ctx.CommitAsync();
     }
 }
+
+/// <summary>
+/// The reciters and their recited surahs, each linked to its surah: the times are written as
+/// milliseconds, one per verse of the corpus, in the recitation node itself — a surah's whole
+/// timing is read at once, never a verse alone.
+/// </summary>
+internal static class RecitationIngest
+{
+    public static Task RunAsync(ConnectorContext ctx)
+    {
+        var c = ctx.Corpus;
+
+        foreach (var r in c.Reciters)
+            ctx.Write(new Reciter
+            {
+                ReciterId         = r.Id,
+                ReciterName       = r.Name,
+                ReciterNameArabic = r.NameArabic,
+                Riwaya            = r.Riwaya,
+                RiwayaArabic      = r.RiwayaArabic,
+                Country           = r.Country,
+                Style             = r.Style,
+                Source            = r.Source,
+                SourceUrl         = r.SourceUrl,
+                Attribution       = r.Attribution,
+            }, r.Id);
+
+        foreach (var r in c.Recitations)
+        {
+            var node = ctx.Write(new Recitation
+            {
+                RecitationKey  = r.Key,
+                ReciterId      = r.Reciter,
+                SurahNumber    = r.Surah,
+                AudioUrl       = r.AudioUrl,
+                DurationMs     = (int)Math.Round(r.Duration * 1000),
+                RecordedVerses = r.RecordedVerses,
+                VerseStartsMs  = string.Join(' ', r.Verses.Select(v => ((int)Math.Round(v.Start * 1000)).ToString(CultureInfo.InvariantCulture))),
+                EstimatedAyahs = string.Join(' ', r.Verses.Where(v => !v.Exact).Select(v => v.Ayah.ToString(CultureInfo.InvariantCulture))),
+            }, r.Key);
+            ctx.Link(node, nameof(Surah), r.Surah.ToString(CultureInfo.InvariantCulture), Edges.RecitesSurah, Edges.SurahRecitedIn);
+            ctx.Link(node, nameof(Reciter), r.Reciter, Edges.RecitedBy, Edges.ReciterOf);
+        }
+
+        return Task.CompletedTask;
+    }
+}

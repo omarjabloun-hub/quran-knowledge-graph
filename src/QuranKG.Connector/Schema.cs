@@ -256,6 +256,48 @@ internal static class Nodes
     }
 
     /// <summary>
+    /// A reciter and the reading he recites in. Key: "mohamed-latrech". The audio is never copied
+    /// into the graph: each surah's recording is streamed from where the source hosts it.
+    /// </summary>
+    [Node]
+    internal sealed class Reciter
+    {
+        [Key]      public string ReciterId         { get; set; } = "";
+        [Property] public string ReciterName       { get; set; } = "";
+        [Property] public string ReciterNameArabic { get; set; } = "";
+        /// <summary>The reading (riwaya): "Qalun from Nafi'".</summary>
+        [Property] public string Riwaya            { get; set; } = "";
+        [Property] public string RiwayaArabic      { get; set; } = "";
+        [Property] public string Country           { get; set; } = "";
+        /// <summary>"Murattal" or "Mujawwad".</summary>
+        [Property] public string Style             { get; set; } = "";
+        [Property] public string Source            { get; set; } = "";
+        [Property] public string SourceUrl         { get; set; } = "";
+        [Property] public string Attribution       { get; set; } = "";
+    }
+
+    /// <summary>
+    /// One surah recited: its recording, and where each verse of the corpus starts in it — what the
+    /// reader follows while it plays. Key: "mohamed-latrech:2". The recording may count its verses
+    /// another way (Qalun: Al-Baqarah has 285): <c>RecordedVerses</c> is its own count, the times are
+    /// for the corpus's verses.
+    /// </summary>
+    [Node]
+    internal sealed class Recitation
+    {
+        [Key]      public string RecitationKey  { get; set; } = "";
+        [Property] public string ReciterId      { get; set; } = "";
+        [Property] public int    SurahNumber    { get; set; }
+        [Property] public string AudioUrl       { get; set; } = "";
+        [Property] public int    DurationMs     { get; set; }
+        [Property] public int    RecordedVerses { get; set; }
+        /// <summary>Where each verse starts, in milliseconds, verse 1 first, space-separated; a verse ends where the next starts, the last at <c>DurationMs</c>.</summary>
+        [Property] public string VerseStartsMs  { get; set; } = "";
+        /// <summary>The verses that start inside a verse of the recording, space-separated: their times are estimated from the letters before them.</summary>
+        [Property] public string EstimatedAyahs { get; set; } = "";
+    }
+
+    /// <summary>
     /// A group of verses found by clustering. Written by the qkg/clusters/build endpoint inside the
     /// workspace, never by this connector, which only registers the type so the schema and N.cs are
     /// complete from the start. Two kinds:
