@@ -16,6 +16,10 @@ public sealed class Corpus
     public required IReadOnlyList<QurSimPair> QurSimPairs { get; init; }
     public required IReadOnlyList<TafsirEdition> TafsirEditions { get; init; }
     public required IReadOnlyList<TafsirEntry>   TafsirEntries  { get; init; }
+    public required IReadOnlyList<HadithCollection> HadithCollections { get; init; }
+    public required IReadOnlyList<HadithBook>       HadithBooks       { get; init; }
+    public required IReadOnlyList<Hadith>           Hadiths           { get; init; }
+    public required IReadOnlyList<QuranQuote>       QuranQuotes       { get; init; }
     /// <summary>What the loader cleaned, and the optional sources it did without.</summary>
     public required IReadOnlyList<string>     Notes       { get; init; }
 
@@ -33,6 +37,19 @@ public sealed class CorpusException(IReadOnlyList<string> problems)
 
 public static class CorpusLoader
 {
+    /// <summary>How many distinctive words a hadith keeps, and the share of hadith a word may be in and still count (قال, الله, رسول are in more).</summary>
+    public const int    HadithKeywords        = 12;
+    public const double HadithKeywordMaxShare = 0.05;
+
+    /// <summary>Particles and pronouns the stemmer leaves whole (it does not cut a word of three letters).</summary>
+    private static readonly HashSet<string> FunctionWords = new(StringComparer.Ordinal)
+    {
+        "ومن", "فمن", "فلا", "ولا", "وما", "فما", "فان", "وان", "فاذا", "واذا", "ولم", "فلم", "ثم", "اذا", "اذ", "لما", "كيف", "هل", "بل",
+        "لكن", "حتي", "قد", "لقد", "فقد", "كل", "بعض", "غير", "عند", "بين", "بعد", "قبل", "اي", "ايضا", "منا", "منكم", "منهم", "عليكم",
+        "عليهم", "عليه", "عليها", "اليه", "اليهم", "لنا", "لكم", "لهم", "انت", "انتم", "نحن", "انهم", "انها", "هذه", "هولاء", "ذلك",
+        "تلك", "الذي", "التي", "الذين", "فيه", "فيها", "فيهم", "به", "بها", "بهم", "معه", "معهم", "قال", "فقال", "قالت", "يقول",
+    };
+
     public static Corpus Load(DataLayout layout)
     {
         var problems = new List<string>();
@@ -201,6 +218,73 @@ public static class CorpusLoader
             notes.Add($"Tafsir {edition.Id}: {read.Entries.Count:N0} entries ({ranges:N0} over several verses){(read.Uncommented.Count > 0 ? $", {read.Uncommented.Count} verses without commentary (e.g. {string.Join(", ", read.Uncommented.Take(3))})" : "")}.");
         }
 
+        // ---- hadith: Bukhari and Muslim, and the verses they quote ---------------------------------
+        var collections = new List<HadithCollection>();
+        var books       = new List<HadithBook>();
+        var hadiths     = new List<Hadith>();
+        foreach (var collection in HadithSource.Collections)
+        {
+            if (!File.Exists(Path.Combine(layout.HadithDir, $"ara-{collection.Id}.json")))
+            {
+                notes.Add($"Hadith {collection.Id} not found under {layout.HadithDir} — run `just fetch`; it is skipped.");
+                continue;
+            }
+            var read = HadithSource.Read(layout.HadithDir, collection, known.Contains);
+            collections.Add(collection);
+            books.AddRange(read.Books);
+            hadiths.AddRange(read.Hadiths);
+            notes.Add($"Hadith {collection.Name}: {read.Hadiths.Count:N0} hadith in {read.Books.Count} books ({read.Skipped} empty entries skipped, {read.Hadiths.Count(h => h.IsVariant):N0} that only refer to the one before).");
+        }
+
+        // Each hadith's distinctive words: tf·idf over the hadith texts, the rarest across them first.
+        if (hadiths.Count > 0)
+        {
+            var stems = hadiths.Select(h => Arabic.MatchTokens(h.Matn).Select(Arabic.Stem).Where(w => w.Length > 1).ToList()).ToList();
+            var df    = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var ws in stems) foreach (var w in ws.Distinct(StringComparer.Ordinal)) df[w] = df.GetValueOrDefault(w) + 1;
+            var n = (double)hadiths.Count;
+            for (var i = 0; i < hadiths.Count; i++)
+                hadiths[i].Keywords = stems[i].GroupBy(w => w, StringComparer.Ordinal)
+                    .Select(g => (Word: g.Key, Df: df[g.Key], Score: (1 + Math.Log(g.Count())) * Math.Log(n / df[g.Key])))
+                    .Where(x => x.Df <= n * HadithKeywordMaxShare && !FunctionWords.Contains(x.Word))
+                    .OrderByDescending(x => x.Score).ThenBy(x => x.Word, StringComparer.Ordinal)
+                    .Take(HadithKeywords).Select(x => x.Word).ToList();
+        }
+
+        var quotes = new List<QuranQuote>();
+        var recall = new Dictionary<string, (int Hit, int Of)>(StringComparer.Ordinal);
+        if (hadiths.Count > 0)
+        {
+            var verseWords = verses.Select(v => Arabic.MatchTokens(v.TextSimple)).ToList();
+            var found      = new QuranQuotes(verseWords).FindAll(hadiths.Select(h => Arabic.MatchTokensMarked(h.TextArabic)).ToList());
+
+            for (var i = 0; i < hadiths.Count; i++)
+            {
+                var h = hadiths[i];
+                foreach (var f in found[i])
+                    quotes.Add(new QuranQuote { HadithKey = h.Key, Verse = verses[f.Verse].Ref, Kind = f.IsQuotation ? "quotation" : "phrase", Words = f.Words, VerseWords = verseWords[f.Verse].Count, Quoted = f.Quoted });
+
+                var quoted = found[i].Select(f => verses[f.Verse].Ref).ToHashSet();
+                foreach (var cited in h.TranslatorCites.Where(c => !quoted.Contains(c)))
+                    quotes.Add(new QuranQuote { HadithKey = h.Key, Verse = cited, Kind = "translator", Words = 0, VerseWords = verseWords[order.IndexOf(cited)].Count, Quoted = "" });
+
+                // Measured, never read by the detector: does the Arabic quote a verse the translator cites?
+                if (h.TranslatorCites.Count > 0)
+                {
+                    var hit = h.TranslatorCites.Any(quoted.Contains);
+                    var key = h.Collection;
+                    recall[key] = (recall.GetValueOrDefault(key).Hit + (hit ? 1 : 0), recall.GetValueOrDefault(key).Of + 1);
+                }
+            }
+
+            foreach (var c in collections)
+            {
+                var mine = quotes.Where(q => q.HadithKey.StartsWith(c.Id + ":", StringComparison.Ordinal)).ToList();
+                var r    = recall.GetValueOrDefault(c.Id);
+                notes.Add($"Quran in {c.Name}: {mine.Where(q => q.Kind == "quotation").Select(q => q.HadithKey).Distinct().Count():N0} hadith quote a verse, {mine.Where(q => q.Kind == "phrase").Select(q => q.HadithKey).Distinct().Count():N0} share a phrase with one ({mine.Count(q => q.Kind != "translator"):N0} links); the translator cites a verse in {r.Of:N0} hadith and the Arabic quotes it in {r.Hit:N0} ({(r.Of == 0 ? 0 : 100.0 * r.Hit / r.Of):F0}%).");
+            }
+        }
+
         if (problems.Count > 0) throw new CorpusException(problems);
 
         return new Corpus
@@ -215,6 +299,10 @@ public static class CorpusLoader
             QurSimPairs = qursim.Pairs,
             TafsirEditions = editions,
             TafsirEntries  = entries,
+            HadithCollections = collections,
+            HadithBooks       = books,
+            Hadiths           = hadiths,
+            QuranQuotes       = quotes,
             Notes       = notes,
         };
     }

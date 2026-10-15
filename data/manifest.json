@@ -132,6 +132,54 @@
       "parts": 114,
       "sha256": "fddbcb18e4c13f09232a6e11ae02e8d37b01b65aa7eea65e6f2ac7c5d5ca0557",
       "licence": "QUL resource 35, via spa5k/tafsir_api. Abridgement © Darussalam: non-commercial use, with attribution"
+    },
+    {
+      "name": "hadith-bukhari-ar",
+      "title": "Sahih al-Bukhari — Arabic, standard numbering (fawazahmed0/hadith-api)",
+      "url": "https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/editions/ara-bukhari.json",
+      "target": "hadith/ara-bukhari.json",
+      "sha256": "e34a3402889ca378871da3c5984b7875c680920e93f1c8738ac7afe502179562",
+      "licence": "hadith-api: Unlicense (public domain dedication). The Arabic text of the collection is in the public domain"
+    },
+    {
+      "name": "hadith-bukhari-en",
+      "title": "Sahih al-Bukhari — English, Muhammad Muhsin Khan (fawazahmed0/hadith-api)",
+      "url": "https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/editions/eng-bukhari.json",
+      "target": "hadith/eng-bukhari.json",
+      "sha256": "b3a10b8d50949e86cec82b0d323ce0eae3e2f713fa2f3daa5361638feb795988",
+      "licence": "hadith-api: Unlicense. Translation © Muhammad Muhsin Khan / Darussalam: non-commercial use, with attribution"
+    },
+    {
+      "name": "hadith-muslim-ar",
+      "title": "Sahih Muslim — Arabic, with the Abdul Baqi numbers (fawazahmed0/hadith-api)",
+      "url": "https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/editions/ara-muslim.json",
+      "target": "hadith/ara-muslim.json",
+      "sha256": "194073b24090c5368e4d14a3f55c9e0ef144c7437bd7e5aa83aa4d2bc54a8ea0",
+      "licence": "hadith-api: Unlicense. The Arabic text of the collection is in the public domain"
+    },
+    {
+      "name": "hadith-muslim-en",
+      "title": "Sahih Muslim — English, Abdul Hamid Siddiqui (fawazahmed0/hadith-api)",
+      "url": "https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/editions/eng-muslim.json",
+      "target": "hadith/eng-muslim.json",
+      "sha256": "2ef51a2a1980fb91e395fbf1580cc9c9413297f54bb8cad271e1499417299488",
+      "licence": "hadith-api: Unlicense. Translation by Abdul Hamid Siddiqui: non-commercial use, with attribution"
+    },
+    {
+      "name": "hadith-names-bukhari",
+      "title": "Sahih al-Bukhari — the books' Arabic names (AhmedBaset/hadith-json v1.2.0, from sunnah.com)",
+      "url": "https://raw.githubusercontent.com/AhmedBaset/hadith-json/v1.2.0/db/by_book/the_9_books/bukhari.json",
+      "target": "hadith/hadith-json-bukhari.json",
+      "sha256": "8b0038db684b9a37efe2f047627c8076496b2a6d05bff576272de17b6da699f7",
+      "licence": "hadith-json (sunnah.com content): only the books' names are read"
+    },
+    {
+      "name": "hadith-names-muslim",
+      "title": "Sahih Muslim — the books' Arabic names (AhmedBaset/hadith-json v1.2.0, from sunnah.com)",
+      "url": "https://raw.githubusercontent.com/AhmedBaset/hadith-json/v1.2.0/db/by_book/the_9_books/muslim.json",
+      "target": "hadith/hadith-json-muslim.json",
+      "sha256": "530ed720dea65c7eb4d6ebfef86e9be22ed284f3cb2d33e33d1d66c8318fd24f",
+      "licence": "hadith-json (sunnah.com content): only the books' names are read"
     }
   ]
 }

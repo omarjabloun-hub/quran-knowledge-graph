@@ -18,6 +18,8 @@ does not add up (6,236 verses in every text, every word's verse present, …).
 | **Tafsir al-Mukhtasar** (Tafsir Center for Quranic Studies), Arabic and its English translation — QUL resources 251 / 266 | one short explanation per verse, the same work in both languages: the default tafsir in the verse panel | free to use with attribution, text unaltered |
 | **Tafsir al-Jalalayn** (al-Mahalli, al-Suyuti), Arabic and Feras Hamza's English — QUL 523 / 573 | a classical gloss of the verse's words, with grammar and readings | Arabic: public domain. English: © Royal Aal al-Bayt Institute (altafsir.com) — non-commercial, with attribution |
 | **Tafsir Ibn Kathir**, Arabic and the abridged English (Darussalam) — QUL 22 / 35 | the classical tafsir by narration, passage by passage. **QurSim was drawn from it**, so it is for people only | Arabic: public domain. English: © Darussalam — non-commercial, with attribution |
+| **Sahih al-Bukhari** and **Sahih Muslim**, Arabic and English ([fawazahmed0/hadith-api](https://github.com/fawazahmed0/hadith-api), pinned to a commit) | 14,940 hadith with their standard numbers (Bukhari 6018; Muslim's Abdul Baqi number, 8a) and books; the English of Muhsin Khan (Bukhari) and Abdul Hamid Siddiqui (Muslim) | hadith-api: Unlicense. The Arabic is in the public domain; the translations are their translators' and publishers' — non-commercial use, with attribution |
+| **The books' Arabic names** ([AhmedBaset/hadith-json](https://github.com/AhmedBaset/hadith-json) v1.2.0, from sunnah.com) | كتاب الإيمان … for the 154 books (only the names are read; its hadith numbering is not the standard one) | sunnah.com content |
 | **QUL ayah topics** (Tarteel) — *manual download* | ~2,500 topics in a hierarchy, including the stories — the reference for clustering | per the resource card on qul.tarteel.ai |
 
 The Kaggle dataset was the starting point; it is kept for what only it has (names, revelation
@@ -41,6 +43,18 @@ footnotes (so the clean Tanzil copy of Qara'i is used).
   manuscript notes in Ibn Kathir's Arabic (`[[في م، أ: …]]`) are removed. Al-Jalalayn's Arabic passes
   over 226 verses it holds need no explanation; they have no entry, which the loader reports.
 
+- Hadith: an entry with no text (Muslim's introduction, 203) is skipped; the 306 of Bukhari's that
+  come without their book are put in the book whose number range holds them. `Matn` is the
+  Arabic after the last chain marker (حدثنا، أخبرنا، عن …) before the first quotation mark or
+  mention of the Prophet — a heuristic, right for most; 1,175 entries that only repeat a chain
+  ("بهذا الإسناد مثله") are marked `IsVariant` and left out of "closest" lists.
+- The verses a hadith quotes (`Text/QuranQuotes.cs`): both texts in one spelling; a run the
+  edition sets in braces `{…}` is a quotation (down to two words); otherwise four words or more,
+  not a formula (in more than three verses, or more than 25 hadith, or naming the Prophet), not
+  inside a longer run; six or more, or a whole verse, is a quotation unless it recurs in more than
+  10 hadith (then a phrase). Measured against the translators' bracketed citations, which the
+  detector never reads: 94% of Bukhari's cited hadith quote the cited verse, 82% of Muslim's.
+
 ## Answer keys stay out of the AI's reach
 
 QurSim is how the similarity ranking is measured, and the QUL topics are how clusters will be. Both
@@ -60,4 +74,4 @@ an AI tool.
 | Asbab al-nuzul (occasions of revelation) | why a verse was revealed — a link from verses to events and people | needs a clean digital edition |
 | Named entities (prophets, places, peoples) — the Quranic Arabic Corpus ontology | `Person` / `Place` nodes linked to verses: the backbone of the stories | the corpus ontology covers ~300 concepts |
 | Recitation timings (Quran.com / EveryAyah) | play a verse in a chosen reciter | audio is large: link, do not ingest |
-| Hadith collections (sunnah.com dumps) | hadith that cite a verse | a different corpus and its own authenticity grading |
+| More hadith collections (Abu Dawud, al-Tirmidhi, al-Nasa'i, Ibn Majah — hadith-api) | the other four of the six books, with their gradings | `HadithSource.Collections` and the manifest; their grades (sahih, hasan, da'if) become a field |

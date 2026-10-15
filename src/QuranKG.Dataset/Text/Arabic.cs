@@ -40,6 +40,79 @@ public static partial class Arabic
         return sb.ToString();
     }
 
+    // Diacritics, Quranic marks, tatweel and the directional marks hadith texts carry (200C–200F).
+    [GeneratedRegex("[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640\u200C-\u200F]")]
+    private static partial Regex MatchNoisePattern();
+
+    [GeneratedRegex("[\u0621-\u064A]+")]
+    private static partial Regex MatchTokenPattern();
+
+    /// <summary>
+    /// The words of an Arabic text in the one spelling two texts are compared in: no diacritics,
+    /// every alef form as ا, ى as ي, ة as ه, ؤ as و, ئ as ي; punctuation and digits dropped. A
+    /// verse's Simple-Clean text and a hadith quoting it come out the same.
+    /// </summary>
+    public static IReadOnlyList<string> MatchTokens(string text)
+    {
+        var t = MatchNoisePattern().Replace(text ?? "", "");
+        var sb = new StringBuilder(t.Length);
+        foreach (var c in t)
+        {
+            sb.Append(c switch
+            {
+                'أ' or 'إ' or 'آ' or 'ٱ' => 'ا',
+                'ى' => 'ي',
+                'ة' => 'ه',
+                'ؤ' => 'و',
+                'ئ' => 'ي',
+                _   => c,
+            });
+        }
+        return MatchTokenPattern().Matches(sb.ToString()).Select(m => m.Value).ToList();
+    }
+
+    /// <summary>
+    /// <see cref="MatchTokens"/>, each word marked when it stands between braces — how the editions
+    /// of Bukhari and Muslim set a verse of the Quran apart: <c>{اقرأ باسم ربك الذي خلق}</c>.
+    /// </summary>
+    public static (IReadOnlyList<string> Words, IReadOnlyList<bool> Marked) MatchTokensMarked(string text)
+    {
+        var words  = new List<string>();
+        var marked = new List<bool>();
+        var depth  = 0;
+        var start  = 0;
+        var t      = text ?? "";
+        for (var i = 0; i <= t.Length; i++)
+        {
+            if (i < t.Length && t[i] != '{' && t[i] != '}') continue;
+            foreach (var w in MatchTokens(t[start..i])) { words.Add(w); marked.Add(depth > 0); }
+            if (i < t.Length) depth = t[i] == '{' ? depth + 1 : Math.Max(0, depth - 1);
+            start = i + 1;
+        }
+        return (words, marked);
+    }
+
+    private static readonly string[] Suffixes = { "هما", "كما", "هم", "هن", "كم", "كن", "نا", "ها", "ه", "ك", "ي" };
+
+    /// <summary>
+    /// A word in the matching spelling without what it carries — و/ف, the article (ال، بال، لل) and
+    /// an attached pronoun (ـه، ـها، ـهم، ـكم، ـنا …) — so جاره and الجار, ضيفه and ضيف count as one
+    /// word. Light and blunt, for counting shared words, never for display. The same rule is
+    /// written in the endpoints' library (QK.Stem); change both.
+    /// </summary>
+    public static string Stem(string word)
+    {
+        var w = word ?? "";
+        if (w is "الله" or "لله" or "بالله" or "والله" or "فالله" or "تالله") return "الله";
+        if (w.Length > 3 && (w[0] == 'و' || w[0] == 'ف')) w = w[1..];
+        if (w.Length > 4 && (w.StartsWith("بال", StringComparison.Ordinal) || w.StartsWith("كال", StringComparison.Ordinal))) w = w[3..];
+        else if (w.Length > 3 && w.StartsWith("ال", StringComparison.Ordinal)) w = w[2..];
+        else if (w.Length > 4 && w.StartsWith("لل", StringComparison.Ordinal)) w = w[2..];
+        foreach (var suffix in Suffixes)
+            if (w.Length - suffix.Length >= 3 && w.EndsWith(suffix, StringComparison.Ordinal)) { w = w[..^suffix.Length]; break; }
+        return w;
+    }
+
     /// <summary>The word tokens of a Tanzil line: pause marks, rub-el-hizb and sajda signs dropped.</summary>
     public static IReadOnlyList<string> WordTokens(string text)
         => text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(HasLetter).ToList();

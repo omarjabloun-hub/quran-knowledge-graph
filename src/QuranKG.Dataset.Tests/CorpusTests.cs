@@ -126,4 +126,55 @@ public class CorpusTests
         Assert.DoesNotContain(new VerseRef(2, 82), arabic);
         Assert.Contains(new VerseRef(2, 83), arabic);
     }
+
+    [Fact]
+    public void Bukhari_and_muslim_are_numbered_as_they_are_cited()
+    {
+        Assert.Equal(7_580, Corpus.Hadiths.Count(h => h.Collection == "bukhari"));
+        Assert.Equal(7_360, Corpus.Hadiths.Count(h => h.Collection == "muslim"));
+
+        var neighbour = Corpus.Hadiths.Single(h => h.Key == "bukhari:6018");
+        Assert.Equal("Bukhari 6018", neighbour.Reference);
+        Assert.Contains("neighbo", neighbour.TextEnglish);
+
+        Assert.Contains(Corpus.Hadiths, h => h.Reference == "Muslim 8a");
+        Assert.All(Corpus.HadithBooks.Where(b => b.Number > 0), b => Assert.NotEqual("", b.NameArabic));
+    }
+
+    [Fact]
+    public void The_matn_leaves_the_chain_of_narrators_out()
+    {
+        var pillars = Corpus.Hadiths.Single(h => h.Key == "bukhari:8");
+        Assert.Contains("بني الإسلام على خمس", pillars.Matn);
+        Assert.DoesNotContain("حدثنا", pillars.Matn);
+    }
+
+    [Fact]
+    public void A_hadith_quoting_a_verse_is_linked_to_it_and_narration_is_not_a_quotation()
+    {
+        Quote("bukhari:125", "17:85", "quotation");     // ويسألونك عن الروح … whole verse
+        Quote("bukhari:3525", "26:214", "quotation");   // وأنذر عشيرتك الأقربين — a verse of three words
+
+        // "من كان يؤمن بالله واليوم الآخر" opens many hadith: a formula in 65:2's words, a phrase, not a quotation.
+        Assert.DoesNotContain(Corpus.QuranQuotes, q => q.HadithKey == "bukhari:6018" && q.Verse == new VerseRef(65, 2) && q.Kind == "quotation");
+
+        // "فقال لهم رسول الله" is narration, not 91:13.
+        Assert.DoesNotContain(Corpus.QuranQuotes, q => q.Verse == new VerseRef(91, 13) && q.Kind != "translator" && q.Quoted == "فقال لهم رسول الله");
+    }
+
+    [Fact]
+    public void A_hadith_keeps_its_distinctive_words_not_its_framing()
+    {
+        var neighbour = Corpus.Hadiths.Single(h => h.Key == "bukhari:6018");
+        Assert.Contains("جار", neighbour.Keywords);      // جاره → جار
+        Assert.Contains("ضيف", neighbour.Keywords);      // ضيفه → ضيف
+        Assert.DoesNotContain("الله", neighbour.Keywords);
+    }
+
+    private static void Quote(string hadith, string verse, string kind)
+    {
+        var q = Corpus.QuranQuotes.SingleOrDefault(x => x.HadithKey == hadith && x.Verse.Key == verse);
+        Assert.NotNull(q);
+        Assert.Equal(kind, q.Kind);
+    }
 }

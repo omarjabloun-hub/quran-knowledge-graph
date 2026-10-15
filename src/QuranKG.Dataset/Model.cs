@@ -182,3 +182,75 @@ public sealed class TafsirEntry
     public string Key => First == Last ? $"{Edition}:{First.Key}" : $"{Edition}:{First.Key}-{Last.Ayah}";
     public IEnumerable<VerseRef> Verses => Enumerable.Range(First.Ayah, Last.Ayah - First.Ayah + 1).Select(a => new VerseRef(First.Surah, a));
 }
+
+/// <summary>A hadith collection: "bukhari" (Sahih al-Bukhari) or "muslim" (Sahih Muslim).</summary>
+public sealed class HadithCollection
+{
+    public required string Id          { get; init; }
+    public required string Name        { get; init; }
+    public required string NameArabic  { get; init; }
+    public required string Compiler    { get; init; }
+    public required string Translator  { get; init; }
+}
+
+/// <summary>A book (kitab) of a collection. Key: "bukhari:65".</summary>
+public sealed class HadithBook
+{
+    public required string Collection { get; init; }
+    public required int    Number     { get; init; }
+    public required string Name       { get; init; }
+    public required string NameArabic { get; init; }
+    public string Key => $"{Collection}:{Number}";
+}
+
+/// <summary>
+/// One hadith, as the collection numbers it. Key: "bukhari:6018", "muslim:93" (hadith-api's
+/// sequence); <see cref="Reference"/> is how it is cited — "Bukhari 6018", "Muslim 8a" (Abdul Baqi).
+/// </summary>
+public sealed class Hadith
+{
+    public required string                  Collection     { get; init; }
+    /// <summary>The collection's sequence number as text: "6018", "402.2".</summary>
+    public required string                  Number         { get; init; }
+    /// <summary>Order within the collection.</summary>
+    public required int                     Sequence       { get; init; }
+    public required string                  Reference      { get; init; }
+    public required int                     Book           { get; init; }
+    public required int                     NumberInBook   { get; init; }
+    /// <summary>The Arabic, chain and text, with its diacritics.</summary>
+    public required string                  TextArabic     { get; init; }
+    /// <summary>The text without its chain of narrators, no diacritics (a heuristic — see <see cref="Sources.HadithSource"/>).</summary>
+    public required string                  Matn           { get; init; }
+    /// <summary>A chain that only points to the hadith before it ("بهذا الإسناد مثله"): no text of its own.</summary>
+    public required bool                    IsVariant      { get; init; }
+    public required string                  TextEnglish    { get; init; }
+    /// <summary>The verses the English translator cites in brackets — his note, not the hadith's words.</summary>
+    public required IReadOnlyList<VerseRef> TranslatorCites { get; init; }
+    /// <summary>
+    /// The words that set its text apart from the other hadith (<see cref="Text.Arabic.Stem"/>med,
+    /// by tf·idf over the hadith texts), most distinctive first — what "shares words with a verse"
+    /// is counted on, so "whoever believes in Allah and the Last Day" does not outweigh "his neighbour".
+    /// </summary>
+    public IReadOnlyList<string> Keywords { get; set; } = [];
+    public string Key => $"{Collection}:{Number}";
+}
+
+/// <summary>
+/// Where a hadith and a verse meet in words. <see cref="Kind"/>:
+///   quotation   six or more consecutive words of the verse in the hadith's Arabic, or a whole short verse;
+///   phrase      four or five consecutive words — a shared phrase, weaker evidence;
+///   translator  only the English translator cites the verse (the Arabic does not quote it).
+/// Key: "bukhari:4500>15:90".
+/// </summary>
+public sealed class QuranQuote
+{
+    public required string   HadithKey  { get; init; }
+    public required VerseRef Verse      { get; init; }
+    public required string   Kind       { get; init; }
+    /// <summary>How many of the verse's words the hadith quotes.</summary>
+    public required int      Words      { get; init; }
+    public required int      VerseWords { get; init; }
+    /// <summary>The longest run quoted, in the matching spelling; empty for a translator's citation.</summary>
+    public required string   Quoted     { get; init; }
+    public string Key => $"{HadithKey}>{Verse.Key}";
+}
