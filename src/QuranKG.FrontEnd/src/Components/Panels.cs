@@ -8,15 +8,16 @@ namespace QuranKG.FrontEnd.Components
     /// <summary>The colours that carry meaning across every chart: a Meccan bar is the same orange everywhere.</summary>
     internal static class Palette
     {
-        internal static string Meccan  => Theme.Colors.Orange600;
-        internal static string Medinan => Theme.Colors.Teal600;
-        internal static string Root    => Theme.Colors.Yellow700;
-        internal static string Lemma   => Theme.Colors.Purple600;
-        internal static string Noun    => Theme.Colors.Blue600;
-        internal static string Verb    => Theme.Colors.Magenta600;
-        internal static string Other   => Theme.Colors.Neutral500;
+        // Concrete colours (a chart's SVG does not read CSS variables); the same values as Look's tokens.
+        internal static string Meccan  => Look.MECCAN_CHART;
+        internal static string Medinan => Look.MEDINAN_CHART;
+        internal static string Root    => "#a07a1c";
+        internal static string Lemma   => "#7339a8";
+        internal static string Noun    => "#3f7fbf";
+        internal static string Verb    => "#b23a7a";
+        internal static string Other   => "#8a9491";
         /// <summary>Verses tied by the Arabic embedding — the meaning signal.</summary>
-        internal static string Meaning => Theme.Colors.Blue600;
+        internal static string Meaning => Look.TEAL;
 
         internal static string ForPlace(string place) => place == QK.MEDINAN ? Medinan : Meccan;
     }

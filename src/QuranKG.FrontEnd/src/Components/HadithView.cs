@@ -6,6 +6,7 @@ using TNT;
 using UID;
 using static Tesserae.UI;
 using static TNT.T;
+using static Transpose.Core.dom;
 
 namespace QuranKG.FrontEnd.Components
 {
@@ -21,41 +22,76 @@ namespace QuranKG.FrontEnd.Components
         internal static string Color => Theme.Colors.Teal700;
 
         /// <summary>How a hadith meets a verse, as a badge: quotation, shared phrase, the translator's citation.</summary>
-        internal static IComponent KindBadge(string kind)
+        internal static IComponent KindBadge(string kind) => Raw(KindPill(kind));
+
+        internal static HTMLElement KindPill(string kind)
         {
             switch (kind)
             {
-                case "quotation":  return Badge("quotes it".t()).Success().Tooltip("The verse's words in the hadith's Arabic: set in braces by the edition, six words or more, or the whole of a short verse".t());
-                case "phrase":     return Badge("shares a phrase".t()).Warning().Tooltip("Four to seven words of the verse, unmarked — weaker evidence: a formula in the Quran's words may be shared by many hadith".t());
-                case "translator": return Badge("translator's citation".t()).Neutral().Tooltip("The English translator cites the verse in brackets; the Arabic does not quote it".t());
-                default:           return Badge("close in meaning".t()).Info().Tooltip("Ranked by meaning and shared words — a candidate to read, not a link the text makes".t());
+                case "quotation":  return Titled(Look.Badge("Quotes it".t(), "teal"), "The verse's words in the hadith's Arabic: set in braces by the edition, six words or more, or the whole of a short verse".t());
+                case "phrase":     return Titled(Look.Badge("Shares a phrase".t(), "warn"), "Four to seven words of the verse, unmarked — weaker evidence: a formula in the Quran's words may be shared by many hadith".t());
+                case "translator": return Titled(Look.Badge("Translator's citation".t(), "plain"), "The English translator cites the verse in brackets; the Arabic does not quote it".t());
+                default:           return Titled(Look.Badge("Close in meaning".t(), "info"), "Ranked by meaning and shared words — a candidate to read, not a link the text makes".t());
             }
         }
 
-        /// <summary>A hadith in a list: its reference and book, how it meets the Quran, the opening of its text in Arabic and English. Opens its page.</summary>
-        internal static IComponent Row(QK.HadithRow h, bool showVerses = true)
-        {
-            var header = HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().Children(
-                TextBlock(h.Reference).SemiBold(),
-                TextBlock(h.BookName ?? "").Tiny().Secondary());
+        private static HTMLElement Titled(HTMLElement el, string title) { el.title = title; return el; }
 
-            if (!string.IsNullOrEmpty(h.Kind) || h.Score > 0) header.Add(KindBadge(h.Kind));
-            if (h.Score > 0) header.Add(TextBlock(string.Format("cosine {0:0.00}".t(), h.Score)).Tiny().Secondary());
+        /// <summary>A hadith in a list: its reference and book, how it meets the Quran, the opening of its text in Arabic and English. Opens its page.</summary>
+        internal static IComponent Row(QK.HadithRow h, bool showVerses = true, bool compact = false)
+        {
+            Look.EnsureStyles();
+            EnsureStyles();
+
+            var card   = Look.El("div", "qkg-card qkg-hadith" + (compact ? " qkg-hadith-compact" : ""));
+            var header = Look.El("div", "qkg-hadith-head");
+            header.appendChild(Look.El("span", "qkg-hadith-ref", h.Reference));
+            header.appendChild(Look.El("span", "qkg-note qkg-hadith-book", h.BookName ?? ""));
+            header.appendChild(Look.El("span", "qkg-toolbar-spacer"));
+            if (!string.IsNullOrEmpty(h.Kind) || h.Score > 0) header.appendChild(KindPill(h.Kind));
+            if (h.Score > 0) header.appendChild(Look.El("span", "qkg-note", string.Format("cosine {0:0.00}".t(), h.Score)));
             if (showVerses)
                 foreach (var key in (h.VerseKeys ?? new string[0]).Take(6))
                 {
                     var captured = key;
-                    header.Add(TextBlock(captured).Tiny().Foreground(Theme.Primary.Background)
-                                  .Style(s => s.setProperty("cursor", "pointer"))
-                                  .OnClick((_, e) => { e.stopPropagation(); VerseReferences.Open(captured); }));
+                    var chip = Look.Chip(captured, () => VerseReferences.Open(captured));
+                    chip.classList.add("qkg-hadith-verse");
+                    header.appendChild(chip);
                 }
+            card.appendChild(header);
 
-            return Card(VStack().WS().Gap(4.px()).Children(
-                        header,
-                        Arabic.Text(h.Matn ?? "", 19),
-                        TextBlock(h.English ?? "").Small().Secondary()))
-                   .OnClick(() => Lists.Open(h.Uid))
-                   .MB(8);
+            var ar = Look.El("p", "qkg-hadith-ar", h.Matn ?? "");
+            ar.setAttribute("dir", "rtl");
+            ar.setAttribute("lang", "ar");
+            card.appendChild(ar);
+            card.appendChild(Look.El("p", "qkg-hadith-en", h.English ?? ""));
+
+            var uid = h.Uid;
+            Look.OnClick(card, () => Lists.Open(uid));
+            return Raw(card).WS();
+        }
+
+        private static bool _styled;
+
+        private static void EnsureStyles()
+        {
+            if (_styled) return;
+            _styled = true;
+            var style = document.createElement("style");
+            style.textContent = @"
+.qkg-hadith { display: flex; flex-direction: column; gap: 10px; }
+.qkg-hadith-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.qkg-hadith-ref { font-weight: 600; font-size: 16px; }
+.qkg-hadith-verse { min-height: 24px; padding: 0 10px; font-size: 12px; }
+.qkg-hadith-ar { font-family: 'Amiri', 'Noto Naskh Arabic', serif; font-size: 20px; line-height: 2; text-align: right; color: var(--qkg-ink); margin: 0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.qkg-hadith-en { font-size: 14px; line-height: 1.6; color: var(--qkg-ink-2); margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.qkg-hadith-compact { padding: 14px 16px; gap: 6px; }
+.qkg-hadith-compact .qkg-hadith-ref { font-size: 14px; }
+.qkg-hadith-compact .qkg-hadith-ar { font-size: 18px; -webkit-line-clamp: 2; }
+.qkg-hadith-compact .qkg-hadith-en { display: none; }
+.qkg-hadith-compact .qkg-hadith-book { display: none; }
+";
+            document.head.appendChild(style);
         }
 
         // -----------------------------------------------------------------------------------

@@ -60,17 +60,20 @@ namespace QuranKG.FrontEnd.Components
 
         public ReadingPane(Settings settings)
         {
+            EnsureStyles();
             _settings = settings;
             _options  = ReaderOptions.Load(settings.OptionsKey ?? "default", settings.KeyWordsByDefault);
 
+            Look.EnsureStyles();
             _scroll = Div(Att("qkg-reader-scroll"));
+            ApplyTheme();
             _scroll.style.flex      = "1 1 auto";
             _scroll.style.overflowY = "auto";
             _scroll.style.minHeight = "0";
             _scroll.style.width     = "100%";
 
-            _details = VStack().W(420.px()).H(100.percent()).ScrollY().NoShrink()
-                               .Style(s => s.setProperty("border-left", "1px solid var(--tss-default-border-color)"));
+            _details = VStack().W(480.px()).MaxWidth(46.vw()).H(100.percent()).ScrollY().NoShrink().Class("qkg-ui qkg-study")
+                               .Style(s => s.setProperty("border-left", "1px solid var(--qkg-line)"));
             _details.Collapse();
 
             _content = Defer(async () =>
@@ -88,18 +91,18 @@ namespace QuranKG.FrontEnd.Components
                         OnVerse        = Recited,
                     });
 
-                var left = VStack().S().Grow().Style(s => s.setProperty("min-width", "0"));
+                var left = VStack().S().Grow().Class("qkg-ui").Style(s => s.setProperty("min-width", "0"));
                 if (settings.Header is object) left.Add(settings.Header(_text));
 
                 // The toolbar and the strip depend on the layout: rebuilt with the text when it changes.
                 var toolbar = VStack().WS();
-                var strip   = VStack().WS();
+                var strip   = VStack().WS().Style(st => st.setProperty("border-bottom", "1px solid var(--qkg-line)"));
                 Rebuild = () =>
                 {
                     toolbar.Clear();
                     toolbar.Add(Toolbar());
                     strip.Clear();
-                    if (_text.PassagesBuilt && (_text.Sections ?? new QK.ReadingSection[0]).Length > 1 && _options.Layout != ReaderOptions.PAGES) strip.Add(Strip().PL(16).PR(16).PB(6));
+                    if (_text.PassagesBuilt && (_text.Sections ?? new QK.ReadingSection[0]).Length > 1 && _options.Layout != ReaderOptions.PAGES) strip.Add(Strip().PL(32).PR(32).PB(10).PT(2));
                 };
                 Rebuild();
                 left.Add(toolbar);
@@ -226,96 +229,172 @@ namespace QuranKG.FrontEnd.Components
 
         private IComponent Toolbar()
         {
-            var smaller = Button().SetIcon(UIcons.Minus).Compact().Tooltip("Smaller text".t());
-            var larger  = Button().SetIcon(UIcons.Plus).Compact().Tooltip("Larger text".t());
-            smaller.OnClick(() => { _options.FontSize = Math.Max(ReaderOptions.MIN_SIZE, _options.FontSize - 2); Changed(); });
-            larger.OnClick(() =>  { _options.FontSize = Math.Min(ReaderOptions.MAX_SIZE, _options.FontSize + 2); Changed(); });
-
-            var bar = HStack().WS().AlignItemsCenter().Gap(16.px()).Wrap().PL(16).PR(16).PT(8).PB(8).Children(
-                HStack().AlignItemsCenter().Gap(4.px()).Children(smaller, TextBlock("Text".t()).Small().Secondary(), larger),
-                Layouts());
-
-            if (_player is object)
-                bar.Add(Button("Listen".t()).SetIcon(UIcons.PlayAlt).Compact()
-                              .Tooltip("The surah recited, the verse being recited marked and followed — from the verse selected, or from the start".t())
-                              .OnClick(() =>
-                              {
-                                  var from = UID128.IsNotNull(_selected) && _byUid.TryGetValue(_selected.ToString(), out var sel) ? sel.Verse.Ayah : 0;
-                                  _player.PlayFrom(from);
-                              }));
-
+            var bar   = Look.El("div", "qkg-toolbar");
             var pages = _options.Layout == ReaderOptions.PAGES;
+
+            bar.appendChild(Layouts());
+
+            var toggles = Look.El("div", "qkg-toolbar-group");
             if (_text.PassagesBuilt && !pages)
-                bar.Add(Option("Passages".t(), "Mark where the clusters build cuts the text, with each passage's words and theme".t(), _options.Passages, on => _options.Passages = on));
-
+                toggles.appendChild(Option("Passages".t(), "Mark where the clusters build cuts the text, with each passage's words and theme".t(), _options.Passages, on => _options.Passages = on));
             if (!pages)
-                bar.Add(Option("English".t(), _options.Layout == ReaderOptions.VERSES ? "Saheeh International under each verse".t() : "Saheeh International beside the Arabic, passage by passage".t(), _options.Translation, on => _options.Translation = on));
-
+                toggles.appendChild(Option("English".t(), _options.Layout == ReaderOptions.VERSES ? "Saheeh International under each verse".t() : "Saheeh International beside the Arabic, passage by passage".t(), _options.Translation, on => _options.Translation = on));
             if ((_text.Sections ?? new QK.ReadingSection[0]).Any(s => (s.Verses ?? new QK.ReadingVerse[0]).Any(v => (v.Highlights ?? new int[0]).Length > 0)))
-                bar.Add(Option("Key words".t(),
+                toggles.appendChild(Option("Key words".t(),
                                _text.Kind == "Surah" ? "Mark each passage's most distinctive words — what sets it apart, and why it was cut there".t()
                                                      : "Mark the words these verses use far more than the rest of the Quran — why they were grouped".t(),
-                               _options.KeyWords, on => _options.KeyWords = on));
+                               _options.KeyWords, on => _options.KeyWords = on, marked: true));
+            bar.appendChild(toggles);
+
+            var spacer = Look.El("span", "qkg-toolbar-spacer");
+            bar.appendChild(spacer);
+
+            _location = TextBlock("").Small().NoWrap().Class("qkg-toolbar-where");
+            bar.appendChild(_location.Tooltip("Where the top of the text is in the Madinah mushaf".t()).Render());
+
+            if (_player is object)
+                bar.appendChild(Look.Button("Listen".t(), () =>
+                {
+                    var from = UID128.IsNotNull(_selected) && _byUid.TryGetValue(_selected.ToString(), out var sel) ? sel.Verse.Ayah : 0;
+                    _player.PlayFrom(from);
+                }, "soft", "▶", "The surah recited, the verse being recited marked and followed — from the verse selected, or from the start".t()));
+
+            var size = Look.El("div", "qkg-toolbar-group qkg-toolbar-size");
+            size.appendChild(Look.IconButton("A−", "Smaller text".t(), () => { _options.FontSize = Math.Max(ReaderOptions.MIN_SIZE, _options.FontSize - 2); Changed(); }));
+            size.appendChild(Look.IconButton("A+", "Larger text".t(), () => { _options.FontSize = Math.Min(ReaderOptions.MAX_SIZE, _options.FontSize + 2); Changed(); }));
+            bar.appendChild(size);
+
+            bar.appendChild(Themes());
 
             var keys = _text.KeyLemmas ?? new QK.Counted[0];
             if (keys.Length > 0)
             {
-                var legend = HStack().AlignItemsCenter().Gap(10.px()).Wrap();
+                var legend = Look.El("div", "qkg-toolbar-keys");
+                legend.appendChild(Look.El("span", "qkg-note", "Key words".t()));
                 foreach (var k in keys.Take(8))
                 {
                     var captured = k;
-                    legend.Add(Arabic.Inline(captured.Label, 17)
-                                     .Style(s => { s.setProperty("color", "#c2410c"); s.setProperty("cursor", "pointer"); })
-                                     .Tooltip(captured.Detail)
-                                     .OnClick((_, __) => Lists.Open(captured.Uid)));
+                    var word = Look.Ar(captured.Label, "qkg-arw qkg-toolbar-key");
+                    word.title = captured.Detail ?? "";
+                    legend.appendChild(Look.OnClick(word, () => Lists.Open(captured.Uid)));
                 }
-                bar.Add(legend);
+                bar.appendChild(legend);
             }
 
-            _location = TextBlock("").Small().Secondary().NoWrap();
-            bar.Add(_location.Grow().Style(st => st.setProperty("text-align", "right")).Tooltip("Where the top of the text is in the Madinah mushaf".t()));
-
-            return bar.Style(s => s.setProperty("border-bottom", "1px solid var(--tss-default-border-color)"));
+            return Raw(bar).WS();
         }
 
         /// <summary>The three ways to lay the text out, as a segmented switch.</summary>
-        private IComponent Layouts()
+        private HTMLElement Layouts()
         {
-            var group = HStack().AlignItemsCenter().Gap(0.px());
-            void Add(string layout, string label, UIcons icon, string tooltip)
+            var layouts = new[] { ReaderOptions.VERSES, ReaderOptions.FLOW, ReaderOptions.PAGES };
+            var seg = Look.Segmented(new[] { "Verse by verse".t(), "Reading".t(), "Mushaf".t() },
+                                     Array.IndexOf(layouts, _options.Layout),
+                                     i =>
+                                     {
+                                         if (_options.Layout == layouts[i]) return;
+                                         _options.Layout = layouts[i];
+                                         _options.Save();
+                                         Rebuild?.Invoke();
+                                         Draw();
+                                     }, "Layout".t());
+            var tips = new[]
             {
-                var button = Button(label).SetIcon(icon).Compact().Tooltip(tooltip);
-                if (_options.Layout == layout) button.Primary();
-                button.OnClick(() =>
+                "One verse to a row, with its key — and its translation if English is on".t(),
+                "The verses flowing one after another, passage by passage".t(),
+                "The pages of the Madinah mushaf (604), each closed by its number".t(),
+            };
+            var buttons = seg.querySelectorAll("button");
+            for (var i = 0; i < buttons.length; i++) buttons[i].As<HTMLElement>().title = tips[i];
+            return seg;
+        }
+
+        /// <summary>The page the text is set on: light, sepia or dark.</summary>
+        private HTMLElement Themes()
+        {
+            var group   = Look.El("div", "qkg-toolbar-group qkg-swatches");
+            group.setAttribute("role", "radiogroup");
+            group.setAttribute("aria-label", "Reading theme".t());
+            var current = string.IsNullOrEmpty(_options.Theme) ? (document.body.classList.contains("tss-dark-mode") ? "dark" : "light") : _options.Theme;
+            foreach (var (theme, label) in new[] { ("light", "Light".t()), ("sepia", "Sepia".t()), ("dark", "Dark".t()) })
+            {
+                var captured = theme;
+                var swatch = Look.El("button", "qkg-swatch qkg-swatch-" + theme + (theme == current ? " qkg-on" : ""));
+                swatch.setAttribute("type", "button");
+                swatch.setAttribute("role", "radio");
+                swatch.setAttribute("aria-checked", theme == current ? "true" : "false");
+                swatch.setAttribute("aria-label", label);
+                swatch.title = label;
+                swatch.onclick = _ =>
                 {
-                    if (_options.Layout == layout) return;
-                    _options.Layout = layout;
+                    _options.Theme = captured;
                     _options.Save();
+                    ApplyTheme();
                     Rebuild?.Invoke();
-                    Draw();
-                });
-                group.Add(button);
+                };
+                group.appendChild(swatch);
             }
-            Add(ReaderOptions.FLOW,   "Flowing".t(),           UIcons.AlignJustify,  "The verses flowing one after another, passage by passage".t());
-            Add(ReaderOptions.VERSES, "Verse by verse".t(), UIcons.RectangleList,        "One verse to a row, with its key — and its translation if English is on".t());
-            Add(ReaderOptions.PAGES,  "Mushaf".t(),         UIcons.BookOpenCover, "The pages of the Madinah mushaf (604), each closed by its number".t());
             return group;
+        }
+
+        private void ApplyTheme()
+        {
+            _scroll.classList.remove("qkg-reading-light");
+            _scroll.classList.remove("qkg-reading-sepia");
+            _scroll.classList.remove("qkg-reading-dark");
+            if (!string.IsNullOrEmpty(_options.Theme)) _scroll.classList.add("qkg-reading-" + _options.Theme);
         }
 
         /// <summary>Set by the pane: rebuilds the toolbar and the text when the layout changes.</summary>
         private Action Rebuild;
 
-        private IComponent Option(string label, string tooltip, bool on, Action<bool> set)
+        private HTMLElement Option(string label, string tooltip, bool on, Action<bool> set, bool marked = false)
         {
-            var toggle = Toggle(label).Checked(on);
-            toggle.OnChange((s, __) => { set(s.IsChecked); Changed(); });
-            return toggle.Tooltip(tooltip);
+            var chip = Look.Chip("", null, on);
+            chip.setAttribute("aria-pressed", on ? "true" : "false");
+            chip.appendChild(Look.El("span", marked ? "qkg-chip-swatch qkg-chip-mark" : "qkg-chip-swatch"));
+            chip.appendChild(Look.El("span", "", label));
+            chip.title   = tooltip;
+            chip.onclick = _ => { set(!on); Changed(); Rebuild?.Invoke(); };
+            return chip;
         }
 
         private void Changed()
         {
             _options.Save();
             Draw();
+        }
+
+        private static bool _styled;
+
+        internal static void EnsureStyles()
+        {
+            if (_styled) return;
+            _styled = true;
+            var style = document.createElement("style");
+            style.textContent = @"
+.qkg-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 32px 12px 32px; }
+.qkg-toolbar-group { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.qkg-toolbar-spacer { flex: 1 1 auto; }
+.qkg-toolbar-where { color: var(--qkg-ink-3); }
+.qkg-toolbar-size .qkg-iconbtn { width: 32px; height: 32px; font-size: 13px; font-weight: 600; }
+.qkg-chip-swatch { width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid currentColor; box-sizing: border-box; opacity: .7; }
+.qkg-chip.qkg-on .qkg-chip-swatch { background: currentColor; opacity: 1; }
+.qkg-chip-mark { border-color: var(--qkg-mark); }
+.qkg-chip.qkg-on .qkg-chip-mark { background: var(--qkg-mark); }
+.qkg-swatch { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--qkg-line-2); cursor: pointer; padding: 0; }
+.qkg-swatch.qkg-on { box-shadow: 0 0 0 2px var(--qkg-bg), 0 0 0 4px var(--qkg-teal); }
+.qkg-swatch-light { background: #ffffff; }
+.qkg-swatch-sepia { background: #f1e2c3; }
+.qkg-swatch-dark { background: #1a1f1e; }
+.qkg-toolbar-keys { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.qkg-toolbar-key { font-size: 18px; color: var(--qkg-mark); }
+.qkg-reader-header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 32px 4px 32px; }
+.qkg-reader-header-name { display: flex; flex-direction: column; line-height: 1.25; }
+.qkg-reader-header-ar { font-size: 28px; color: var(--qkg-teal-strong); }
+.qkg-study { background: var(--qkg-bg); }
+";
+            document.head.appendChild(style);
         }
 
         /// <summary>The text's passages as a strip, each as wide as its words and in its theme's colour: click to go there.</summary>

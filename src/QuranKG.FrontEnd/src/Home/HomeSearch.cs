@@ -33,12 +33,13 @@ namespace QuranKG.FrontEnd.Home
         internal static IComponent Hero()
         {
             EnsureStyles();
-            Arabic.EnsureFonts();
+            Look.EnsureStyles();
 
             var hero = Div(Att("qkg-hero"));
 
             var title = Div(Att("qkg-hero-ar"));
             title.setAttribute("dir", "rtl");
+            title.setAttribute("lang", "ar");
             title.textContent = "القرآن الكريم";
             hero.appendChild(title);
 
@@ -60,9 +61,11 @@ namespace QuranKG.FrontEnd.Home
             var field = Div(Att("qkg-search-field"));
             var icon  = Span(Att("qkg-search-icon"));
             icon.textContent = "⌕";
+            icon.setAttribute("aria-hidden", "true");
             var input = document.createElement("input").As<HTMLInputElement>();
             input.className   = "qkg-search-input";
-            input.placeholder = "Search the Quran — 2:255, Al-Kahf, الرحمن, page 50, mercy, Bukhari 6018…".t();
+            input.placeholder = "2:255, Al-Kahf, الرحمن, page 50, mercy, Bukhari 6018…".t();
+            input.setAttribute("aria-label", "Search the Quran".t());
             input.setAttribute("autocomplete", "off");
             input.setAttribute("spellcheck", "false");
             var clear = Span(Att("qkg-search-clear"));
@@ -71,6 +74,10 @@ namespace QuranKG.FrontEnd.Home
             field.appendChild(icon);
             field.appendChild(input);
             field.appendChild(clear);
+            var hint = Span(Att("qkg-search-kbd"));
+            hint.textContent = "/";
+            hint.title = "Press / to search".t();
+            field.appendChild(hint);
             box.appendChild(field);
 
             var results = Div(Att("qkg-search-results"));
@@ -130,6 +137,7 @@ namespace QuranKG.FrontEnd.Home
             clear.onclick = _ => { input.value = ""; clear.style.visibility = "hidden"; generation++; Hide(); input.focus(); };
 
             DomObserver.WhenMounted(input, () => window.setTimeout(__ => input.focus(), 50));
+            input.setAttribute("data-qkg-search", "1");
             return box;
         }
 
@@ -156,12 +164,15 @@ namespace QuranKG.FrontEnd.Home
                 {
                     var captured = t;
                     var row  = Div(Att("qkg-sr-target"));
-                    var kind = Span(Att("qkg-sr-kind"));
-                    kind.textContent = KindLabel(t.Kind);
-                    row.appendChild(kind);
+                    if (t.Kind != "hadith" && t.SurahNumber > 0) row.appendChild(Look.SurahNumber(t.SurahNumber));
+                    var text  = Div(Att("qkg-sr-text"));
                     var label = Span(Att("qkg-sr-label"));
                     label.textContent = t.Label;
-                    row.appendChild(label);
+                    text.appendChild(label);
+                    var detail = Span(Att("qkg-sr-detail"));
+                    detail.textContent = KindLabel(t.Kind) + (string.IsNullOrEmpty(t.Detail) ? "" : " · " + t.Detail);
+                    text.appendChild(detail);
+                    row.appendChild(text);
                     if (!string.IsNullOrEmpty(t.LabelArabic))
                     {
                         var ar = Span(Att("qkg-sr-ar"));
@@ -169,9 +180,6 @@ namespace QuranKG.FrontEnd.Home
                         ar.textContent = t.LabelArabic;
                         row.appendChild(ar);
                     }
-                    var detail = Span(Att("qkg-sr-detail"));
-                    detail.textContent = t.Detail ?? "";
-                    row.appendChild(detail);
                     Item(row, () => Open(captured));
                 }
             }
@@ -179,7 +187,7 @@ namespace QuranKG.FrontEnd.Home
             var verses = dto?.Verses ?? new QK.QuickVerse[0];
             if (verses.Length > 0)
             {
-                into.appendChild(Label(dto.Total > verses.Length ? string.Format("Verses — the first {0} of {1}".t(), verses.Length, dto.Total) : string.Format("Verses — {0}".t(), verses.Length)));
+                into.appendChild(Label(dto.Total > verses.Length ? string.Format("Verses — the first {0} of {1}, in Arabic or English".t(), verses.Length, Panels.Number(dto.Total)) : string.Format("Verses — {0}".t(), verses.Length)));
                 foreach (var v in verses)
                 {
                     var captured = v;
@@ -193,14 +201,17 @@ namespace QuranKG.FrontEnd.Home
                     head.appendChild(surah);
                     row.appendChild(head);
 
+                    var body = Div(Att("qkg-sr-vbody"));
                     var ar = Div(Att("qkg-sr-vtext"));
                     ar.setAttribute("dir", "rtl");
+                    ar.setAttribute("lang", "ar");
                     ar.textContent = v.Text;
-                    row.appendChild(ar);
+                    body.appendChild(ar);
 
                     var en = Div(Att("qkg-sr-ven"));
                     en.textContent = v.Translation;
-                    row.appendChild(en);
+                    body.appendChild(en);
+                    row.appendChild(body);
 
                     Item(row, () => QuranLinks.Go(captured.SurahNumber, captured.Ayah));
                 }
@@ -255,19 +266,23 @@ namespace QuranKG.FrontEnd.Home
         private static HTMLElement Chips()
         {
             var chips = Div(Att("qkg-hero-chips"));
-
-            chips.appendChild(Chip("☰ " + "Surah list".t(), "All 114 surahs, to read".t(), true, () => QuranLinks.Go(1)));
-
             var (surah, ayah) = QuranLinks.LastRead();
-            if (surah > 0)
-                chips.appendChild(Chip("↻ " + string.Format("Continue reading · {0}".t(), ayah > 0 ? surah + ":" + ayah : "surah " + surah),
-                                       "Where you left off".t(), false, () => QuranLinks.Go(surah, ayah)));
 
-            chips.appendChild(Chip("▶ " + "Listen · Sheikh Latrech".t(), "The recitation of Sheikh Mohamed (Hamadi) Latrech, Qalun from Nafi' — the text follows the verse being recited".t(), false, () =>
+            if (surah > 0)
+                chips.appendChild(Look.Button(string.Format("Continue reading · {0}".t(), ayah > 0 ? surah + ":" + ayah : "surah " + surah),
+                                              () => QuranLinks.Go(surah, ayah), "primary", "↻", "Where you left off".t()));
+
+            chips.appendChild(Look.Button("Listen · Sheikh Latrech".t(), () =>
             {
                 QuranLinks.ListenOnArrival = true;
                 QuranLinks.Go(surah > 0 ? surah : 1, surah > 0 ? ayah : 0);
-            }));
+            }, surah > 0 ? "plain" : "primary", "▶", "The recitation of Sheikh Mohamed (Hamadi) Latrech, Qalun from Nafi' — the text follows the verse being recited".t()));
+
+            chips.appendChild(Look.Button("Surah list".t(), () =>
+            {
+                var list = document.getElementById("qkg-surahs");
+                if (list is object) list.scrollIntoView(); else QuranLinks.Go(1);
+            }, "plain", "☰", "All 114 surahs".t()));
 
             var popular = Div(Att("qkg-hero-popular"));
             var label   = Span(Att("qkg-hero-popular-label"));
@@ -276,9 +291,8 @@ namespace QuranKG.FrontEnd.Home
             foreach (var p in Popular)
             {
                 var captured = p;
-                var link = Span(Att("qkg-hero-link"));
+                var link = Look.OnClick(Span(Att("qkg-link")), () => QuranLinks.Go(captured.Surah, captured.Ayah));
                 link.textContent = p.Label;
-                link.onclick = _ => QuranLinks.Go(captured.Surah, captured.Ayah);
                 popular.appendChild(link);
             }
 
@@ -286,15 +300,6 @@ namespace QuranKG.FrontEnd.Home
             wrap.appendChild(chips);
             wrap.appendChild(popular);
             return wrap;
-        }
-
-        private static HTMLElement Chip(string text, string title, bool primary, Action onClick)
-        {
-            var chip = Span(Att(primary ? "qkg-chip qkg-chip-primary" : "qkg-chip"));
-            chip.textContent = text;
-            chip.title       = title;
-            chip.onclick     = _ => onClick();
-            return chip;
         }
 
         // -----------------------------------------------------------------------------------
@@ -311,38 +316,38 @@ namespace QuranKG.FrontEnd.Home
         }
 
         private const string CSS = @"
-.qkg-hero { display: flex; flex-direction: column; align-items: center; padding: 34px 16px 30px 16px; background: linear-gradient(180deg, rgba(14, 116, 144, .10), rgba(14, 116, 144, .02)); border-bottom: 1px solid var(--tss-default-border-color); }
-.qkg-hero-ar { font-family: {FONT}; font-size: 64px; line-height: 1.9; color: #0e7490; opacity: .85; }
-.qkg-hero-sub { font-size: 14px; color: var(--tss-secondary-foreground-color); margin: 4px 0 20px 0; }
-.qkg-search { position: relative; width: min(720px, 100%); }
-.qkg-search-field { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 18px; border-radius: 26px; background: var(--tss-default-background-color); border: 1px solid var(--tss-default-border-color); box-shadow: 0 2px 10px rgba(0,0,0,.06); }
-.qkg-search-field:focus-within { border-color: #0e7490; box-shadow: 0 2px 14px rgba(14, 116, 144, .18); }
-.qkg-search-icon { font-size: 22px; color: var(--tss-secondary-foreground-color); }
-.qkg-search-input { flex: 1 1 auto; border: none; outline: none; background: transparent; font-size: 16px; color: var(--tss-default-foreground-color); min-width: 0; }
-.qkg-search-clear { cursor: pointer; color: var(--tss-secondary-foreground-color); font-size: 14px; }
-.qkg-search-results { position: absolute; z-index: 50; top: 58px; left: 0; right: 0; max-height: 62vh; overflow-y: auto; padding: 8px; border-radius: 16px; background: var(--tss-default-background-color); border: 1px solid var(--tss-default-border-color); box-shadow: 0 10px 30px rgba(0,0,0,.14); }
-.qkg-sr-group { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--tss-secondary-foreground-color); padding: 8px 10px 4px 10px; }
-.qkg-sr-item { cursor: pointer; border-radius: 10px; padding: 8px 10px; }
-.qkg-sr-item:hover, .qkg-sr-item.qkg-active { background: var(--tss-default-background-hover-color); }
-.qkg-sr-target { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.qkg-sr-kind { font-size: 11px; font-weight: 600; color: #0e7490; min-width: 44px; }
+.qkg-hero { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 52px 24px 36px 24px; border-radius: 28px; background: var(--qkg-teal-tint); text-align: center; }
+.qkg-hero-ar { font-family: {FONT}; font-size: 72px; line-height: 1.6; color: var(--qkg-teal-strong); }
+.qkg-hero-sub { font-size: 17px; color: var(--qkg-ink-2); margin-top: -6px; }
+@media (max-width: 700px) { .qkg-hero-ar { font-size: 48px; } .qkg-hero { padding: 32px 16px 24px 16px; } }
+.qkg-search { position: relative; width: min(720px, 100%); text-align: left; }
+.qkg-search-field { display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 22px; border-radius: 999px; background: var(--qkg-raised); border: 1px solid transparent; box-shadow: 0 2px 12px rgba(15, 100, 102, .10); box-sizing: border-box; }
+.qkg-search-field:focus-within { border-color: var(--qkg-teal); box-shadow: 0 0 0 3px var(--qkg-teal-tint-2); }
+.qkg-search-icon { font-size: 22px; color: var(--qkg-ink-3); }
+.qkg-search-input { flex: 1 1 auto; border: none; outline: none; background: transparent; font: inherit; font-size: 17px; color: var(--qkg-ink); min-width: 0; }
+.qkg-search-input::placeholder { color: var(--qkg-ink-3); }
+.qkg-search-clear { cursor: pointer; color: var(--qkg-ink-3); font-size: 14px; }
+.qkg-search-kbd { display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border-radius: 6px; border: 1px solid var(--qkg-line-2); font-size: 12px; color: var(--qkg-ink-3); }
+.qkg-search-results { position: absolute; z-index: 50; top: 68px; left: 0; right: 0; max-height: 64vh; overflow-y: auto; padding: 8px; border-radius: 18px; background: var(--qkg-raised); border: 1px solid var(--qkg-line); box-shadow: 0 24px 64px rgba(10, 20, 18, .22); }
+.qkg-sr-group { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--qkg-ink-3); padding: 12px 12px 6px 12px; }
+.qkg-sr-item { cursor: pointer; border-radius: 12px; padding: 10px 12px; color: var(--qkg-ink); }
+.qkg-sr-item:hover, .qkg-sr-item.qkg-active { background: var(--qkg-teal-tint); }
+.qkg-sr-target { display: flex; align-items: center; gap: 14px; }
+.qkg-sr-text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
 .qkg-sr-label { font-weight: 600; }
-.qkg-sr-ar { font-family: {FONT}; font-size: 18px; line-height: 1.4; }
-.qkg-sr-detail { font-size: 12px; color: var(--tss-secondary-foreground-color); }
-.qkg-sr-vhead { display: flex; gap: 10px; align-items: baseline; }
-.qkg-sr-key { font-weight: 600; font-size: 13px; }
-.qkg-sr-vtext { font-family: {FONT}; font-size: 21px; line-height: 1.9; text-align: right; }
-.qkg-sr-ven { font-size: 13px; color: var(--tss-secondary-foreground-color); line-height: 1.5; }
-.qkg-sr-none { padding: 12px; font-size: 13px; color: var(--tss-secondary-foreground-color); }
-.qkg-hero-ways { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 18px; }
+.qkg-sr-ar { font-family: {FONT}; font-size: 24px; line-height: 1.4; color: var(--qkg-teal-strong); }
+.qkg-sr-detail { font-size: 13px; color: var(--qkg-ink-3); }
+.qkg-sr-verse { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
+.qkg-sr-vhead { display: flex; flex-direction: column; gap: 2px; }
+.qkg-sr-key { font-weight: 600; font-size: 14px; color: var(--qkg-teal-strong); }
+.qkg-sr-vbody { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.qkg-sr-vtext { font-family: {FONT}; font-size: 22px; line-height: 1.9; text-align: right; }
+.qkg-sr-ven { font-size: 14px; color: var(--qkg-ink-2); line-height: 1.5; }
+.qkg-sr-none { padding: 14px; font-size: 14px; color: var(--qkg-ink-3); }
+.qkg-hero-ways { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .qkg-hero-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.qkg-chip { cursor: pointer; padding: 8px 16px; border-radius: 10px; font-size: 14px; background: var(--tss-default-background-color); border: 1px solid var(--tss-default-border-color); }
-.qkg-chip:hover { border-color: #0e7490; }
-.qkg-chip-primary { background: #0e7490; border-color: #0e7490; color: #fff; }
-.qkg-hero-popular { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; font-size: 13px; }
-.qkg-hero-popular-label { color: var(--tss-secondary-foreground-color); }
-.qkg-hero-link { cursor: pointer; color: #0e7490; }
-.qkg-hero-link:hover { text-decoration: underline; }
+.qkg-hero-popular { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; font-size: 14px; }
+.qkg-hero-popular-label { color: var(--qkg-ink-3); }
 ";
     }
 }

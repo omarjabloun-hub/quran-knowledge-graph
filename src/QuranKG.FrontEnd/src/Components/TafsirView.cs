@@ -61,21 +61,17 @@ namespace QuranKG.FrontEnd.Components
 
             var current = works.FirstOrDefault(w => w.Work == dto.Work) ?? works[0];
 
-            var picker = HStack().AlignItemsCenter().Gap(4.px()).Wrap();
-            foreach (var w in works)
-            {
-                var captured = w;
-                var button   = Button(w.Name).Compact().Tooltip(w.NameArabic + " — " + w.Author);
-                if (w.Work == current.Work) button.Primary();
-                else button.OnClick(() => show(captured.Work));
-                picker.Add(button);
-            }
+            var picker = Look.Segmented(works.Select(w => w.Name).ToArray(), Array.IndexOf(works, current), i => show(works[i].Work), "Tafsir".t());
+            var pickerButtons = picker.querySelectorAll("button");
+            for (var i = 0; i < pickerButtons.length && i < works.Length; i++) pickerButtons[i].As<HTMLElement>().title = works[i].NameArabic + " — " + works[i].Author;
 
-            var section = VStack().WS().Gap(8.px()).Children(
-                HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap().Children(Heading(heading).Grow(), picker),
-                HStack().WS().AlignItemsCenter().Gap(8.px()).Wrap().Children(
-                    Arabic.Inline(current.NameArabic, 17),
-                    TextBlock(current.Author).Tiny().Secondary()));
+            var who = Look.El("div", "qkg-tafsir-who");
+            who.appendChild(Look.Ar(current.NameArabic, "qkg-arw qkg-tafsir-who-ar"));
+            who.appendChild(Look.El("span", "qkg-note", current.Author));
+
+            var section = VStack().WS().Gap(12.px()).Children(
+                HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap().Children(Heading(heading).Grow(), Raw(picker)),
+                Raw(who));
 
             if (current.Arabic is null && current.English is null)
             {
@@ -91,13 +87,13 @@ namespace QuranKG.FrontEnd.Components
             var english = current.English?.Text ?? "";
             var clip    = arabic.Length > CLIP_AT || english.Length > CLIP_AT;
 
-            section.Add(Raw(Block(current.Arabic,  "ar", clip, current.Name)));
-            section.Add(Raw(Block(current.English, "en", clip, current.Name)));
+            var pair = Look.El("div", "qkg-tafsir-pair");
+            pair.appendChild(Block(current.Arabic,  "ar", clip, current.Name));
+            pair.appendChild(Block(current.English, "en", clip, current.Name));
+            section.Add(Raw(pair).WS());
 
             if (clip)
-                section.Add(Button("Read the whole commentary".t()).SetIcon(UIcons.BookOpenReader).Compact()
-                               .Tooltip("The Arabic and the English side by side".t())
-                               .OnClick(() => OpenWhole(dto.VerseKey, current)));
+                section.Add(Raw(Look.Button("Read the whole commentary".t(), () => OpenWhole(dto.VerseKey, current), "soft", "☰", "The Arabic and the English side by side".t())));
 
             return section;
         }
@@ -217,7 +213,7 @@ namespace QuranKG.FrontEnd.Components
 
         // -----------------------------------------------------------------------------------
 
-        private static TextBlock Heading(bool shown) => shown ? TextBlock("Tafsir".t()).SemiBold().PT(4) : TextBlock("");
+        private static IComponent Heading(bool shown) => shown ? Raw(Look.El("h3", "qkg-h3", "Tafsir".t())) : Raw(Look.El("span", ""));
 
         private static string Saved()
         {
@@ -250,29 +246,34 @@ namespace QuranKG.FrontEnd.Components
 
             var style = document.createElement("style");
             style.textContent = @"
-.qkg-tafsir { border-left: 3px solid #c2410c; padding: 2px 0 2px 12px; }
-.qkg-tafsir-ar { border-left: none; border-right: 3px solid #c2410c; padding: 2px 12px 2px 0; }
+.qkg-tafsir-who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+.qkg-tafsir-who-ar { font-size: 20px; font-weight: 700; }
+.qkg-tafsir-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 16px; align-items: start; }
+.qkg-tafsir { background: var(--qkg-raised); border: 1px solid var(--qkg-line); border-radius: 16px; padding: 18px 20px; color: var(--qkg-ink); }
+.qkg-tafsir-ar { order: -1; }
 .qkg-tafsir-body p { margin: 0 0 10px 0; }
 .qkg-tafsir-ar .qkg-tafsir-body {
   font-family: 'Amiri', 'Noto Naskh Arabic', 'Geeza Pro', serif;
-  font-size: 19px;
+  font-size: 20px;
   line-height: 2;
   text-align: justify;
 }
-.qkg-tafsir-en .qkg-tafsir-body { font-size: 14px; line-height: 1.6; }
-.qkg-tafsir-quran { color: #15803d; }
-.qkg-tafsir-arline { font-family: 'Amiri', 'Noto Naskh Arabic', 'Geeza Pro', serif; font-size: 20px; line-height: 2; color: #15803d; margin: 4px 0 10px 0; }
-.qkg-tafsir-title { font-weight: 600; font-size: 14px; margin: 14px 0 6px 0; }
-.qkg-tafsir-source, .qkg-tafsir-none { font-size: 11px; color: var(--tss-secondary-foreground-color); }
-.qkg-tafsir-none { font-size: 13px; }
+.qkg-tafsir-en .qkg-tafsir-body { font-size: 15px; line-height: 1.7; color: var(--qkg-ink-2); }
+.qkg-tafsir-quran { color: var(--qkg-teal-strong); }
+.qkg-tafsir-arline { font-family: 'Amiri', 'Noto Naskh Arabic', 'Geeza Pro', serif; font-size: 20px; line-height: 2; color: var(--qkg-teal-strong); margin: 4px 0 10px 0; }
+.qkg-tafsir-title { font-weight: 600; font-size: 14px; margin: 14px 0 6px 0; color: var(--qkg-ink); }
+.qkg-tafsir-source, .qkg-tafsir-none { font-size: 12px; color: var(--qkg-ink-3); }
+.qkg-tafsir-source { padding-top: 6px; }
+.qkg-tafsir-none { font-size: 13px; padding: 12px 0; }
 .qkg-tafsir-clip {
-  max-height: 260px;
+  max-height: 300px;
   overflow: hidden;
   -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent);
   mask-image: linear-gradient(to bottom, black 70%, transparent);
 }
 .qkg-tafsir-columns { display: flex; flex-direction: row-reverse; gap: 24px; height: 100%; width: 100%; }
 .qkg-tafsir-column { flex: 1 1 0; min-width: 0; overflow-y: auto; padding: 0 8px; }
+.qkg-tafsir-column .qkg-tafsir { border: 0; padding: 0; background: transparent; }
 @media (max-width: 800px) { .qkg-tafsir-columns { flex-direction: column; overflow-y: auto; } .qkg-tafsir-column { overflow: visible; } }
 ";
             document.head.appendChild(style);

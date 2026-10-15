@@ -4,6 +4,7 @@ using QuranKG.FrontEnd.Chat;
 using QuranKG.FrontEnd.Components;
 using QuranKG.FrontEnd.Dashboard;
 using QuranKG.FrontEnd.Hadith;
+using QuranKG.FrontEnd.Home;
 using QuranKG.FrontEnd.Reader;
 using QuranKG.FrontEnd.Themes;
 using Tesserae;
@@ -30,6 +31,7 @@ namespace QuranKG.FrontEnd
             // The Arabic typefaces are requested before the first page draws, so the first verse
             // on screen does not reflow when they arrive.
             Arabic.EnsureFonts();
+            Look.EnsureStyles();
 
             App.Initialize(Configure, OnLoad).FireAndForget();
         }
@@ -37,7 +39,7 @@ namespace QuranKG.FrontEnd
         /// <summary>Runs before the app is built: settings and sidebar hooks.</summary>
         private static void Configure(AppSettings settings)
         {
-            settings.HomeView              = state => new PatternDashboard(state);
+            settings.HomeView              = state => new HomeView(state);
             settings.AssistantView         = QuranChatView.Create;
             settings.DisableOnboardingTips = true;
 
@@ -55,12 +57,17 @@ namespace QuranKG.FrontEnd
                 var hadith = new SidebarButton("QKG_HADITH", UIcons.CommentQuote, "Hadith and the Quran".t())
                     .OnClick(() => Router.Navigate(HadithStudyView.Route));
 
+                var patterns = new SidebarButton("QKG_PATTERNS", UIcons.ChartHistogram, "Patterns".t())
+                    .OnClick(() => Router.Navigate(PatternDashboard.Route));
+
                 refresh.Add(() => read.IsSelected   = QuranView.IsShowing());
+                refresh.Add(() => patterns.IsSelected = PatternDashboard.IsShowing());
                 refresh.Add(() => themes.IsSelected = ThemesView.IsShowing());
                 refresh.Add(() => hadith.IsSelected = HadithStudyView.IsShowing());
                 sidebar.AddContent(read);
                 sidebar.AddContent(themes);
                 sidebar.AddContent(hadith);
+                sidebar.AddContent(patterns);
             };
         }
 
@@ -69,6 +76,7 @@ namespace QuranKG.FrontEnd
         {
             Router.Register(ThemesView.Route, state => App.ShowDefault(new ThemesView(state)));
             Router.Register(HadithStudyView.Route, state => App.ShowDefault(new HadithStudyView(state)));
+            Router.Register(PatternDashboard.Route, state => App.ShowDefault(new PatternDashboard(state)));
             QuranView.Register();
         }
     }

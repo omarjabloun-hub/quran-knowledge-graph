@@ -35,6 +35,8 @@ namespace QuranKG.FrontEnd.Components
         internal bool Translation { get; set; }
         internal bool KeyWords    { get; set; }
         internal string Layout    { get; set; } = FLOW;
+        /// <summary>The page the text is set on: "" follows the workspace, else light, sepia or dark.</summary>
+        internal string Theme     { get; set; } = "";
 
         private ReaderOptions(string key) => _key = "qkg-reader-" + key;
 
@@ -54,6 +56,7 @@ namespace QuranKG.FrontEnd.Components
                         o.Translation = parts[2] == "1";
                         o.KeyWords    = parts[3] == "1";
                         if (parts.Length >= 5 && (parts[4] == VERSES || parts[4] == PAGES)) o.Layout = parts[4];
+                        if (parts.Length >= 6 && (parts[5] == "light" || parts[5] == "sepia" || parts[5] == "dark")) o.Theme = parts[5];
                     }
                 }
             }
@@ -71,7 +74,7 @@ namespace QuranKG.FrontEnd.Components
 
         internal void Save()
         {
-            try { localStorage.setItem(_key, FontSize + "|" + (Passages ? 1 : 0) + "|" + (Translation ? 1 : 0) + "|" + (KeyWords ? 1 : 0) + "|" + Layout); }
+            try { localStorage.setItem(_key, FontSize + "|" + (Passages ? 1 : 0) + "|" + (Translation ? 1 : 0) + "|" + (KeyWords ? 1 : 0) + "|" + Layout + "|" + Theme); }
             catch { /* nothing to keep it in */ }
         }
     }
@@ -114,6 +117,7 @@ namespace QuranKG.FrontEnd.Components
         private readonly HTMLElement                            _root;
         private readonly Dictionary<string, List<HTMLElement>> _verses   = new Dictionary<string, List<HTMLElement>>();
         private readonly Dictionary<string, HTMLElement>       _sections = new Dictionary<string, HTMLElement>();
+        private readonly Dictionary<string, UID128>            _uids     = new Dictionary<string, UID128>();
         private string _selected;
         private string _playing;
         private readonly List<(HTMLElement Element, QK.ReadingVerse Verse)> _order = new List<(HTMLElement, QK.ReadingVerse)>();
@@ -134,8 +138,11 @@ namespace QuranKG.FrontEnd.Components
             {
                 var s     = sections[0];
                 var title = Div(Att("qkg-surah-title"));
-                title.appendChild(Text("div", "qkg-surah-name", "سورة " + s.SurahNameArabic, rtl: true));
-                title.appendChild(Text("div", "qkg-surah-latin", s.SurahNumber + ". " + s.SurahName));
+                var name  = Div(Att("qkg-surah-name-row"));
+                name.appendChild(Text("span", "qkg-rule", ""));
+                name.appendChild(Text("span", "qkg-surah-name", "سُورَةُ " + s.SurahNameArabic, rtl: true));
+                name.appendChild(Text("span", "qkg-rule", ""));
+                title.appendChild(name);
                 // Tanzil prefixes the Bismillah to verse 1 of every surah but 1 (where it IS verse 1)
                 // and 9 (which has none); the connector strips it, so it is drawn here as the heading.
                 if (s.SurahNumber != 1 && s.SurahNumber != 9) title.appendChild(Text("div", "qkg-bismillah", BISMILLAH, rtl: true));
@@ -145,6 +152,7 @@ namespace QuranKG.FrontEnd.Components
             if (options.Layout == ReaderOptions.PAGES)
             {
                 Pages(sections, isSurah, callbacks);
+                WordTip.Attach(_root, key => _uids.TryGetValue(key, out var uid) ? uid : default(UID128));
                 return;
             }
 
@@ -176,7 +184,10 @@ namespace QuranKG.FrontEnd.Components
                 }
 
                 var marked = options.Passages && UID128.IsNotNull(section.PassageUid);
-                if (marked) block.appendChild(Header(section, callbacks));
+                // Flowing Arabic alone: the passage is described in the margin beside its text.
+                var aside  = marked && !byRow && !options.Translation;
+                if (aside) block.classList.add("qkg-pas-side");
+                if (marked && !aside) block.appendChild(Header(section, callbacks));
 
                 if (byRow)
                 {
@@ -202,6 +213,7 @@ namespace QuranKG.FrontEnd.Components
                         body.appendChild(english);
                     }
                     block.appendChild(body);
+                    if (aside) block.appendChild(Aside(section, callbacks));
                 }
                 if (section.ThemeOrdinal > 0 && marked) block.style.setProperty("--qkg-theme", Clusters.ColorOf(section.ThemeOrdinal));
 
@@ -218,6 +230,8 @@ namespace QuranKG.FrontEnd.Components
 
                 _root.appendChild(block);
             }
+
+            WordTip.Attach(_root, key => _uids.TryGetValue(key, out var uid) ? uid : default(UID128));
         }
 
         public HTMLElement Render() => _root;
@@ -280,6 +294,14 @@ namespace QuranKG.FrontEnd.Components
             foreach (var page in verses.GroupBy(x => x.Verse.Page))
             {
                 var sheet = Div(Att("qkg-page"));
+                var frame = Div(Att("qkg-page-frame"));
+                sheet.appendChild(frame);
+                var firstOf = page.First();
+                var top = Div(Att("qkg-page-top"));
+                top.setAttribute("dir", "rtl");
+                top.appendChild(Text("span", "", firstOf.Section.SurahNameArabic, rtl: true));
+                top.appendChild(Text("span", "", "الجزء " + Panels.ArabicDigits(firstOf.Verse.Juz), rtl: true));
+                frame.appendChild(top);
                 HTMLElement text = null;
 
                 foreach (var entry in page)
@@ -298,7 +320,7 @@ namespace QuranKG.FrontEnd.Components
                             var captured = section;
                             heading.onclick = _ => callbacks.OnSurah(captured);
                         }
-                        sheet.appendChild(heading);
+                        frame.appendChild(heading);
                         text = null;
                     }
 
@@ -307,7 +329,7 @@ namespace QuranKG.FrontEnd.Components
                         text = Div(Att("qkg-ar qkg-page-text"));
                         text.setAttribute("dir", "rtl");
                         text.setAttribute("lang", "ar");
-                        sheet.appendChild(text);
+                        frame.appendChild(text);
                     }
 
                     text.appendChild(VerseArabic(verse, section, callbacks));
@@ -317,46 +339,123 @@ namespace QuranKG.FrontEnd.Components
                 var first = page.First().Verse;
                 var foot  = Div(Att("qkg-page-foot"));
                 foot.appendChild(Text("span", "qkg-page-n", Panels.ArabicDigits(page.Key), rtl: true));
-                foot.appendChild(Text("span", "qkg-page-where", string.Format("Page {0} · Juz {1} · Hizb {2}".t(), page.Key, first.Juz, first.Hizb)));
-                sheet.appendChild(foot);
+                foot.title = string.Format("Page {0} · Juz {1} · Hizb {2}".t(), page.Key, first.Juz, first.Hizb);
+                frame.appendChild(foot);
 
                 _root.appendChild(sheet);
             }
         }
 
-        /// <summary>One verse as a row: its key, a way to listen from it, the Arabic, and — if asked — its translation.</summary>
+        /// <summary>
+        /// One verse as a row: on the left its key and what can be done with it (listen from it, copy
+        /// it, study it); on the right the Arabic and — if asked — its translation.
+        /// </summary>
         private HTMLElement VerseRow(QK.ReadingVerse v, QK.ReadingSection s, Callbacks callbacks, bool translation)
         {
-            var row  = Div(Att("qkg-row"));
-            var head = Div(Att("qkg-row-head"));
-            head.appendChild(Text("span", "qkg-row-key", v.VerseKey));
-            if (!string.IsNullOrEmpty(v.Sajda)) head.appendChild(Text("span", "qkg-row-sajda", string.Format("prostration ({0})".t(), v.Sajda)));
-            if (callbacks.OnListen is object)
-            {
-                var listen = Text("span", "qkg-row-listen qkg-clickable", "▶ " + "Listen".t());
-                listen.title   = "Listen from this verse".t();
-                listen.onclick = e => { e.stopPropagation(); callbacks.OnListen(v); };
-                head.appendChild(listen);
-            }
-            row.appendChild(head);
+            var row   = Div(Att("qkg-row"));
+            var tools = Div(Att("qkg-row-tools"));
+            tools.appendChild(Text("span", "qkg-row-key", v.VerseKey));
 
+            if (callbacks.OnListen is object)
+                tools.appendChild(Tool(UIcons.PlayAlt, string.Format("Listen from {0}".t(), v.VerseKey), () => callbacks.OnListen(v)));
+            tools.appendChild(Tool(UIcons.Copy, string.Format("Copy {0}".t(), v.VerseKey), () => Copy(v)));
+            tools.appendChild(Tool(UIcons.BookOpenReader, string.Format("Study {0}: its words, tafsir, hadith and related verses".t(), v.VerseKey), () => callbacks.OnVerse?.Invoke(v, s)));
+            if (!string.IsNullOrEmpty(v.Sajda)) tools.appendChild(Text("span", "qkg-row-sajda", "۩")).setAttribute("title", string.Format("A verse of prostration ({0})".t(), v.Sajda));
+            row.appendChild(tools);
+
+            var body   = Div(Att("qkg-row-body"));
             var arabic = Div(Att("qkg-row-ar"));
             arabic.setAttribute("dir", "rtl");
             arabic.setAttribute("lang", "ar");
             AppendWords(arabic, v);
             arabic.appendChild(Text("span", "qkg-ayah", "۝" + Panels.ArabicDigits(v.Ayah)));
-            row.appendChild(arabic);
+            body.appendChild(arabic);
 
-            if (translation) row.appendChild(Text("div", "qkg-row-en", v.Translation ?? ""));
+            if (translation)
+            {
+                body.appendChild(Text("div", "qkg-row-en", v.Translation ?? ""));
+                body.appendChild(Text("div", "qkg-row-src", "Saheeh International"));
+            }
+            row.appendChild(body);
 
             Wire(row, v, s, callbacks);
             return row;
+        }
+
+        /// <summary>A small round button in a verse's tools; its click does not also select the row.</summary>
+        private static HTMLElement Tool(UIcons icon, string label, Action action)
+        {
+            var button = Text("button", "qkg-iconbtn qkg-row-tool", "");
+            button.setAttribute("type", "button");
+            button.setAttribute("aria-label", label);
+            button.title = label;
+            button.appendChild(Icon(icon).Render());
+            button.onclick = e => { e.stopPropagation(); action(); };
+            return button;
+        }
+
+        /// <summary>Copies the verse — its Arabic, its translation and its key — to the clipboard.</summary>
+        private static void Copy(QK.ReadingVerse v)
+        {
+            var text = (v.Text ?? "") + "\n" + (v.Translation ?? "") + "\n— " + v.VerseKey;
+            try { navigator.clipboard.writeText(text); Toast().Success(string.Format("{0} copied".t(), v.VerseKey)); }
+            catch { /* no clipboard in this context */ }
+        }
+
+        /// <summary>The margin note a flowing passage carries: its number and range, its distinctive words, its theme.</summary>
+        private static HTMLElement Aside(QK.ReadingSection s, Callbacks callbacks)
+        {
+            var aside = Div(Att("qkg-pas-aside"));
+            aside.appendChild(Text("span", "qkg-kicker", string.Format("Passage {0}".t(), s.Ordinal)));
+
+            var where = Text("span", "qkg-pas-aside-range qkg-clickable", Range(s));
+            where.title   = "Open the passage: its key words, the passages either side".t();
+            where.onclick = e => { e.stopPropagation(); callbacks.OnPassage(s.PassageUid); };
+            aside.appendChild(where);
+
+            if (!string.IsNullOrEmpty(s.LabelArabic))
+            {
+                var label = Text("span", "qkg-pas-aside-ar", s.LabelArabic, rtl: true);
+                label.title = "The words this passage uses far more than the rest of the Quran".t();
+                aside.appendChild(label);
+            }
+            var english = (s.Label ?? "").Split(new[] { " · " }, StringSplitOptions.None);
+            if (english.Length > 1) aside.appendChild(Text("span", "qkg-note", string.Join(" · ", english.Skip(1))));
+
+            if (UID128.IsNotNull(s.ThemeUid))
+            {
+                var chip = Text("span", "qkg-pas-theme qkg-clickable", "");
+                chip.style.setProperty("--qkg-chip", Clusters.ColorOf(s.ThemeOrdinal));
+                chip.appendChild(Text("span", "qkg-dot", ""));
+                chip.appendChild(Text("span", "qkg-pas-theme-ar", s.ThemeLabelArabic, rtl: true));
+                chip.appendChild(Text("span", "qkg-pas-theme-n", string.Format("{0} surahs".t(), s.ThemeSurahs)));
+                chip.title   = string.Format("Theme shared with {0} surahs: {1}. Open it to read them together.".t(), s.ThemeSurahs, s.ThemeLabel);
+                chip.onclick = e => { e.stopPropagation(); callbacks.OnTheme(s.ThemeUid); };
+                aside.appendChild(chip);
+            }
+            else
+            {
+                aside.appendChild(Text("span", "qkg-note", "No theme shared with other surahs".t()));
+            }
+
+            if (UID128.IsNotNull(s.GroupUid))
+            {
+                var chip = Text("span", "qkg-pas-theme qkg-pas-group qkg-clickable", "");
+                chip.style.setProperty("--qkg-chip", Clusters.GroupColorOf(s.GroupOrdinal));
+                chip.appendChild(Text("span", "qkg-dot", ""));
+                chip.appendChild(Text("span", "qkg-pas-theme-ar", s.GroupLabelArabic, rtl: true));
+                chip.appendChild(Text("span", "qkg-pas-theme-n", string.Format("similar · {0} surahs".t(), s.GroupSurahs)));
+                chip.onclick = e => { e.stopPropagation(); callbacks.OnTheme(s.GroupUid); };
+                aside.appendChild(chip);
+            }
+            return aside;
         }
 
         /// <summary>The line a passage opens with: where it is, its distinctive words, and the theme it shares.</summary>
         private static HTMLElement Header(QK.ReadingSection s, Callbacks callbacks)
         {
             var head = Div(Att("qkg-pas-head"));
+            head.appendChild(Text("span", "qkg-pas-glyph", "◇"));
 
             var where = Text("span", "qkg-pas-where", string.Format("Passage {0} · {1}".t(), s.Ordinal, Range(s)));
             where.classList.add("qkg-clickable");
@@ -428,6 +527,8 @@ namespace QuranKG.FrontEnd.Components
         private void Wire(HTMLElement span, QK.ReadingVerse v, QK.ReadingSection s, Callbacks callbacks)
         {
             var key = v.Uid.ToString();
+            _uids[key] = v.Uid;
+            span.setAttribute("data-qkg-verse", key);
             if (!_verses.TryGetValue(key, out var els))
             {
                 _verses[key] = els = new List<HTMLElement>();
@@ -450,25 +551,28 @@ namespace QuranKG.FrontEnd.Components
         {
             var tokens     = (v.Text ?? "").Split(' ');
             var highlights = v.Highlights ?? new int[0];
-            var marks      = highlights.Length > 0 && tokens.Count(IsWord) == v.Words ? new HashSet<int>(highlights) : null;
+            // The positions are the morphology's only when the counts agree; otherwise no word is
+            // marked and none carries a position (so no tooltip names the wrong word).
+            var aligned    = tokens.Count(IsWord) == v.Words;
+            var marks      = highlights.Length > 0 && aligned ? new HashSet<int>(highlights) : null;
 
             var plain    = new StringBuilder();
             var position = 0;
             foreach (var token in tokens)
             {
                 var isWord = IsWord(token);
-                if (isWord) position++;
-
-                if (marks is object && isWord && marks.Contains(position))
-                {
-                    if (plain.Length > 0) { into.appendChild(document.createTextNode(plain.ToString())); plain.Clear(); }
-                    into.appendChild(Text("span", "qkg-kw", token));
-                    plain.Append(' ');
-                }
-                else
+                if (!isWord)
                 {
                     plain.Append(token).Append(' ');
+                    continue;
                 }
+
+                position++;
+                if (plain.Length > 0) { into.appendChild(document.createTextNode(plain.ToString())); plain.Clear(); }
+                var word = Text("span", marks is object && marks.Contains(position) ? "qkg-w qkg-kw" : "qkg-w", token);
+                if (aligned) word.setAttribute("data-qkg-p", position.ToString());
+                into.appendChild(word);
+                plain.Append(' ');
             }
             if (plain.Length > 0) into.appendChild(document.createTextNode(plain.ToString()));
         }
@@ -518,68 +622,94 @@ namespace QuranKG.FrontEnd.Components
         // sets the span in monospace ("qkg-sec-head" did — hence "qkg-pas-"). Marks are colours, not
         // backgrounds: Amiri Quran's line box is twice the letters' height, and so would a background be.
         private const string CSS = @"
-.qkg-reader { max-width: 980px; margin: 0 auto; padding: 8px 28px 120px 28px; color: var(--tss-default-foreground-color); }
-.qkg-surah-title { text-align: center; padding: 8px 0 18px 0; }
-.qkg-surah-name { font-family: {FONT}; font-size: calc(var(--qkg-size) * 1.25); line-height: 1.8; }
-.qkg-surah-latin { font-size: 13px; color: var(--tss-secondary-foreground-color); }
-.qkg-bismillah { font-family: {FONT}; font-size: calc(var(--qkg-size) * 0.95); line-height: 2; padding-top: 10px; }
-.qkg-surah-heading { display: flex; align-items: baseline; gap: 12px; justify-content: center; margin: 34px 0 6px 0; padding-bottom: 6px; border-bottom: 1px solid var(--tss-default-border-color); }
+.qkg-reader-scroll { background: var(--qkg-bg); color: var(--qkg-ink); }
+.qkg-reading-light { --qkg-bg: #ffffff; --qkg-surface: #f6f7f6; --qkg-surface-2: #eef1f0; --qkg-raised: #ffffff; --qkg-line: #e4e8e6; --qkg-line-2: #d3d9d6; --qkg-ink: #1b2422; --qkg-ink-2: #44514d; --qkg-ink-3: #66726e; --qkg-teal: #157a7c; --qkg-teal-strong: #0f6466; --qkg-teal-tint: #e4f2f1; --qkg-teal-tint-2: #cfe7e5; --qkg-gold: #a9802f; --qkg-mark: #b0461b; --qkg-paper: #fcf7ea; --qkg-paper-ink: #2a2214; --qkg-paper-band: #f4ead0; }
+.qkg-reading-sepia { --qkg-bg: #f7efe0; --qkg-surface: #f1e6d1; --qkg-surface-2: #eadcc2; --qkg-raised: #fbf5ea; --qkg-line: #e3d4b8; --qkg-line-2: #d6c3a0; --qkg-ink: #3b2f1e; --qkg-ink-2: #5a4a33; --qkg-ink-3: #6f5d43; --qkg-teal: #157a7c; --qkg-teal-strong: #0f6466; --qkg-teal-tint: #e6e7d6; --qkg-teal-tint-2: #d5dcc6; --qkg-gold: #a9802f; --qkg-mark: #b0461b; --qkg-paper: #fbf3e2; --qkg-paper-ink: #3b2f1e; --qkg-paper-band: #f1e2c3; }
+.qkg-reading-dark { --qkg-bg: #121615; --qkg-surface: #1a1f1e; --qkg-surface-2: #232928; --qkg-raised: #1a1f1e; --qkg-line: #2b3331; --qkg-line-2: #3a4442; --qkg-ink: #e7eceb; --qkg-ink-2: #b9c3c0; --qkg-ink-3: #95a19d; --qkg-teal: #5cc2c2; --qkg-teal-strong: #7fd4d3; --qkg-teal-tint: #173433; --qkg-teal-tint-2: #1f4443; --qkg-gold: #d2ad5f; --qkg-mark: #ef8f62; --qkg-paper: #1d1a14; --qkg-paper-ink: #efe6d2; --qkg-paper-band: #2a2417; }
+.qkg-reader { max-width: 980px; margin: 0 auto; padding: 12px 32px 120px 32px; color: var(--qkg-ink); box-sizing: border-box; }
+@media (max-width: 700px) { .qkg-reader { padding: 8px 16px 96px 16px; } }
+.qkg-surah-title { text-align: center; padding: 16px 0 24px 0; }
+.qkg-surah-name-row { display: flex; align-items: center; justify-content: center; gap: 18px; }
+.qkg-rule { flex: 0 1 180px; height: 1px; background: var(--qkg-gold); opacity: .55; }
+.qkg-surah-name { font-family: {FONT}; font-size: calc(var(--qkg-size) * 1.4); line-height: 1.7; }
+.qkg-bismillah { font-family: {FONT}; font-size: var(--qkg-size); line-height: 2; padding-top: 6px; }
+.qkg-surah-heading { display: flex; align-items: baseline; gap: 12px; justify-content: center; margin: 34px 0 6px 0; padding-bottom: 6px; border-bottom: 1px solid var(--qkg-line); }
 .qkg-surah-heading-ar { font-family: {FONT}; font-size: calc(var(--qkg-size) * 0.85); }
-.qkg-surah-heading-latin { font-size: 13px; color: var(--tss-secondary-foreground-color); }
-.qkg-pas { --qkg-theme: var(--tss-default-border-color); }
-.qkg-pas-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 26px 0 4px 0; padding: 6px 0 6px 12px; border-left: 3px solid var(--qkg-theme); font-size: 13px; color: var(--tss-secondary-foreground-color); }
-.qkg-pas-where { font-weight: 600; color: var(--tss-default-foreground-color); }
-.qkg-pas-label { font-family: {FONT}; font-size: 19px; line-height: 1.4; unicode-bidi: isolate; color: var(--tss-default-foreground-color); }
-.qkg-pas-theme { display: inline-flex; align-items: center; gap: 6px; padding: 1px 10px; border-radius: 12px; border: 1px solid var(--qkg-chip); }
+.qkg-surah-heading-latin { font-size: 13px; color: var(--qkg-ink-3); }
+.qkg-pas { --qkg-theme: var(--qkg-line-2); }
+.qkg-pas-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 22px 0 6px 0; padding: 12px 16px; border-radius: 14px; background: var(--qkg-surface); font-size: 13px; color: var(--qkg-ink-3); box-shadow: inset 3px 0 0 var(--qkg-theme); }
+.qkg-pas-glyph { color: var(--qkg-teal); font-size: 14px; }
+.qkg-pas-where { font-weight: 600; font-size: 14px; color: var(--qkg-ink); }
+.qkg-pas-label { font-family: {FONT}; font-size: 19px; line-height: 1.4; unicode-bidi: isolate; color: var(--qkg-mark); }
+.qkg-pas-theme { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--qkg-raised); border: 1px solid var(--qkg-line-2); align-self: flex-start; }
 .qkg-pas-theme .qkg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--qkg-chip); }
 .qkg-pas-group { border-style: dashed; }
 .qkg-pas-group .qkg-dot { border-radius: 2px; }
-.qkg-pas-theme-ar { font-family: {FONT}; font-size: 17px; line-height: 1.5; unicode-bidi: isolate; color: var(--tss-default-foreground-color); }
+.qkg-pas-theme-ar { font-family: {FONT}; font-size: 17px; line-height: 1.5; unicode-bidi: isolate; color: var(--qkg-ink); }
+.qkg-pas-theme-n { font-size: 12px; color: var(--qkg-ink-3); }
+.qkg-pas-side { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 32px; align-items: start; padding: 18px 0; border-top: 1px solid var(--qkg-line); }
+.qkg-pas-aside { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 14px; background: var(--qkg-surface); box-shadow: inset 3px 0 0 var(--qkg-theme); font-size: 13px; }
+.qkg-pas-aside-range { font-weight: 600; font-size: 14px; color: var(--qkg-ink); }
+.qkg-pas-aside-ar { font-family: {FONT}; font-size: 22px; line-height: 1.6; color: var(--qkg-mark); text-align: right; }
+@media (max-width: 900px) { .qkg-pas-side { grid-template-columns: minmax(0, 1fr); } .qkg-pas-aside { position: static; order: -1; } }
 .qkg-clickable { cursor: pointer; }
 .qkg-clickable:hover { text-decoration: underline; }
 .qkg-body { display: flex; flex-direction: row-reverse; flex-wrap: wrap; gap: 8px 36px; }
-.qkg-ar { flex: 1 1 100%; font-family: {FONT}; font-size: var(--qkg-size); line-height: 2.35; text-align: justify; text-align-last: right; word-spacing: 2px; }
+.qkg-ar { flex: 1 1 100%; font-family: {FONT}; font-size: var(--qkg-size); line-height: 2.3; text-align: justify; text-align-last: right; word-spacing: 2px; color: var(--qkg-ink); }
 .qkg-two .qkg-ar { flex: 1 1 380px; }
-.qkg-en { flex: 1 1 320px; font-size: 15px; line-height: 1.75; color: var(--tss-default-foreground-color); padding-top: 8px; }
-.qkg-en-n { font-size: 10px; font-weight: 600; color: var(--tss-secondary-foreground-color); margin-right: 3px; }
+.qkg-en { flex: 1 1 320px; font-size: 16px; line-height: 1.75; color: var(--qkg-ink-2); padding-top: 8px; }
+.qkg-en-n { font-size: 10px; font-weight: 600; color: var(--qkg-ink-3); margin-right: 3px; }
 .qkg-v { cursor: pointer; border-radius: 6px; padding: 2px 0; transition: background-color .12s; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-.qkg-v.qkg-hover { background-color: var(--tss-default-background-hover-color); }
-.qkg-v.qkg-on { background-color: rgba(59, 130, 246, .16); box-shadow: 0 0 0 2px rgba(59, 130, 246, .16); }
-.qkg-ayah { font-family: {FONT}; color: #15803d; padding: 0 4px; white-space: nowrap; }
-.qkg-v.qkg-play { color: #0369a1; }
-.qkg-v.qkg-play .qkg-ayah { color: #0369a1; }
-.qkg-row { padding: 14px 12px 16px 12px; border-bottom: 1px solid var(--tss-default-border-color); border-radius: 6px; }
-.qkg-row-head { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--tss-secondary-foreground-color); }
-.qkg-row-key { font-weight: 600; min-width: 48px; }
-.qkg-row-sajda { color: #15803d; }
-.qkg-row-listen { color: var(--tss-primary-background-color); }
-.qkg-row-ar { font-family: {FONT}; font-size: var(--qkg-size); line-height: 2.2; text-align: right; padding: 6px 0 2px 0; }
-.qkg-row-en { font-size: 15px; line-height: 1.7; padding-top: 4px; }
-.qkg-row { cursor: pointer; transition: background-color .12s; }
-.qkg-row.qkg-hover { background-color: var(--tss-default-background-hover-color); }
-.qkg-row.qkg-on { background-color: rgba(59, 130, 246, .10); }
-.qkg-row.qkg-play { box-shadow: inset 3px 0 0 #0369a1; }
-.qkg-row.qkg-play .qkg-row-ar, .qkg-row.qkg-play .qkg-ayah { color: #0369a1; }
-.qkg-layout-pages { max-width: 760px; }
-.qkg-page { margin: 18px auto 26px auto; padding: 18px 34px 10px 34px; border: 1px solid var(--tss-default-border-color); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.06); background: var(--tss-default-background-color); }
-.qkg-page-text { text-align: justify; text-align-last: center; line-height: 2.25; }
-.qkg-page .qkg-surah-heading { margin: 10px 0 6px 0; }
-.qkg-page-foot { display: flex; justify-content: center; align-items: baseline; gap: 12px; padding: 10px 0 2px 0; margin-top: 8px; border-top: 1px dashed var(--tss-default-border-color); font-size: 12px; color: var(--tss-secondary-foreground-color); }
-.qkg-page-n { font-family: {FONT}; font-size: 18px; color: var(--tss-default-foreground-color); }
-.qkg-sajda { color: #15803d; padding-left: 2px; }
-.qkg-keywords .qkg-kw { color: #c2410c; }
-.qkg-strip { display: flex; gap: 2px; height: 14px; width: 100%; flex: 0 0 auto; }
-.qkg-strip-seg { border-radius: 3px; cursor: pointer; min-width: 3px; opacity: .9; }
-.qkg-strip-seg:hover { opacity: 1; outline: 2px solid var(--tss-default-foreground-color); outline-offset: 1px; }
-.qkg-map { display: grid; grid-template-columns: 150px 1fr; gap: 3px 10px; align-items: center; }
-.qkg-map-label { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--tss-secondary-foreground-color); cursor: pointer; display: flex; gap: 6px; align-items: baseline; }
-.qkg-map-label:hover { color: var(--tss-default-foreground-color); }
-.qkg-map-label-ar { font-family: {FONT}; font-size: 14px; line-height: 1.2; unicode-bidi: isolate; }
-.qkg-map .qkg-strip { height: 12px; }
-.qkg-map.qkg-focus .qkg-strip-seg { opacity: .14; }
+.qkg-v.qkg-hover { background-color: var(--qkg-surface-2); }
+.qkg-v.qkg-on { background-color: var(--qkg-teal-tint); box-shadow: 0 0 0 2px var(--qkg-teal-tint); }
+.qkg-ayah { font-family: {FONT}; color: var(--qkg-gold); padding: 0 4px; white-space: nowrap; }
+.qkg-v.qkg-play, .qkg-v.qkg-play .qkg-ayah { color: var(--qkg-teal-strong); }
+.qkg-w { border-radius: 4px; }
+.qkg-w.qkg-tip { color: var(--qkg-teal-strong); text-decoration: underline; text-decoration-color: var(--qkg-teal); text-underline-offset: .45em; }
+.qkg-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 20px; padding: 26px 12px 26px 0; border-bottom: 1px solid var(--qkg-line); border-radius: 14px; cursor: pointer; transition: background-color .12s; }
+.qkg-row-tools { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--qkg-ink-3); }
+.qkg-row-key { font-size: 14px; font-weight: 600; color: var(--qkg-teal-strong); margin-bottom: 4px; }
+.qkg-row-tool { width: 32px; height: 32px; font-size: 16px; opacity: .75; }
+.qkg-row-tool > * { font-size: 16px; }
+.qkg-row:hover .qkg-row-tool, .qkg-row.qkg-on .qkg-row-tool { opacity: 1; }
+.qkg-row-sajda { color: var(--qkg-gold); font-size: 18px; }
+.qkg-row-body { min-width: 0; }
+.qkg-row-ar { font-family: {FONT}; font-size: var(--qkg-size); line-height: 2.1; text-align: right; color: var(--qkg-ink); }
+.qkg-row-en { font-size: 17px; line-height: 1.65; color: var(--qkg-ink-2); margin-top: 12px; }
+.qkg-row-src { font-size: 12px; color: var(--qkg-ink-3); margin-top: 6px; }
+.qkg-row.qkg-hover { background-color: var(--qkg-surface); }
+.qkg-row.qkg-on { background-color: var(--qkg-teal-tint); border-bottom-color: transparent; }
+.qkg-row.qkg-play { background-color: var(--qkg-teal-tint); box-shadow: inset 3px 0 0 var(--qkg-teal); }
+.qkg-row.qkg-play .qkg-row-ar, .qkg-row.qkg-play .qkg-ayah { color: var(--qkg-teal-strong); }
+.qkg-layout-pages { max-width: 1160px; display: flex; flex-wrap: wrap; flex-direction: row-reverse; justify-content: center; gap: 0; }
+.qkg-layout-pages .qkg-surah-title { flex: 1 1 100%; }
+.qkg-page { flex: 1 1 400px; max-width: 540px; box-sizing: border-box; margin: 0 0 24px 0; padding: 20px; background: var(--qkg-paper); color: var(--qkg-paper-ink); box-shadow: 0 10px 30px rgba(60, 40, 10, .14); }
+.qkg-layout-pages .qkg-page:nth-of-type(odd) { border-radius: 4px 14px 14px 4px; }
+.qkg-layout-pages .qkg-page:nth-of-type(even) { border-radius: 14px 4px 4px 14px; }
+.qkg-page-frame { height: 100%; box-sizing: border-box; border: 2px solid var(--qkg-gold); outline: 1px solid var(--qkg-gold); outline-offset: -7px; border-radius: 6px; padding: 16px 24px 12px 24px; display: flex; flex-direction: column; gap: 6px; }
+.qkg-page-top { display: flex; justify-content: space-between; font-family: 'Amiri', serif; font-size: 15px; color: var(--qkg-gold); }
+.qkg-page .qkg-ar { color: var(--qkg-paper-ink); }
+.qkg-page-text { flex: 1 1 auto; text-align: justify; text-align-last: center; line-height: 2.3; }
+.qkg-page .qkg-surah-heading { margin: 8px 0 4px 0; padding: 4px; border: 1.5px solid var(--qkg-gold); border-radius: 10px; background: var(--qkg-paper-band); justify-content: center; }
+.qkg-page .qkg-surah-heading-latin { color: var(--qkg-gold); }
+.qkg-page-foot { display: flex; justify-content: center; padding: 8px 0 0 0; }
+.qkg-page-n { font-family: 'Amiri', serif; font-size: 16px; color: var(--qkg-gold); border: 1px solid var(--qkg-gold); border-radius: 999px; padding: 0 12px; }
+.qkg-sajda { color: var(--qkg-gold); padding-left: 2px; }
+.qkg-keywords .qkg-kw { color: var(--qkg-mark); }
+.qkg-strip { display: flex; gap: 3px; height: 6px; width: auto !important; flex: 0 0 auto; box-sizing: content-box; }
+.qkg-strip-seg { border-radius: 999px; cursor: pointer; min-width: 3px; opacity: .9; }
+.qkg-strip-seg:hover { opacity: 1; outline: 2px solid var(--qkg-teal); outline-offset: 2px; }
+.qkg-map { display: grid; grid-template-columns: 190px 1fr; gap: 5px 14px; align-items: center; }
+.qkg-map-label { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--qkg-ink-2); cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+.qkg-map-label:hover { color: var(--qkg-teal-strong); }
+.qkg-map-label-ar { font-family: {FONT}; font-size: 15px; line-height: 1.2; unicode-bidi: isolate; color: var(--qkg-ink-3); }
+.qkg-map .qkg-strip { height: 14px; gap: 2px; box-sizing: border-box; }
+.qkg-map .qkg-strip-seg { border-radius: 3px; }
+.qkg-map.qkg-focus .qkg-strip-seg { opacity: .16; }
 .qkg-map.qkg-focus .qkg-strip-seg.qkg-lit { opacity: 1; }
 .qkg-map.qkg-focus .qkg-map-label { opacity: .45; }
-.qkg-map.qkg-focus .qkg-map-label.qkg-lit { opacity: 1; color: var(--tss-default-foreground-color); font-weight: 600; }
+.qkg-map.qkg-focus .qkg-map-label.qkg-lit { opacity: 1; color: var(--qkg-ink); font-weight: 600; }
+@media (max-width: 700px) { .qkg-map { grid-template-columns: 110px 1fr; } }
 ";
     }
 }

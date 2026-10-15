@@ -46,6 +46,7 @@ namespace QuranKG.FrontEnd.Reader
                 var surahs = corpus.Overview.SurahRows.OrderBy(r => r.Number).ToArray();
                 var current = surahs.First(r => r.Number == _surah);
 
+                IComponent index = null;
                 var pane = new ReadingPane(new ReadingPane.Settings
                 {
                     Uid                = current.Uid,
@@ -57,6 +58,7 @@ namespace QuranKG.FrontEnd.Reader
                     GoToVerseElsewhere = (uid, key) => QuranLinks.Go(key),
                     OnSelected         = v =>
                     {
+                        if (index is object) { if (v is object) index.Collapse(); else index.Show(); }
                         window.history.replaceState(null, "", QuranLinks.For(_surah, v?.Ayah ?? 0));
                         if (v is object) QuranLinks.Remember(_surah, v.Ayah);
                     },
@@ -64,7 +66,8 @@ namespace QuranKG.FrontEnd.Reader
 
                 QuranLinks.Remember(_surah, ayah);
 
-                return HStack().S().Children(Index(surahs), pane.S().Grow().Style(st => st.setProperty("min-width", "0")));
+                index = Index(surahs);
+                return HStack().S().Class("qkg-ui").Children(index, pane.S().Grow().Style(st => st.setProperty("min-width", "0")));
             }, TextBlock("Opening the Quran…".t()).Secondary().P(24)).S();
         }
 
@@ -73,50 +76,60 @@ namespace QuranKG.FrontEnd.Reader
         /// <summary>The surah's name and place, the way to the surahs either side, and to its own page.</summary>
         private IComponent Header(QK.SurahStats s, QK.ReadingDto text)
         {
-            var previous = Button().SetIcon(UIcons.AngleLeft).Compact().Tooltip("Previous surah".t()).OnClick(() => QuranLinks.Go(_surah - 1));
-            var next     = Button().SetIcon(UIcons.AngleRight).Compact().Tooltip("Next surah".t()).OnClick(() => QuranLinks.Go(_surah + 1));
-            if (_surah <= 1)   previous.Disabled();
-            if (_surah >= 114) next.Disabled();
-
             var passages = (text.Sections ?? new QK.ReadingSection[0]).Count(x => UID128.IsNotNull(x.PassageUid));
 
-            return HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap().PL(16).PR(16).PT(12).Children(
-                previous,
-                Arabic.Inline(s.NameArabic, 24),
-                TextBlock(s.Number + ". " + s.Name).SemiBold(),
-                TextBlock(s.NameEnglish).Small().Secondary(),
-                Badge(s.Place).Foreground(Palette.ForPlace(s.Place)).Outline(),
-                TextBlock(passages > 0 ? string.Format("{0} verses · {1} passages".t(), s.Verses, passages) : string.Format("{0} verses".t(), s.Verses)).Small().Secondary().Grow(),
-                Button("Surah page".t()).SetIcon(UIcons.ArrowUpRightFromSquare).Compact().Tooltip("Its profile, passages and similar surahs".t()).OnClick(() => Lists.Open(s.Uid)),
-                next);
+            var previous = Look.IconButton("‹", "Previous surah".t(), () => QuranLinks.Go(_surah - 1));
+            var next     = Look.IconButton("›", "Next surah".t(), () => QuranLinks.Go(_surah + 1));
+            if (_surah <= 1)   previous.setAttribute("disabled", "disabled");
+            if (_surah >= 114) next.setAttribute("disabled", "disabled");
+
+            var header = Look.El("div", "qkg-reader-header");
+            header.appendChild(previous);
+            header.appendChild(Look.Ar(s.NameArabic, "qkg-arw qkg-reader-header-ar"));
+            header.appendChild(Look.El("div", "qkg-reader-header-name",
+                Look.El("span", "qkg-h3", s.Number + " · " + s.Name),
+                Look.El("span", "qkg-note", s.NameEnglish)));
+            header.appendChild(next);
+            header.appendChild(Look.PlaceBadge(s.Place));
+            header.appendChild(Look.Badge(string.Format("{0} verses".t(), s.Verses)));
+            if (passages > 0) header.appendChild(Look.Badge(string.Format("{0} passages".t(), passages)));
+            header.appendChild(Look.Badge(string.Format("revealed #{0}".t(), s.RevelationOrder)));
+            header.appendChild(Look.El("span", "qkg-toolbar-spacer"));
+            header.appendChild(Look.Button("Surah page".t(), () => Lists.Open(s.Uid), "ghost", "↗", "Its profile, passages and similar surahs".t()));
+            return Raw(header).WS();
         }
 
         /// <summary>The 114 surahs, filterable by number, name or Arabic name; the one being read lit and in view.</summary>
         private IComponent Index(QK.SurahStats[] surahs)
         {
-            var list = VStack().WS();
+            var list = Look.El("div", "qkg-index-list");
             var rows = surahs.Select(s =>
             {
-                var row = HStack().WS().AlignItemsCenter().Gap(8.px()).PL(12).PR(12).PT(4).PB(4).Children(
-                    TextBlock(s.Number.ToString()).Tiny().Secondary().W(24.px()).NoShrink(),
-                    VStack().Grow().Style(st => st.setProperty("min-width", "0")).Children(
-                        TextBlock(s.Name).Small().NoWrap().Ellipsis(),
-                        TextBlock(string.Format("{0} verses".t(), s.Verses)).Tiny().Secondary()),
-                    Arabic.Inline(s.NameArabic, 18).Foreground(Palette.ForPlace(s.Place)))
-                   .Style(st => { st.setProperty("cursor", "pointer"); st.setProperty("border-radius", "6px"); });
-
-                if (s.Number == _surah) row.Background(Theme.Colors.Blue100);
+                var row = Look.El("div", "qkg-index-row" + (s.Number == _surah ? " qkg-on" : ""));
+                row.appendChild(Look.El("span", "qkg-index-n", s.Number.ToString()));
+                row.appendChild(Look.El("span", "qkg-index-text",
+                    Look.El("span", "qkg-index-name", s.Name),
+                    Look.El("span", "qkg-index-meta", string.Format("{0} verses".t(), s.Verses))));
+                var ar = Look.Ar(s.NameArabic, "qkg-arw qkg-index-ar");
+                ar.style.color = s.Place == QK.MEDINAN ? "var(--qkg-medinan)" : "var(--qkg-meccan)";
+                row.appendChild(ar);
+                row.title = s.Number + ". " + s.Name + " — " + s.NameEnglish + " · " + s.Place;
                 var number = s.Number;
-                row.Render().onclick = _ => QuranLinks.Go(number);
+                Look.OnClick(row, () => QuranLinks.Go(number));
+                list.appendChild(row);
                 return (Surah: s, Row: row);
             }).ToArray();
 
-            foreach (var r in rows) list.Add(r.Row);
-
-            var search = SearchBox("Surah".t()).SearchAsYouType().WS();
-            search.OnSearch((_, query) =>
+            var field = Look.El("label", "qkg-field qkg-index-field");
+            field.appendChild(Look.El("span", "", "⌕"));
+            var input = document.createElement("input").As<HTMLInputElement>();
+            input.placeholder = "Find a surah".t();
+            input.setAttribute("aria-label", "Find a surah".t());
+            input.type = "search";
+            field.appendChild(input);
+            input.oninput = _ =>
             {
-                var q = (query ?? "").Trim();
+                var q = (input.value ?? "").Trim();
                 foreach (var r in rows)
                 {
                     var match = q.Length == 0
@@ -124,17 +137,46 @@ namespace QuranKG.FrontEnd.Reader
                              || (r.Surah.Name ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0
                              || (r.Surah.NameEnglish ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0
                              || (r.Surah.NameArabic ?? "").Contains(q);
-                    if (match) r.Row.Show(); else r.Row.Collapse();
+                    r.Row.style.display = match ? "" : "none";
                 }
-            });
+            };
 
-            var scroll = VStack().WS().Grow().ScrollY().Children(list);
-            var current = rows.First(r => r.Surah.Number == _surah).Row.Render();
-            DomObserver.WhenMounted(current, () => window.setTimeout(_ => current.scrollIntoView(), 50));
+            var current = rows.First(r => r.Surah.Number == _surah).Row;
+            DomObserver.WhenMounted(current, () => window.setTimeout(_ => current.scrollIntoView(new ScrollIntoViewOptions { block = ScrollLogicalPosition.center }), 50));
 
-            return VStack().W(250.px()).H(100.percent()).NoShrink()
-                           .Style(st => st.setProperty("border-right", "1px solid var(--tss-default-border-color)"))
-                           .Children(VStack().WS().P(10).Children(search), scroll);
+            var top = Look.El("div", "qkg-index-top");
+            top.appendChild(field);
+
+            EnsureStyles();
+            return VStack().W(250.px()).H(100.percent()).NoShrink().Class("qkg-ui qkg-index")
+                           .Children(Raw(top), VStack().WS().Grow().ScrollY().Children(Raw(list)));
+        }
+
+        private static bool _styled;
+
+        private static void EnsureStyles()
+        {
+            if (_styled) return;
+            _styled = true;
+            var style = document.createElement("style");
+            style.textContent = @"
+.qkg-index { border-right: 1px solid var(--qkg-line); }
+.qkg-index-top { padding: 16px 14px 10px 14px; }
+.qkg-index-field { height: 40px; padding: 0 14px; }
+.qkg-index-field input { font-size: 14px; }
+.qkg-index-list { display: flex; flex-direction: column; padding: 0 8px 16px 8px; }
+.qkg-index-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 10px; color: var(--qkg-ink); }
+.qkg-index-row:hover { background: var(--qkg-surface-2); }
+.qkg-index-row.qkg-on { background: var(--qkg-teal-tint); }
+.qkg-index-row.qkg-on .qkg-index-name { font-weight: 600; }
+.qkg-index-n { width: 22px; text-align: right; font-size: 12px; color: var(--qkg-ink-3); flex: none; }
+.qkg-index-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.qkg-index-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qkg-index-meta { font-size: 12px; color: var(--qkg-ink-3); }
+.qkg-index-ar { font-size: 18px; line-height: 1.4; }
+@media (max-width: 900px) { .qkg-index { display: none !important; } }
+";
+            document.head.appendChild(style);
         }
     }
 }

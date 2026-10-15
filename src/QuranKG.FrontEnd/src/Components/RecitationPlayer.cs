@@ -43,8 +43,7 @@ namespace QuranKG.FrontEnd.Components
         private readonly HTMLElement      _progressFill;
 
         private QK.RecitationDto _recitation;
-        private Button           _play, _speed;
-        private ToggleButton     _repeat, _follow;
+        private HTMLElement      _play, _speed, _repeat, _follow;
         private TextBlock        _where, _time;
         private int              _current = -1;
         private int              _generation;
@@ -85,12 +84,8 @@ namespace QuranKG.FrontEnd.Components
             };
 
             _body = HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap();
-            _root = VStack().WS().Children(Raw(_progress).WS(), _body.PL(16).PR(16).PT(6).PB(8))
-                            .Style(s =>
-                            {
-                                s.setProperty("border-top", "1px solid var(--tss-default-border-color)");
-                                s.setProperty("background", "var(--tss-default-background-color)");
-                            });
+            EnsureStyles();
+            _root = VStack().WS().Class("qkg-player").Children(Raw(_progress).WS(), _body.PL(32).PR(32).PT(10).PB(12));
             _root.Collapse();
         }
 
@@ -143,36 +138,58 @@ namespace QuranKG.FrontEnd.Components
                 return;
             }
 
-            _play   = Button().SetIcon(UIcons.PlayAlt).Primary().Tooltip("Play / pause (space)".t()).OnClick(Toggle);
-            var previous = Button().SetIcon(UIcons.AngleLeft).Compact().Tooltip("The verse before".t()).OnClick(() => Step(-1));
-            var next     = Button().SetIcon(UIcons.AngleRight).Compact().Tooltip("The verse after".t()).OnClick(() => Step(+1));
-            _repeat = Button().SetIcon(UIcons.ArrowsRepeat).Compact().Tooltip("Repeat the verse being recited".t()).ToToggle()
-                              .OnChange((t, _) => _repeatVerse = t.IsChecked);
-            _follow = Button("Follow".t()).SetIcon(UIcons.BookOpenReader).Compact().Tooltip("Keep the verse being recited in view".t()).ToToggle().Checked(Follow)
-                              .OnChange((t, _) => { Follow = t.IsChecked; Save(FOLLOW_KEY, Follow ? "1" : "0"); });
-            _speed  = Button(SpeedLabel()).Compact().Tooltip("Speed".t()).OnClick(() =>
+            _play = Look.IconButton("", "Play / pause".t(), Toggle);
+            _play.classList.add("qkg-on");
+            _play.classList.add("qkg-player-play");
+            _play.appendChild(Icon(UIcons.PlayAlt).Render());
+            var previous = Look.IconButton("‹", "The verse before".t(), () => Step(-1));
+            var next     = Look.IconButton("›", "The verse after".t(), () => Step(+1));
+
+            _repeat = Look.IconButton("", "Repeat the verse being recited".t(), null);
+            _repeat.appendChild(Icon(UIcons.ArrowsRepeat).Render());
+            _repeat.setAttribute("aria-pressed", "false");
+            _repeat.onclick = _ =>
+            {
+                _repeatVerse = !_repeatVerse;
+                if (_repeatVerse) _repeat.classList.add("qkg-on"); else _repeat.classList.remove("qkg-on");
+                _repeat.setAttribute("aria-pressed", _repeatVerse ? "true" : "false");
+            };
+
+            _follow = Look.Chip("Follow".t(), null, Follow);
+            _follow.title = "Keep the verse being recited in view".t();
+            _follow.setAttribute("aria-pressed", Follow ? "true" : "false");
+            _follow.onclick = _ =>
+            {
+                Follow = !Follow;
+                if (Follow) _follow.classList.add("qkg-on"); else _follow.classList.remove("qkg-on");
+                _follow.setAttribute("aria-pressed", Follow ? "true" : "false");
+                Save(FOLLOW_KEY, Follow ? "1" : "0");
+            };
+
+            _speed = Look.Button(SpeedLabel(), null, "ghost", null, "Speed".t());
+            _speed.onclick = _ =>
             {
                 _speedIndex = (_speedIndex + 1) % Speeds.Length;
                 _audio.playbackRate = Speeds[_speedIndex];
-                _speed.SetText(SpeedLabel());
+                _speed.querySelector("span").As<HTMLElement>().textContent = SpeedLabel();
                 Save(SPEED_KEY, _speedIndex.ToString());
-            });
+            };
 
             _where = TextBlock("").SemiBold().Small();
             _time  = TextBlock("").Tiny().Secondary();
 
-            var reciter = HStack().AlignItemsCenter().Gap(8.px()).Children(
+            var reciter = HStack().AlignItemsCenter().Gap(10.px()).Children(
                 Arabic.Inline(_recitation.ReciterNameArabic, 18),
                 VStack().Children(
                     TextBlock(_recitation.ReciterName).Small(),
                     TextBlock(_recitation.Riwaya + " · " + _recitation.Country).Tiny().Secondary()))
                .Tooltip(About());
 
-            _body.Add(HStack().AlignItemsCenter().Gap(4.px()).Children(previous, _play, next));
+            var transport = Look.El("div", "qkg-player-transport", previous, _play, next);
+            _body.Add(Raw(transport));
             _body.Add(VStack().Children(_where, _time).W(150.px()));
             _body.Add(reciter.Grow());
-            _body.Add(HStack().AlignItemsCenter().Gap(4.px()).Children(_repeat, _speed, _follow,
-                Button().SetIcon(UIcons.Cross).Compact().Tooltip("Stop and close".t()).OnClick(Close)));
+            _body.Add(Raw(Look.El("div", "qkg-player-tools", _speed, _repeat, _follow, Look.IconButton("✕", "Stop and close".t(), Close))));
 
             _audio.src = _recitation.AudioUrl;
             Show(-1);
@@ -207,7 +224,11 @@ namespace QuranKG.FrontEnd.Components
         private void SetPlaying(bool playing)
         {
             _playing = playing;
-            _play?.SetIcon(playing ? UIcons.PauseCircle : UIcons.PlayAlt);
+            if (_play is object)
+            {
+                _play.innerHTML = "";
+                _play.appendChild(Icon(playing ? UIcons.Pause : UIcons.PlayAlt).Render());
+            }
             if (playing)
             {
                 var generation = ++_generation;
@@ -298,6 +319,25 @@ namespace QuranKG.FrontEnd.Components
         private static string Load(string key)
         {
             try { return localStorage.getItem(key) ?? ""; } catch { return ""; }
+        }
+
+        private static bool _styled;
+
+        private static void EnsureStyles()
+        {
+            if (_styled) return;
+            _styled = true;
+            Look.EnsureStyles();
+            var style = document.createElement("style");
+            style.textContent = @"
+.qkg-player { background: var(--qkg-raised); border-top: 1px solid var(--qkg-line); color: var(--qkg-ink); }
+.qkg-player-track { height: 4px; background: var(--qkg-surface-2); cursor: pointer; }
+.qkg-player-track:hover { height: 6px; }
+.qkg-player-fill { height: 100%; width: 0; background: var(--qkg-teal); }
+.qkg-player-transport, .qkg-player-tools { display: inline-flex; align-items: center; gap: 6px; }
+.qkg-player-play { width: 44px; height: 44px; font-size: 16px; }
+";
+            document.head.appendChild(style);
         }
 
         private static void Save(string key, string value)
