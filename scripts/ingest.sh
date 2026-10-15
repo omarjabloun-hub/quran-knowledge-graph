@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Writes the graph: schema, then every node and edge (QuranKG.Connector). Idempotent — re-run
 # it after changing the connector; nothing is deleted. `--dry-run` maps the corpus and prints the
-# counters without contacting the workspace.
+# counters without contacting the workspace. `--only tafsir` runs only those steps (comma-separated:
+# structure, language, verses, words, topics, qursim, tafsir) and leaves the rest of the graph as it is.
 #
-# Usage: scripts/ingest.sh [--target local|prod] [--dry-run]
+# Usage: scripts/ingest.sh [--target local|prod] [--dry-run] [--only <steps>]
 set -euo pipefail
 # shellcheck disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
@@ -14,7 +15,16 @@ resolve_target
 require_command dotnet "Install the .NET 10 SDK."
 
 dry=""
-for arg in "$@"; do [ "$arg" = "--dry-run" ] && dry="--dry-run"; done
+only=()
+expect_only=0
+for arg in "$@"; do
+  if [ "$expect_only" = "1" ]; then only=(--only "$arg"); expect_only=0; continue; fi
+  case "$arg" in
+    --dry-run) dry="--dry-run" ;;
+    --only)    expect_only=1 ;;
+    --only=*)  only=(--only "${arg#*=}") ;;
+  esac
+done
 
 [ -d "$ROOT_DIR/data/raw" ] || fail "No data/raw/ — run 'just fetch' first."
 
@@ -27,4 +37,4 @@ else
 fi
 
 cd "$ROOT_DIR"
-dotnet run --project "$CONNECTOR_CSPROJ" -c Release -- $dry
+dotnet run --project "$CONNECTOR_CSPROJ" -c Release -- $dry ${only[@]+"${only[@]}"}

@@ -1,6 +1,6 @@
 # The graph model
 
-Ten node types, written by [`src/QuranKG.Connector`](../src/QuranKG.Connector) from the sources in
+Twelve node types, written by [`src/QuranKG.Connector`](../src/QuranKG.Connector) from the sources in
 [data-sources.md](data-sources.md). The connector's schema (`Schema.cs`, `Edges.cs`) is the
 contract for everything above it: `just emit-schema` generates the `N`/`E` constants the front end
 uses, and the workspace injects the same constants into every endpoint.
@@ -23,6 +23,8 @@ flowchart LR
     Verse -- HasTopic / InTopicBranch --> Topic[Topic<br/>QUL]
     Topic -- ParentTopic --> Topic
     Verse -- InQurSimPair --> QurSimPair[QurSimPair<br/>7,295 · answer key]
+    Verse -- HasTafsirEntry --> TafsirEntry[TafsirEntry<br/>28,486]
+    TafsirEntry -- EntryOfTafsir --> Tafsir[Tafsir<br/>6 editions]
     Passage[Cluster: Passage<br/>561] -- HasMember --> Verse
     Passage -- ClusterOfSurah --> Surah
     Theme[Cluster: Theme<br/>119] -- HasPassage --> Passage
@@ -42,6 +44,8 @@ traversal reads in the direction it goes.
 | **Revelation** | `Meccan` / `Medinan` | where a surah was revealed |
 | **Topic** | QUL id | a theme, with its parent; verses link to their topic and every ancestor of it |
 | **QurSimPair** | `a~b` | two verses Ibn Kathir relates, with the degree (0–2). **The answer key** |
+| **Tafsir** | `mukhtasar-ar` … | a tafsir in one language — al-Mukhtasar, al-Jalalayn, Ibn Kathir, each in Arabic and English: names, author, attribution, `Rank` (the order a reader is offered them) |
+| **TafsirEntry** | `ibn-kathir-ar:2:1-5` | one commentary, on a verse or on the run of verses it explains together (Ibn Kathir: up to 20); linked to **every** verse it covers. For people only: Ibn Kathir's text is what QurSim was drawn from |
 | **Cluster** | `P:7:103-126` · `T:{hash}` | written by `qkg/clusters/build` (`just clusters`), two kinds. A **Passage** is a run of consecutive verses of one surah — its sections (`SurahNumber`, `Ordinal`, `FirstVerseKey`, `LastVerseKey`). A **Theme** groups passages of several surahs that tell the same story or treat the same subject. Both carry an Arabic label (distinctive lemmas), an English one (a reading aid), the `Method` and the `RunId`. A third kind, **SimilarGroup** (`S:{hash}`), is written by `qkg/clusters/similar-build`: passages grouped by Arabic meaning, lemmas and roots, with `HasPassage` edges only (a passage does not name its group); `qkg/clusters/build` leaves them alone |
 
 ## Why it is shaped this way

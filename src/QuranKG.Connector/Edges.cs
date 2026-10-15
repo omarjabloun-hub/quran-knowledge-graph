@@ -63,6 +63,13 @@ internal static class Edges
     public const string InQurSimPair        = nameof(InQurSimPair);        // Verse → QurSimPair
     public const string QurSimPairVerse     = nameof(QurSimPairVerse);     // QurSimPair → Verse
 
+    // --- tafsir — for people to read, never a signal and never the AI's ----------------------
+    public const string HasTafsirEntry      = nameof(HasTafsirEntry);      // Verse → TafsirEntry (every verse it explains)
+    public const string ExplainsVerse       = nameof(ExplainsVerse);       // TafsirEntry → Verse
+
+    public const string TafsirHasEntry      = nameof(TafsirHasEntry);      // Tafsir → TafsirEntry
+    public const string EntryOfTafsir       = nameof(EntryOfTafsir);       // TafsirEntry → Tafsir
+
     // --- clusters: written by the Clusters work inside the workspace, never by the connector --
     public const string HasMember           = nameof(HasMember);           // Cluster → Verse
     public const string InCluster           = nameof(InCluster);           // Verse → Cluster

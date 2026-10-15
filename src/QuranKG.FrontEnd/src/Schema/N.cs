@@ -80,6 +80,34 @@ namespace QuranKG.FrontEnd.Schema
             public const string Introduction = "Introduction";
         }
 
+        public static class Tafsir
+        {
+            public const string Type = "Tafsir";
+            public const string TafsirId = "TafsirId";
+            public const string Work = "Work";
+            public const string Language = "Language";
+            public const string TafsirName = "TafsirName";
+            public const string TafsirNameArabic = "TafsirNameArabic";
+            public const string Author = "Author";
+            public const string Description = "Description";
+            public const string Attribution = "Attribution";
+            public const string Rank = "Rank";
+        }
+
+        public static class TafsirEntry
+        {
+            public const string Type = "TafsirEntry";
+            public const string EntryKey = "EntryKey";
+            public const string TafsirId = "TafsirId";
+            public const string Language = "Language";
+            public const string SurahNumber = "SurahNumber";
+            public const string FirstVerseKey = "FirstVerseKey";
+            public const string LastVerseKey = "LastVerseKey";
+            public const string FirstAyah = "FirstAyah";
+            public const string LastAyah = "LastAyah";
+            public const string Text = "Text";
+        }
+
         public static class Topic
         {
             public const string Type = "Topic";
@@ -138,7 +166,7 @@ namespace QuranKG.FrontEnd.Schema
 
     public static class Groups
     {
-        public static readonly string[] AllTypes = { "Cluster", "Juz", "Lemma", "QurSimPair", "Revelation", "Root", "Surah", "Topic", "Verse", "Word" };
+        public static readonly string[] AllTypes = { "Cluster", "Juz", "Lemma", "QurSimPair", "Revelation", "Root", "Surah", "Tafsir", "TafsirEntry", "Topic", "Verse", "Word" };
     }
 
     public static class E
@@ -175,6 +203,10 @@ namespace QuranKG.FrontEnd.Schema
         public const string ChildTopic = "ChildTopic";
         public const string InQurSimPair = "InQurSimPair";
         public const string QurSimPairVerse = "QurSimPairVerse";
+        public const string HasTafsirEntry = "HasTafsirEntry";
+        public const string ExplainsVerse = "ExplainsVerse";
+        public const string TafsirHasEntry = "TafsirHasEntry";
+        public const string EntryOfTafsir = "EntryOfTafsir";
         public const string HasMember = "HasMember";
         public const string InCluster = "InCluster";
         public const string ClusterOfSurah = "ClusterOfSurah";

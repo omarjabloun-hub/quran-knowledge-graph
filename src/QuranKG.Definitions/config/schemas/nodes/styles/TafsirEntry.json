@@ -1,0 +1,13 @@
+﻿{
+  "UID": "7McXuZhksTFRcDdQLTjduB",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "TafsirEntry",
+  "DisplayName": "Tafsir entry",
+  "Description": "One commentary of a tafsir, on a verse or on the run of verses it explains together.",
+  "Color": "#9a3412",
+  "Icon": "fi-rr-book-open-cover",
+  "LabelField": "${TafsirId} {FirstVerseKey}–{LastAyah}",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

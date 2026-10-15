@@ -3,6 +3,7 @@
 //   dotnet run --project src/QuranKG.Connector                       ingest into CURIOSITY_URL with CURIOSITY_API_TOKEN
 //   dotnet run --project src/QuranKG.Connector -- --dry-run          map everything, write nothing, print the counts
 //   dotnet run --project src/QuranKG.Connector -- --schema-only      register node + edge schemas, write no data
+//   dotnet run --project src/QuranKG.Connector -- --only tafsir      only these steps (comma-separated), the rest left as it is
 //   dotnet run --project src/QuranKG.Connector -- --emit-schema <N.cs path>
 //
 // Idempotent: every node is keyed, so a re-run updates in place. There is deliberately no hash
@@ -24,6 +25,7 @@ if (emitTo is not null)
 
 var dryRun     = Flag("--dry-run");
 var schemaOnly = Flag("--schema-only");
+var only       = Arg("--only")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal);
 var url        = Arg("--url")   ?? Environment.GetEnvironmentVariable("CURIOSITY_URL") ?? "http://localhost:8080/";
 var token      = Arg("--token") ?? Environment.GetEnvironmentVariable("CURIOSITY_API_TOKEN");
 var name       = Environment.GetEnvironmentVariable("WORKSPACE_CONNECTOR_NAME") is { Length: > 0 } n ? n : "Quran Knowledge Graph";
@@ -47,7 +49,7 @@ catch (Exception ex) when (ex is CorpusException or FileNotFoundException or Dir
     return 1;
 }
 
-Console.WriteLine($"corpus: {corpus.Verses.Count:N0} verses, {corpus.Words.Count:N0} words, {corpus.Roots.Count:N0} roots, {corpus.Lemmas.Count:N0} lemmas, {corpus.Topics.Count:N0} topics, {corpus.QurSimPairs.Count:N0} QurSim pairs");
+Console.WriteLine($"corpus: {corpus.Verses.Count:N0} verses, {corpus.Words.Count:N0} words, {corpus.Roots.Count:N0} roots, {corpus.Lemmas.Count:N0} lemmas, {corpus.Topics.Count:N0} topics, {corpus.QurSimPairs.Count:N0} QurSim pairs, {corpus.TafsirEntries.Count:N0} tafsir entries in {corpus.TafsirEditions.Count} editions");
 
 using var loggerFactory = LoggerFactory.Create(f => f.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
@@ -72,6 +74,7 @@ try
     await Step("words",      () => WordIngest.RunAsync(ctx));
     await Step("topics",     () => TopicIngest.RunAsync(ctx));
     await Step("qursim",     () => QurSimIngest.RunAsync(ctx));
+    await Step("tafsir",     () => TafsirIngest.RunAsync(ctx));
 }
 catch (Exception ex)
 {
@@ -97,6 +100,7 @@ int Finish(int exitCode)
 
 async Task Step(string label, Func<Task> action)
 {
+    if (only is not null && !only.Contains(label)) return;
     var (nodes, edges) = (ctx.TotalNodes, ctx.TotalEdges);
     var sw = Stopwatch.StartNew();
     await action();
@@ -115,6 +119,8 @@ static async Task SyncSchemaAsync(Graph graph)
     await graph.CreateNodeSchemaAsync<Nodes.Topic>(overwrite: true);
     await graph.CreateNodeSchemaAsync<Nodes.QurSimPair>(overwrite: true);
     await graph.CreateNodeSchemaAsync<Nodes.Cluster>(overwrite: true);
+    await graph.CreateNodeSchemaAsync<Nodes.Tafsir>(overwrite: true);
+    await graph.CreateNodeSchemaAsync<Nodes.TafsirEntry>(overwrite: true);
     await graph.CreateEdgeSchemaAsync(typeof(Edges));
 }
 

@@ -1,0 +1,13 @@
+﻿{
+  "UID": "7cv8U65DhRBVxyJQV4fi9y",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Tafsir",
+  "DisplayName": "Tafsir",
+  "Description": "A tafsir in one language: al-Mukhtasar, al-Jalalayn or Ibn Kathir, in Arabic or English. For people to read — never a signal, never the AI's.",
+  "Color": "#7c2d12",
+  "Icon": "fi-rr-book-open-reader",
+  "LabelField": "${TafsirName} ({Language})",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

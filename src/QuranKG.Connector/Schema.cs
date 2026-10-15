@@ -147,6 +147,47 @@ internal static class Nodes
     }
 
     /// <summary>
+    /// A tafsir in one language — an edition: al-Mukhtasar, al-Jalalayn or Ibn Kathir, in Arabic or
+    /// English. Key: "mukhtasar-ar", "ibn-kathir-en" …. Read by people; never by a signal or the AI
+    /// (Ibn Kathir's is the text QurSim was drawn from).
+    /// </summary>
+    [Node]
+    internal sealed class Tafsir
+    {
+        [Key]      public string TafsirId     { get; set; } = "";
+        /// <summary>The work its editions share: "mukhtasar", "jalalayn", "ibn-kathir".</summary>
+        [Property] public string Work         { get; set; } = "";
+        /// <summary>"ar" or "en".</summary>
+        [Property] public string Language     { get; set; } = "";
+        [Property] public string TafsirName   { get; set; } = "";
+        [Property] public string TafsirNameArabic { get; set; } = "";
+        [Property] public string Author       { get; set; } = "";
+        [Property] public string Description  { get; set; } = "";
+        [Property] public string Attribution  { get; set; } = "";
+        /// <summary>Where a reader is offered it first: 1 = al-Mukhtasar.</summary>
+        [Property] public int    Rank         { get; set; }
+    }
+
+    /// <summary>
+    /// One commentary of a tafsir, on a verse or on the run of verses it explains together (Ibn
+    /// Kathir explains up to 20 at a time). Key: "{tafsir}:{surah}:{first}" or "…:{first}-{last}".
+    /// </summary>
+    [Node]
+    internal sealed class TafsirEntry
+    {
+        [Key]      public string EntryKey      { get; set; } = "";
+        [Property] public string TafsirId      { get; set; } = "";
+        [Property] public string Language      { get; set; } = "";
+        [Property] public int    SurahNumber   { get; set; }
+        [Property] public string FirstVerseKey { get; set; } = "";
+        [Property] public string LastVerseKey  { get; set; } = "";
+        [Property] public int    FirstAyah     { get; set; }
+        [Property] public int    LastAyah      { get; set; }
+        /// <summary>Plain text, paragraphs separated by a blank line.</summary>
+        [Property] public string Text          { get; set; } = "";
+    }
+
+    /// <summary>
     /// A group of verses found by clustering. Written by the qkg/clusters/build endpoint inside the
     /// workspace, never by this connector, which only registers the type so the schema and N.cs are
     /// complete from the start. Two kinds:

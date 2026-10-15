@@ -228,3 +228,49 @@ internal static class QurSimIngest
         await ctx.CommitAsync();
     }
 }
+
+internal static class TafsirIngest
+{
+    public static async Task RunAsync(ConnectorContext ctx)
+    {
+        var c = ctx.Corpus;
+
+        foreach (var (edition, rank) in c.TafsirEditions.Select((e, i) => (e, i + 1)))
+            ctx.Write(new Tafsir
+            {
+                TafsirId         = edition.Id,
+                Work             = edition.Work,
+                Language         = edition.Language,
+                TafsirName       = edition.Name,
+                TafsirNameArabic = edition.NameArabic,
+                Author           = edition.Author,
+                Description      = edition.Description,
+                Attribution      = edition.Attribution,
+                Rank             = rank,
+            }, edition.Id);
+
+        var language = c.TafsirEditions.ToDictionary(e => e.Id, e => e.Language, StringComparer.Ordinal);
+
+        foreach (var e in c.TafsirEntries)
+        {
+            var node = ctx.Write(new TafsirEntry
+            {
+                EntryKey      = e.Key,
+                TafsirId      = e.Edition,
+                Language      = language[e.Edition],
+                SurahNumber   = e.First.Surah,
+                FirstVerseKey = e.First.Key,
+                LastVerseKey  = e.Last.Key,
+                FirstAyah     = e.First.Ayah,
+                LastAyah      = e.Last.Ayah,
+                Text          = e.Text,
+            }, e.Key);
+
+            ctx.Link(node, nameof(Tafsir), e.Edition, Edges.EntryOfTafsir, Edges.TafsirHasEntry);
+            foreach (var v in e.Verses)
+                ctx.Link(node, nameof(Verse), v.Key, Edges.ExplainsVerse, Edges.HasTafsirEntry);
+        }
+
+        await ctx.CommitAsync();
+    }
+}
