@@ -36,6 +36,23 @@ closes it.
       pinned), as `Tafsir` / `TafsirEntry` nodes linked to every verse they explain. In the verse
       panel and the verse page's Tafsir tab; a long commentary opens whole, Arabic beside English.
       Out of the AI's reach (Ibn Kathir is QurSim's source)
+- [x] **Hadith and the Quran** (`HadithSource`, `Text/QuranQuotes.cs`, `HadithIngest`, `qkg/hadith/*`,
+      `qkg/verse/hadith`, `Hadith/HadithStudyView.cs`, `HadiThTooLs…`): Bukhari and Muslim in Arabic
+      and English; the verses each quotes (braces, runs, whole verses; phrases graded apart;
+      measured on the translators' citations, 94% / 82%); the closest verses by meaning and
+      distinctive words (`just benchmark-hadith`: 28% top-10 on the hard cases, chance 0.2%);
+      a study page, hadith pages, a Hadith tab on verses; the assistant's Hadith tools and its
+      method for the relation (quotes / agrees / explains / adds / apparent tension)
+- [ ] **Hadith, next**:
+  - the relation as data: run the assistant's method over the hadith that quote a verse (1,137)
+    and store each verdict, its verses and its argument as a node, labelled as the model's
+    reading — a sweep, to be scoped and costed before it runs;
+  - the chain of narrators as a graph: narrators as nodes (isnad), so a hadith's transmission is
+    read the way its text is;
+  - the parallels: a hadith in both collections (muttafaq 'alayh) and its variants, found from the
+    texts' meaning;
+  - the matn heuristic measured (against sunnah.com's narrator/text split) and improved;
+  - Abu Dawud, al-Tirmidhi, al-Nasa'i, Ibn Majah, with their gradings.
 - [x] **The clusters map** (`qkg/clusters/map`, `Themes/ClusterMap.cs`): every surah in its passages,
       coloured by theme or by similarity group, on the Stories and themes page; hover lights a group
       across the Quran

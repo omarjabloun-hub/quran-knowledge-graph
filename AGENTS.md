@@ -13,7 +13,7 @@ Orientation for anyone — person or agent — working in this repository. The w
 | `src/QuranKG.Tools` | `fetch`, `check`, `sync-dto` | no |
 | `src/QuranKG.Connector` | the graph schema (`Schema.cs`, `Edges.cs`), the ingest (`Ingest.cs`), `--dry-run`, `--emit-schema` | yes (Library token) |
 | `src/QuranKG.Definitions` | the workspace as files — `config/` (indexes, styles, settings, schemas), `code/endpoints/qkg/`, `variants/` | imported |
-| `src/QuranKG.FrontEnd` | the dashboard (`Dashboard/`), the Quran View (`Reader/`), the Stories and themes page and its map (`Themes/`), renderers (`Renderers/`), the reader and shared components (`Components/`), the API layer | uploaded |
+| `src/QuranKG.FrontEnd` | the dashboard (`Dashboard/`), the Quran View (`Reader/`), the Stories and themes page and its map (`Themes/`), the Hadith and the Quran page (`Hadith/`), renderers (`Renderers/`), the reader and shared components (`Components/`), the API layer | uploaded |
 | `src/QuranKG.Workspace` | `tokens`, `status`, `call`, `warm`, `clusters`, `stage-definitions`, `use-embeddings` | yes (admin sign-in) |
 | `tools/embedding-benchmark` | Python: embeds the verses with candidate models and scores them on QurSim | no |
 | `tools/embedding-server` | Python: AraModernBert-STS behind the OpenAI embeddings API — what the workspace embeds the verses' Arabic with | called by it |
@@ -60,6 +60,11 @@ in the csproj files: Curiosity.Library 26.10.6546, Curiosity.FrontEnd* 26.10.657
 | `qkg/root/profile` | one root: per-surah spread, Meccan / Medinan, lemmas, forms, verses |
 | `qkg/verse/words` | one verse: its words with morphology, roots, lemmas, and its QurSim pairs (**people only**) |
 | `qkg/verse/tafsir` | one verse: every tafsir work, and the chosen one's text in Arabic and English (**people only**) |
+| `qkg/verse/hadith` | one verse: the hadith that quote it, and those closest to it in meaning |
+| `qkg/hadith/profile` | one hadith: its texts, the verses it quotes, the ten verses closest to it (meaning + distinctive words) |
+| `qkg/hadith/list` | hadith filtered by collection, book, surah, how they meet the Quran, words or reference |
+| `qkg/hadith/overview` | the Hadith and the Quran page: per collection, measured recall, most quoted verses, surahs, books |
+| `qkg/hadith/prune-quotes` | admin, writes: deletes the hadith–verse links an older ingest found and the latest did not (`just ingest` runs it) |
 | `qkg/verse/similar` | similar verses: Arabic embedding + shared lemmas + shared roots, with each signal's contribution |
 
 All read-only, `AllUsers`, sharing the DTO library `qkg/_lib/dto` (admin-only).
@@ -67,13 +72,14 @@ All read-only, `AllUsers`, sharing the DTO library `qkg/_lib/dto` (admin-only).
 ## The AI layer
 
 The **AI Assistant** page (`src/QuranKG.FrontEnd/src/Chat/QuranChatView.cs`) is the Quran Research
-Assistant with its four tools pinned on every turn — the stock page starts each chat with only
+Assistant with its five tools pinned on every turn — the stock page starts each chat with only
 consult ticked.
 
 | Definition (`src/QuranKG.Definitions/code/`) | What |
 |---|---|
 | `ai-assistants/quran-research-assistant-…1111.cs` | the assistant: the method for testing a claim (fix the counting rule, count both sides, list the verses, measure the baseline), one worked example |
 | `chat-ai-tools/QuranTooLs111111111111.cs` | CountTerm (lemma / root / form / text, with every verse and how many lemmas share the count), FindVerses, ReadVerses, SameCount, SimilarVerses, SimilarSurahs |
+| `chat-ai-tools/HadiThTooLs11111111111.cs` | FindHadith (reference, words, verse), ReadHadith (text, quoted verses, closest verses), HadithForVerse |
 | `chat-ai-tools/QuranFiLes111111111111.cs` | the sandbox `quran`: words / verses / surahs / lemmas / roots as TSV, bash and python, `app` for the read-only endpoints |
 | `chat-ai-tools/SEARCHRecords111111111.cs` | the workspace search, fenced to Verse, Surah, Root, Lemma, Cluster, Juz |
 | `chat-ai-tools/ConsuLt111111111111111.cs` | the consult readers for those types and Word |

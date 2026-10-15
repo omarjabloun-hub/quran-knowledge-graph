@@ -22,6 +22,45 @@ namespace QuranKG.FrontEnd.Schema
             public const string LastVerseKey = "LastVerseKey";
         }
 
+        public static class Hadith
+        {
+            public const string Type = "Hadith";
+            public const string HadithKey = "HadithKey";
+            public const string CollectionId = "CollectionId";
+            public const string Number = "Number";
+            public const string Sequence = "Sequence";
+            public const string Reference = "Reference";
+            public const string BookNumber = "BookNumber";
+            public const string BookName = "BookName";
+            public const string NumberInBook = "NumberInBook";
+            public const string TextArabic = "TextArabic";
+            public const string Matn = "Matn";
+            public const string IsVariant = "IsVariant";
+            public const string TextEnglish = "TextEnglish";
+            public const string TranslatorCites = "TranslatorCites";
+            public const string Keywords = "Keywords";
+        }
+
+        public static class HadithBook
+        {
+            public const string Type = "HadithBook";
+            public const string BookKey = "BookKey";
+            public const string CollectionId = "CollectionId";
+            public const string BookNumber = "BookNumber";
+            public const string BookName = "BookName";
+            public const string BookNameArabic = "BookNameArabic";
+        }
+
+        public static class HadithCollection
+        {
+            public const string Type = "HadithCollection";
+            public const string CollectionId = "CollectionId";
+            public const string CollectionName = "CollectionName";
+            public const string CollectionNameArabic = "CollectionNameArabic";
+            public const string Compiler = "Compiler";
+            public const string Translator = "Translator";
+        }
+
         public static class Juz
         {
             public const string Type = "Juz";
@@ -48,6 +87,19 @@ namespace QuranKG.FrontEnd.Schema
             public const string VerseA = "VerseA";
             public const string VerseB = "VerseB";
             public const string Degree = "Degree";
+        }
+
+        public static class QuranQuote
+        {
+            public const string Type = "QuranQuote";
+            public const string QuoteKey = "QuoteKey";
+            public const string HadithKey = "HadithKey";
+            public const string VerseKey = "VerseKey";
+            public const string Kind = "Kind";
+            public const string Words = "Words";
+            public const string VerseWords = "VerseWords";
+            public const string Quoted = "Quoted";
+            public const string RunId = "RunId";
         }
 
         public static class Revelation
@@ -166,7 +218,7 @@ namespace QuranKG.FrontEnd.Schema
 
     public static class Groups
     {
-        public static readonly string[] AllTypes = { "Cluster", "Juz", "Lemma", "QurSimPair", "Revelation", "Root", "Surah", "Tafsir", "TafsirEntry", "Topic", "Verse", "Word" };
+        public static readonly string[] AllTypes = { "Cluster", "Hadith", "HadithBook", "HadithCollection", "Juz", "Lemma", "QurSimPair", "QuranQuote", "Revelation", "Root", "Surah", "Tafsir", "TafsirEntry", "Topic", "Verse", "Word" };
     }
 
     public static class E
@@ -207,6 +259,18 @@ namespace QuranKG.FrontEnd.Schema
         public const string ExplainsVerse = "ExplainsVerse";
         public const string TafsirHasEntry = "TafsirHasEntry";
         public const string EntryOfTafsir = "EntryOfTafsir";
+        public const string InCollection = "InCollection";
+        public const string CollectionHasHadith = "CollectionHasHadith";
+        public const string InHadithBook = "InHadithBook";
+        public const string HadithBookHasHadith = "HadithBookHasHadith";
+        public const string BookOfCollection = "BookOfCollection";
+        public const string CollectionHasBook = "CollectionHasBook";
+        public const string HasQuranQuote = "HasQuranQuote";
+        public const string QuoteInHadith = "QuoteInHadith";
+        public const string QuoteOfVerse = "QuoteOfVerse";
+        public const string VerseHasQuote = "VerseHasQuote";
+        public const string HadithQuotesVerse = "HadithQuotesVerse";
+        public const string VerseQuotedInHadith = "VerseQuotedInHadith";
         public const string HasMember = "HasMember";
         public const string InCluster = "InCluster";
         public const string ClusterOfSurah = "ClusterOfSurah";

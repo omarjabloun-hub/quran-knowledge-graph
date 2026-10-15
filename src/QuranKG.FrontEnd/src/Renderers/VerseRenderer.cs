@@ -56,6 +56,7 @@ namespace QuranKG.FrontEnd.Renderers
         {
             yield return Tab("verse",      "Verse".t(),            () => VerseTab(node));
             yield return Tab("commentary", "Tafsir".t(),           () => VStack().WS().P(16).Children(TafsirView.Create(node.UID, heading: false)));
+            yield return Tab("hadith",     "Hadith".t(),           () => HadithTab(node));
             yield return Tab("similar",    "Similar verses".t(),   () => SimilarTab(node));
             yield return Tab("tafsir",     "Ibn Kathir links".t(), () => TafsirTab(node));
         }
@@ -91,6 +92,31 @@ namespace QuranKG.FrontEnd.Renderers
                                      Translation("Ali Quli Qarai",       verse.GetString(N.Verse.EnglishQarai)))));
             }).S();
         }
+
+        // -----------------------------------------------------------------------------------
+        // Hadith: those that quote it, those close to it in meaning
+        // -----------------------------------------------------------------------------------
+
+        private static IComponent HadithTab(Node verse)
+            => Defer(async () =>
+            {
+                var hadith  = await QuranApi.VerseHadithAsync(verse.UID, 12);
+                var quoting = VStack().WS();
+                foreach (var h in hadith.Quoting ?? new QK.HadithRow[0]) quoting.Add(HadithView.Row(h, showVerses: true));
+                if ((hadith.Quoting ?? new QK.HadithRow[0]).Length == 0) quoting.Add(TextBlock("No hadith of Bukhari or Muslim quotes it.".t()).Small().Secondary());
+
+                var closest = VStack().WS();
+                foreach (var h in hadith.Closest ?? new QK.HadithRow[0]) closest.Add(HadithView.Row(h, showVerses: true));
+                if (!hadith.SemanticReady) closest.Add(TextBlock("The hadith are not embedded yet.".t()).Small().Secondary());
+
+                return VStack().WS().P(16).Gap(16.px()).Children(
+                    Panels.Panel("Hadith that quote it".t(),
+                                 "Bukhari and Muslim whose Arabic quotes the verse (the verse set in braces by the edition, six words or more, or the whole of a short verse) or shares a phrase with it, then those whose English translator cites it.".t(),
+                                 quoting),
+                    Panels.Panel("Hadith close to it in meaning".t(),
+                                 "The hadith whose text (without its chain) is nearest the verse's Arabic, by the same embedding model. Candidates to read: whether a hadith supports, explains, adds to or seems to sit in tension with the verse is a reading — ask the assistant to argue it.".t(),
+                                 closest));
+            }, TextBlock("Finding the hadith…".t()).Secondary().P(16)).S();
 
         private static IComponent WordChip(QK.WordRow word)
         {

@@ -35,10 +35,12 @@ namespace QuranKG.FrontEnd.Chat
         private static readonly UID128 Tool_Sandbox = new UID128("QuranFiLes111111111111");
         /// <summary>The workspace search, fenced to the types the assistant may read.</summary>
         private static readonly UID128 Tool_Search  = new UID128("SEARCHRecords111111111");
-        /// <summary>The readers of verses, words, roots, lemmas, surahs, passages and themes.</summary>
+        /// <summary>The readers of verses, words, roots, lemmas, surahs, passages, themes and hadith.</summary>
         private static readonly UID128 Tool_Consult = new UID128("ConsuLt111111111111111");
+        /// <summary>FindHadith, ReadHadith, HadithForVerse: Bukhari and Muslim against the Quran.</summary>
+        private static readonly UID128 Tool_Hadith  = new UID128("HadiThTooLs11111111111");
 
-        private static readonly UID128[] PinnedTools = { Tool_Quran, Tool_Sandbox, Tool_Search, Tool_Consult };
+        private static readonly UID128[] PinnedTools = { Tool_Quran, Tool_Hadith, Tool_Sandbox, Tool_Search, Tool_Consult };
 
         /// <summary>Questions an empty chat can answer, one per kind of tool.</summary>
         private static readonly string[] WelcomePrompts =
@@ -48,6 +50,7 @@ namespace QuranKG.FrontEnd.Chat
             "Read 2:255 word by word, with each word's root and lemma.".t(),
             "Which surah is the most similar to Al-Baqarah, and why?".t(),
             "Among the prophets' names, which pairs occur equally often — and how often would that happen by chance?".t(),
+            "Is Bukhari 6018 backed by the Quran? Read it against the verses closest to it.".t(),
         };
 
         private static readonly ChatViewConfiguration Configuration = new ChatViewConfiguration

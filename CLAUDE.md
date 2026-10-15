@@ -112,6 +112,16 @@ just status                     # after an import: "Code compiles", counts as ex
   `!= default(UID128)` (every unthemed passage drew an empty theme chip).
 - `just ingest local --only tafsir` (comma-separated steps) writes one part of the graph; a new
   source in parts (one file per surah) takes `"parts": 114` and `{part}` in its url in the manifest.
+- A node type's schema is uploaded from `src/QuranKG.Definitions/config/schemas`: after adding a
+  field in `Schema.cs`, ingest, `just export-definitions` and copy the type's file before the next
+  `just upload-endpoints` — or the upload puts the old schema back and every endpoint naming the
+  field fails to compile ("'N.Hadith' does not contain a definition for 'Keywords'").
+- An endpoint's cache is keyed on its code, not the data: a re-ingest shows only after an hour on a
+  cached endpoint. The hadith endpoints are not cached for that reason.
+- The connector only adds and updates. Links a detector stops finding stay in the graph unless
+  removed: `QuranQuote.RunId` and `qkg/hadith/prune-quotes` (run by `just ingest`) do it for hadith.
+- The editions of Bukhari and Muslim set a quoted verse in braces `{…}`: the strongest evidence of a
+  quotation, stronger than any length or frequency rule.
 - The sandbox has no `query` command on purpose: the query engine emits whole nodes, and a verse
   node carries its ruku'.
 

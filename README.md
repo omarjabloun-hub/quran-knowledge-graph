@@ -10,10 +10,11 @@ references made by people (Ibn Kathir's related verses, the traditional ruku' se
 
 | | |
 |---|---|
-| **Graph** | 114 surahs · 6,236 verses · 77,429 words · 1,651 roots · 4,776 lemmas · 30 juz · 7,295 tafsir links · 3 tafsirs in Arabic and English (28,486 entries) — ~126,000 nodes, ~494,100 edges |
+| **Graph** | 114 surahs · 6,236 verses · 77,429 words · 1,651 roots · 4,776 lemmas · 30 juz · 7,295 tafsir links · 3 tafsirs in Arabic and English (28,486 entries) · Sahih al-Bukhari and Sahih Muslim (14,940 hadith, 2,385 links to the verses they quote) — ~143,500 nodes, ~531,100 edges |
 | **Dashboard** | totals and parts of speech; Meccan vs Medinan (length, characteristic roots); verse length in the book's order and in the order of revelation; most frequent roots, nouns, verbs; where each root lives across the juz and surahs; every surah in a table. Every count opens what it counted. |
 | **Reading** | the **Quran View** (`#/read/2/255`): the 114 surahs, each read as continuous Arabic in its passages — no box per verse — with the English beside it on demand; a click on a verse opens its translations, its **tafsir in Arabic and English** (al-Mukhtasar, al-Jalalayn, Ibn Kathir), words, passage and theme, closest verses and tafsir links. In the chat, every verse cited (`21:30`) opens the same way. A passage and a theme read the same way, the words that tie them marked |
 | **Pages** | a surah read in order, its passages, its similar surahs and its lexical profile; a verse word by word (root, lemma, part of speech), its tafsir, its similar verses and its tafsir links; a root's distribution, lemmas and forms; a theme surah by surah; a passage verse by verse |
+| **Hadith and the Quran** | Bukhari and Muslim in Arabic and English, read against the text: every verse a hadith's Arabic quotes (the editions' braces, runs of six words or more, whole short verses; shared phrases graded apart) — 1,137 hadith quote a verse, measured against the translators' citations (94% / 82% found); every hadith's closest verses by the meaning of the Arabic and its distinctive words ([`tools/hadith-benchmark`](tools/hadith-benchmark/README.md)); every verse's hadith. The **Hadith and the Quran** page, the hadith pages, a Hadith tab and section on every verse, and the assistant's Hadith tools, which argue how a hadith relates to a verse — quotes, agrees, explains, adds, or an apparent tension, with the readings that reconcile it |
 | **Passages and themes** | every surah cut where its vocabulary changes (561 passages); passages of different surahs that lean on the same distinctive words grouped into 119 themes — Moses and Pharaoh in 8 surahs, Lot in 7, Mary and the Messiah in 7… On the **Stories and themes** page — a map of the 114 surahs in their passages, coloured by theme — and in every surah's text. Built inside the workspace by `just clusters`, no model needed — scored with [`tools/cluster-benchmark`](tools/cluster-benchmark/README.md) |
 | **Similarity** | verses: Arabic embedding (AraModernBert-STS, the best of 24 models measured) + shared lemmas + shared roots, each standardised and summed — scored against QurSim with [`tools/embedding-benchmark`](tools/embedding-benchmark/README.md). Surahs: shared distinctive lemmas and roots, and how many of each verse's nearest verses in meaning the other surah holds |
 | **Models** | the verses' Arabic embedded by AraModernBert-STS on the Mac's GPU ([`tools/embedding-server`](tools/embedding-server/README.md)), or built in (Harrier, no setup); chat through any tool-calling model (Claude via a local OpenAI-compatible wrapper, or Ollama) — [docs/models.md](docs/models.md) |
@@ -68,7 +69,9 @@ docs/                       use case, data sources, graph model, models, local s
 
 Quran text and metadata: [Tanzil](https://tanzil.net) (CC BY 3.0). Morphology: the
 [Quranic Arabic Corpus](https://corpus.quran.com) (GNU GPL). Translations: Saheeh International
-and Ali Quli Qara'i via Tanzil. Related verses: QurSim (Sharaf & Atwell, LREC 2012). Tafsir: al-Mukhtasar (Tafsir Center for Quranic
+and Ali Quli Qara'i via Tanzil. Related verses: QurSim (Sharaf & Atwell, LREC 2012). Hadith: Sahih al-Bukhari (English: Muhsin Khan)
+and Sahih Muslim (English: Abdul Hamid Siddiqui) from [hadith-api](https://github.com/fawazahmed0/hadith-api),
+the books' Arabic names from [hadith-json](https://github.com/AhmedBaset/hadith-json). Tafsir: al-Mukhtasar (Tafsir Center for Quranic
 Studies), al-Jalalayn (English: Feras Hamza, Royal Aal al-Bayt Institute) and Ibn Kathir (English
 abridgement: Darussalam), from [QUL](https://qul.tarteel.ai). Details and
 licences in [docs/data-sources.md](docs/data-sources.md).

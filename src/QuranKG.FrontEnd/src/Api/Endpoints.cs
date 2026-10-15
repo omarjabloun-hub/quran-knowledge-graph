@@ -24,6 +24,10 @@ namespace QuranKG.FrontEnd.Api
         public const string VerseWords = "qkg/verse/words";
         /// <summary>The tafsirs on a verse, Arabic and English — for people, never an AI tool.</summary>
         public const string VerseTafsir = "qkg/verse/tafsir";
+        public const string VerseHadith    = "qkg/verse/hadith";
+        public const string HadithProfile  = "qkg/hadith/profile";
+        public const string HadithOverview = "qkg/hadith/overview";
+        public const string HadithList     = "qkg/hadith/list";
 
         /// <summary>Verses similar to one verse, Arabic first. Body: <c>{ "Uid": …, "Count": 20 }</c>.</summary>
         public const string VerseSimilar = "qkg/verse/similar";

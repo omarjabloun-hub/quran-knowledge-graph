@@ -13,7 +13,8 @@ namespace QuranKG.FrontEnd.Components
 {
     /// <summary>
     /// The side panel a verse opens in a reader: the verse, its translations and transliteration,
-    /// its tafsir in Arabic and English (<see cref="TafsirView"/>), the passage and theme it sits in, its words with their roots, the verses closest to it in
+    /// its tafsir in Arabic and English (<see cref="TafsirView"/>), the hadith that quote it or are
+    /// close to it in meaning, the passage and theme it sits in, its words with their roots, the verses closest to it in
     /// the Arabic, and the verses Ibn Kathir relates to it. Each part loads on its own, so the
     /// translation shows at once and the similarity ranking follows.
     /// </summary>
@@ -21,6 +22,7 @@ namespace QuranKG.FrontEnd.Components
     {
         private const int SIMILAR_COUNT = 5;
         private const int TAFSIR_COUNT  = 8;
+        private const int HADITH_COUNT  = 4;
 
         /// <param name="goToVerse">Where a related verse leads: in the Quran View, to the verse in the text; elsewhere, to its page.</param>
         /// <param name="readInQuran">Whether to offer to read the verse in its surah (not in the Quran View itself).</param>
@@ -56,6 +58,27 @@ namespace QuranKG.FrontEnd.Components
             }, Translation("Saheeh International", v.Translation)));
 
             page.Add(TafsirView.Create(v.Uid));
+
+            page.Add(Defer(async () =>
+            {
+                var hadith = await QuranApi.VerseHadithAsync(v.Uid, HADITH_COUNT);
+                var list = VStack().WS().Gap(6.px()).Children(Heading("Hadith".t()));
+                var quoting = hadith.Quoting ?? new QK.HadithRow[0];
+                list.Add(TextBlock(quoting.Length == 0
+                    ? "No hadith of Bukhari or Muslim quotes it.".t()
+                    : string.Format("{0} hadith of Bukhari and Muslim meet it in words:".t(), quoting.Length)).Tiny().Secondary());
+                foreach (var h in quoting.Take(HADITH_COUNT)) list.Add(HadithView.Row(h, showVerses: false));
+                if (quoting.Length > HADITH_COUNT)
+                    list.Add(TextBlock(string.Format("and {0} more on the verse's page.".t(), quoting.Length - HADITH_COUNT)).Tiny().Secondary());
+
+                var closest = hadith.Closest ?? new QK.HadithRow[0];
+                if (closest.Length > 0)
+                {
+                    list.Add(TextBlock("Close in meaning (the Arabic of both, one embedding model) — candidates to read:".t()).Tiny().Secondary().PT(6));
+                    foreach (var h in closest) list.Add(HadithView.Row(h, showVerses: false));
+                }
+                return list;
+            }, TextBlock("Finding the hadith…".t()).Small().Secondary()));
 
             if (UID128.IsNotNull(s.PassageUid))
             {

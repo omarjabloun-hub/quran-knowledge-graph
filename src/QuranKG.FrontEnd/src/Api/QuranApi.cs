@@ -41,6 +41,18 @@ namespace QuranKG.FrontEnd.Api
         internal static Task<QK.VerseTafsirDto> VerseTafsirAsync(UID128 verseUID, string work)
             => Mosaik.API.Endpoints.CallAsync<QK.VerseTafsirDto>(Endpoints.VerseTafsir, new QK.VerseTafsirRequest { Uid = verseUID, Work = work }, readOnlyCompatible: true);
 
+        internal static Task<QK.VerseHadithDto> VerseHadithAsync(UID128 verseUID, int count)
+            => Mosaik.API.Endpoints.CallAsync<QK.VerseHadithDto>(Endpoints.VerseHadith, new QK.SimilarRequest { Uid = verseUID, Count = count }, readOnlyCompatible: true);
+
+        internal static Task<QK.HadithProfileDto> HadithProfileAsync(UID128 hadithUID)
+            => Mosaik.API.Endpoints.CallAsync<QK.HadithProfileDto>(Endpoints.HadithProfile, new QK.HadithProfileRequest { Uid = hadithUID }, readOnlyCompatible: true);
+
+        internal static Task<QK.HadithOverviewDto> HadithOverviewAsync()
+            => Mosaik.API.Endpoints.CallAsync<QK.HadithOverviewDto>(Endpoints.HadithOverview, readOnlyCompatible: true);
+
+        internal static Task<QK.HadithListDto> HadithListAsync(QK.HadithListRequest request)
+            => Mosaik.API.Endpoints.CallAsync<QK.HadithListDto>(Endpoints.HadithList, request, readOnlyCompatible: true);
+
         internal static Task<QK.SimilarDto> SimilarVersesAsync(UID128 verseUID, int count)
             => Mosaik.API.Endpoints.CallAsync<QK.SimilarDto>(Endpoints.VerseSimilar, new QK.SimilarRequest { Uid = verseUID, Count = count }, readOnlyCompatible: true);
 

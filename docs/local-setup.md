@@ -72,6 +72,7 @@ Where to look:
 | | |
 |---|---|
 | **Read the Quran** (sidebar) | the Quran View: a surah as continuous text in its passages; click a verse for its translations, its tafsir (Arabic and English), words, passage, theme and related verses. `#/read/2/255` opens on a verse |
+| **Hadith and the Quran** (sidebar) | Bukhari and Muslim against the text: how many hadith quote a verse (measured), the verses and surahs quoted most, the books, and every hadith to read — by collection, by how it meets the Quran, by surah, by words or reference. A hadith's page shows its text, the verses it quotes and the verses closest to it; every verse has a Hadith tab |
 | **Stories and themes** (sidebar) | the 119 themes — passages of several surahs that tell the same story or treat the same subject — widest first, with a filter — under a map of every surah in its passages, coloured by theme |
 | a surah → **Passages** | its sections in order, each with the theme it shares; a strip shows the whole surah at a glance |
 | a surah → **Similar surahs** | the surahs that lean on the same distinctive words, and the themes both tell |
@@ -112,7 +113,8 @@ before it creates.
 
 The Quran Research Assistant (the **AI Assistant** page) counts, reads and tests claims through
 tool calls, so it needs a model that calls tools reliably. The verses it cites (`21:30`,
-`2:255–257`) are links: a click opens the verse in its surah over the chat. Two ways to give it a model:
+`2:255–257`) are links: a click opens the verse in its surah over the chat; a hadith it cites
+(`Bukhari 6018`, `Muslim 8a`) opens the hadith. Two ways to give it a model:
 
 **Claude, through a local OpenAI-compatible wrapper** (what this machine uses: a container
 exposing the Claude Code CLI as `/v1/chat/completions` on port 8000). In the workspace:

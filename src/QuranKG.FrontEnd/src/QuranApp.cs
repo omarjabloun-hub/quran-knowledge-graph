@@ -3,6 +3,7 @@ using Mosaik.Helpers;
 using QuranKG.FrontEnd.Chat;
 using QuranKG.FrontEnd.Components;
 using QuranKG.FrontEnd.Dashboard;
+using QuranKG.FrontEnd.Hadith;
 using QuranKG.FrontEnd.Reader;
 using QuranKG.FrontEnd.Themes;
 using Tesserae;
@@ -51,10 +52,15 @@ namespace QuranKG.FrontEnd
                 var themes = new SidebarButton("QKG_THEMES", UIcons.CircleNodes, "Stories and themes".t())
                     .OnClick(() => Router.Navigate(ThemesView.Route));
 
+                var hadith = new SidebarButton("QKG_HADITH", UIcons.CommentQuote, "Hadith and the Quran".t())
+                    .OnClick(() => Router.Navigate(HadithStudyView.Route));
+
                 refresh.Add(() => read.IsSelected   = QuranView.IsShowing());
                 refresh.Add(() => themes.IsSelected = ThemesView.IsShowing());
+                refresh.Add(() => hadith.IsSelected = HadithStudyView.IsShowing());
                 sidebar.AddContent(read);
                 sidebar.AddContent(themes);
+                sidebar.AddContent(hadith);
             };
         }
 
@@ -62,6 +68,7 @@ namespace QuranKG.FrontEnd
         private static void OnLoad()
         {
             Router.Register(ThemesView.Route, state => App.ShowDefault(new ThemesView(state)));
+            Router.Register(HadithStudyView.Route, state => App.ShowDefault(new HadithStudyView(state)));
             QuranView.Register();
         }
     }

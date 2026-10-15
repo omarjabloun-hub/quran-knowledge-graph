@@ -14,7 +14,7 @@ namespace QuranKG.FrontEnd.Components
     /// <summary>
     /// Verse references in running text — "21:30", "2:255–257", "(٢١:٣٠)" — made links: clicking one
     /// opens its surah in a reader over the page, on that verse, with its translation and related
-    /// verses beside it. The chat's answers read through it (Chat/QuranChatView.cs), so the assistant
+    /// verses beside it. Hadith references — "Bukhari 6018", "Muslim 8a" — open the hadith. The chat's answers read through it (Chat/QuranChatView.cs), so the assistant
     /// can cite and the reader read in one click.
     ///
     /// <para>A reference is taken only when the surah exists and has that verse — the counts come
@@ -137,14 +137,19 @@ namespace QuranKG.FrontEnd.Components
             {
                 var text  = node.nodeValue ?? "";
                 var found = Find(text, surahs);
+                foreach (var h in FindHadith(text))
+                    if (!found.Any(f => f.Start < h.End && h.Start < f.End)) found.Add(h);
                 if (found.Count == 0) continue;
+                found = found.OrderBy(f => f.Start).ToList();
 
                 var fragment = document.createDocumentFragment();
                 var at = 0;
                 foreach (var r in found)
                 {
                     if (r.Start > at) fragment.appendChild(document.createTextNode(text.Substring(at, r.Start - at)));
-                    fragment.appendChild(Link(text.Substring(r.Start, r.End - r.Start), r.Surah, r.Ayah, r.Last, surahs[r.Surah]));
+                    fragment.appendChild(r.Hadith is object
+                        ? HadithLink(text.Substring(r.Start, r.End - r.Start), r.Hadith)
+                        : Link(text.Substring(r.Start, r.End - r.Start), r.Surah, r.Ayah, r.Last, surahs[r.Surah]));
                     at = r.End;
                 }
                 if (at < text.Length) fragment.appendChild(document.createTextNode(text.Substring(at)));
@@ -167,7 +172,7 @@ namespace QuranKG.FrontEnd.Components
                 if (child.nodeType == 3)
                 {
                     var value = child.nodeValue ?? "";
-                    if (value.IndexOf(':') >= 0) into.Add((Text)child);
+                    if (value.IndexOf(':') >= 0 || value.IndexOf("Bukhari", StringComparison.Ordinal) >= 0 || value.IndexOf("Muslim", StringComparison.Ordinal) >= 0) into.Add((Text)child);
                 }
                 else if (child.nodeType == 1)
                 {
@@ -201,6 +206,8 @@ namespace QuranKG.FrontEnd.Components
         private struct Match
         {
             internal int Start, End, Surah, Ayah, Last;
+            /// <summary>A hadith reference ("Bukhari 6018") instead of a verse, when set.</summary>
+            internal string Hadith;
         }
 
         /// <summary>
@@ -250,6 +257,54 @@ namespace QuranKG.FrontEnd.Components
             }
 
             return found;
+        }
+
+        /// <summary>"Bukhari 6018", "Muslim 8a", "Sahih Muslim 2564b": the collection's name, a space, the number as it is cited.</summary>
+        private static List<Match> FindHadith(string text)
+        {
+            var found = new List<Match>();
+            foreach (var name in new[] { "Bukhari", "Muslim" })
+            {
+                var at = 0;
+                while ((at = text.IndexOf(name + " ", at, StringComparison.Ordinal)) >= 0)
+                {
+                    var start = at;
+                    var i = at + name.Length + 1;
+                    var digits = i;
+                    while (i < text.Length && text[i] >= '0' && text[i] <= '9') i++;
+                    if (i == digits || i - digits > 4) { at = i; continue; }
+                    if (i + 1 < text.Length && text[i] == '.' && text[i + 1] >= '0' && text[i + 1] <= '9') { i++; while (i < text.Length && text[i] >= '0' && text[i] <= '9') i++; }
+                    if (name == "Muslim" && i < text.Length && text[i] >= 'a' && text[i] <= 'z' && (i + 1 == text.Length || !char.IsLetter(text[i + 1]))) i++;
+                    if (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] == ':')) { at = i; continue; }
+                    found.Add(new Match { Start = start, End = i, Hadith = text.Substring(start, i - start) });
+                    at = i;
+                }
+            }
+            return found;
+        }
+
+        /// <summary>A hadith reference that opens the hadith's page.</summary>
+        private static HTMLElement HadithLink(string label, string reference)
+        {
+            var a = (HTMLAnchorElement)document.createElement("a");
+            a.className   = "qkg-vref";
+            a.textContent = label;
+            a.href        = "#";
+            a.title       = string.Format("{0} — open the hadith".t(), reference);
+            a.onclick     = e =>
+            {
+                e.preventDefault();
+                e.stopPropagation();
+                OpenHadithAsync(reference).FireAndForget();
+            };
+            return a;
+        }
+
+        private static async System.Threading.Tasks.Task OpenHadithAsync(string reference)
+        {
+            var found = await QuranApi.HadithListAsync(new QK.HadithListRequest { Text = reference, Kind = "all", Take = 1 });
+            var row = (found.Rows ?? new QK.HadithRow[0]).FirstOrDefault();
+            if (row is object) Lists.Open(row.Uid);
         }
 
         private static bool IsDigit(char c) => (c >= '0' && c <= '9') || (c >= '٠' && c <= '٩');
