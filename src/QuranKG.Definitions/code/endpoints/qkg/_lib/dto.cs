@@ -773,6 +773,8 @@ public static class QK
     {
         public UID128 Uid   { get; set; }
         public int    Ayah  { get; set; }
+        /// <summary>The Hafs verse it is, or starts in: where a link to it leads (#/read/2/255).</summary>
+        public int    HafsAyah { get; set; }
         public double Start { get; set; }
         public double End   { get; set; }
         public bool   Exact { get; set; }

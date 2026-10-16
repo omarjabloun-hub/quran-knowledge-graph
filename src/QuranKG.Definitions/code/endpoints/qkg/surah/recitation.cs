@@ -24,6 +24,14 @@ var verses = Q().StartAt(uid).Out(N.Verse.Type, E.HasVerse).AsEnumerable()
 
 var riwayaNodes = Q().StartAt(N.Riwaya.Type).AsEnumerable().ToList();
 
+// The ayah of the first Hafs verse a reading's verse is in ("2:255 2:256" → 255).
+int HafsAyah(ReadOnlyNode v)
+{
+    var key   = (v.GetString(N.RiwayaVerse.HafsVerseKeys) ?? "").Split(' ')[0];
+    var colon = key.IndexOf(':');
+    return colon > 0 && int.TryParse(key.Substring(colon + 1), out var a) ? a : 0;
+}
+
 var recitations = Q().StartAt(uid).Out(N.Recitation.Type, E.SurahRecitedIn).AsEnumerable().Select(r =>
 {
     var reciter   = Q().StartAt(r.UID).Out(N.Reciter.Type, E.RecitedBy).AsEnumerable().FirstOrDefault();
@@ -35,10 +43,10 @@ var recitations = Q().StartAt(uid).Out(N.Recitation.Type, E.SurahRecitedIn).AsEn
 
     // The recording's reading in the graph (a Reciter names it as a Riwaya does), and its verses of this surah.
     var riwaya   = riwayaNodes.FirstOrDefault(n => n.GetString(N.Riwaya.RiwayaName) == (reciter?.GetString(N.Reciter.Riwaya) ?? ""));
-    var own      = riwaya is null || riwaya.GetBool(N.Riwaya.IsCorpusText) ? new Dictionary<int, UID128>()
+    var own      = riwaya is null || riwaya.GetBool(N.Riwaya.IsCorpusText) ? new Dictionary<int, ReadOnlyNode>()
                  : Q().StartAt(uid).Out(N.RiwayaVerse.Type, E.SurahHasRiwayaVerse).AsEnumerable()
                       .Where(v => v.GetString(N.RiwayaVerse.RiwayaId) == riwaya.GetString(N.Riwaya.RiwayaId))
-                      .ToDictionary(v => v.GetInt(N.RiwayaVerse.AyahNumber), v => v.UID);
+                      .ToDictionary(v => v.GetInt(N.RiwayaVerse.AyahNumber), v => v);
     var recorded = (r.GetString(N.Recitation.RecordedStartsMs) ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
                       .Select(x => int.Parse(x, System.Globalization.CultureInfo.InvariantCulture) / 1000.0).ToArray();
 
@@ -59,8 +67,9 @@ var recitations = Q().StartAt(uid).Out(N.Recitation.Type, E.SurahRecitedIn).AsEn
         RecordedVerses    = r.GetInt(N.Recitation.RecordedVerses),
         Verses            = starts.Select((start, i) => new QK.RecitedVerseRow
         {
-            Uid   = verses.TryGetValue(i + 1, out var v) ? v : default(UID128),
-            Ayah  = i + 1,
+            Uid      = verses.TryGetValue(i + 1, out var v) ? v : default(UID128),
+            Ayah     = i + 1,
+            HafsAyah = i + 1,
             Start = start,
             End   = i + 1 < starts.Length ? starts[i + 1] : duration,
             Exact = !estimated.Contains(i + 1),
@@ -68,8 +77,9 @@ var recitations = Q().StartAt(uid).Out(N.Recitation.Type, E.SurahRecitedIn).AsEn
         RiwayaId          = riwaya?.GetString(N.Riwaya.RiwayaId) ?? "",
         RecordedVerseRows = recorded.Select((start, i) => new QK.RecitedVerseRow
         {
-            Uid   = own.TryGetValue(i + 1, out var v) ? v : default(UID128),
-            Ayah  = i + 1,
+            Uid      = own.TryGetValue(i + 1, out var v) ? v.UID : default(UID128),
+            Ayah     = i + 1,
+            HafsAyah = own.TryGetValue(i + 1, out var w) ? HafsAyah(w) : 0,
             Start = start,
             End   = i + 1 < recorded.Length ? recorded[i + 1] : duration,
             Exact = true,
