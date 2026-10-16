@@ -218,7 +218,7 @@ public static class QK
         public RelatedVerse[] TafsirRelated { get; set; }
     }
 
-    /// <summary>qkg/verse/tafsir: a verse, and the tafsir work to read on it ("mukhtasar" when empty).</summary>
+    /// <summary>qkg/verse/tafsir: a verse, and the tafsir work to read on it ("ibn-ashur", the main one, when empty).</summary>
     public class VerseTafsirRequest
     {
         public UID128 Uid  { get; set; }
@@ -242,7 +242,7 @@ public static class QK
 
     public class TafsirWork
     {
-        /// <summary>"mukhtasar", "jalalayn", "ibn-kathir".</summary>
+        /// <summary>"ibn-ashur", "mukhtasar", "jalalayn", "ibn-kathir".</summary>
         public string     Work        { get; set; }
         public string     Name        { get; set; }
         public string     NameArabic  { get; set; }

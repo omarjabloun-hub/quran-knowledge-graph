@@ -147,15 +147,15 @@ internal static class Nodes
     }
 
     /// <summary>
-    /// A tafsir in one language — an edition: al-Mukhtasar, al-Jalalayn or Ibn Kathir, in Arabic or
-    /// English. Key: "mukhtasar-ar", "ibn-kathir-en" …. Read by people; never by a signal or the AI
+    /// A tafsir in one language — an edition: Ibn Ashur (Arabic), al-Mukhtasar, al-Jalalayn or Ibn
+    /// Kathir, in Arabic or English. Key: "mukhtasar-ar", "ibn-kathir-en" …. Read by people; never by a signal or the AI
     /// (Ibn Kathir's is the text QurSim was drawn from).
     /// </summary>
     [Node]
     internal sealed class Tafsir
     {
         [Key]      public string TafsirId     { get; set; } = "";
-        /// <summary>The work its editions share: "mukhtasar", "jalalayn", "ibn-kathir".</summary>
+        /// <summary>The work its editions share: "ibn-ashur", "mukhtasar", "jalalayn", "ibn-kathir".</summary>
         [Property] public string Work         { get; set; } = "";
         /// <summary>"ar" or "en".</summary>
         [Property] public string Language     { get; set; } = "";
@@ -164,7 +164,7 @@ internal static class Nodes
         [Property] public string Author       { get; set; } = "";
         [Property] public string Description  { get; set; } = "";
         [Property] public string Attribution  { get; set; } = "";
-        /// <summary>Where a reader is offered it first: 1 = al-Mukhtasar.</summary>
+        /// <summary>Where a reader is offered it: 1 = Ibn Ashur, the main tafsir.</summary>
         [Property] public int    Rank         { get; set; }
     }
 

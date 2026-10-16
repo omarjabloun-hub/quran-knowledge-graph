@@ -3,7 +3,7 @@
   "Type": "_NodeSchemaStyleSettings",
   "Name": "Tafsir",
   "DisplayName": "Tafsir",
-  "Description": "A tafsir in one language: al-Mukhtasar, al-Jalalayn or Ibn Kathir, in Arabic or English. For people to read — never a signal, never the AI's.",
+  "Description": "A tafsir in one language: Ibn Ashur, al-Mukhtasar, al-Jalalayn or Ibn Kathir, in Arabic or English. For people to read — never a signal, never the AI's.",
   "Color": "#7c2d12",
   "Icon": "fi-rr-book-open-reader",
   "LabelField": "${TafsirName} ({Language})",

@@ -5,15 +5,16 @@
 
 //ImportEndpoint("qkg/_lib/dto")
 
-// What the tafsirs say on one verse: every work (al-Mukhtasar, al-Jalalayn, Ibn Kathir) with the
+// What the tafsirs say on one verse: every work (Ibn Ashur, al-Mukhtasar, al-Jalalayn, Ibn Kathir) with the
 // range of verses each of its editions explains together with this one, and the requested work's
-// text in Arabic and in English. Only one work's text: Ibn Kathir's run to 70,000 characters, and
-// a reader asks for it when they choose it.
+// text in Arabic and in English (Ibn Ashur's is in Arabic only). Only one work's text: Ibn Kathir's
+// and Ibn Ashur's run to 60,000 characters and more, and a reader asks for one when they choose it.
+// Ibn Ashur's al-Tahrir wa al-Tanwir is the main tafsir: the one read when none is asked for.
 //
 // FOR PEOPLE ONLY. No AI tool may call this endpoint, and Tafsir / TafsirEntry have no consult
 // reader: Ibn Kathir's tafsir is the text QurSim — the similarity answer key — was drawn from.
 
-const string DEFAULT_WORK = "mukhtasar";
+const string DEFAULT_WORK = "ibn-ashur";
 
 var req  = Body.FromJson<QK.VerseTafsirRequest>();
 var uid  = req?.Uid ?? default(UID128);
