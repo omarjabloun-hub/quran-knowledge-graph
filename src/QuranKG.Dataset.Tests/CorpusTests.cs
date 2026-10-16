@@ -147,6 +147,46 @@ public class CorpusTests
     }
 
     [Fact]
+    public void Qalun_is_the_main_reading_and_counts_its_verses_the_madani_way()
+    {
+        Assert.Equal("qalun", Corpus.Riwayat[0].Id);
+        Assert.Equal("hafs", Corpus.Riwayat[1].Id);
+        Assert.True(Corpus.Riwayat[1].IsCorpusText);
+
+        var qalun = Corpus.RiwayaVerses.Where(v => v.Riwaya == "qalun").ToList();
+        Assert.Equal(6_214, qalun.Count);
+        Assert.Equal(285, qalun.Count(v => v.Surah == 2));
+        Assert.Equal(604, qalun.Max(v => v.Page));
+        Assert.DoesNotContain(qalun, v => v.Text.EndsWith("١", StringComparison.Ordinal));
+
+        // Every verse of Hafs is in a verse of Qalun, but Al-Fatiha's Bismillah.
+        var covered = qalun.SelectMany(v => v.HafsVerses).ToHashSet();
+        Assert.Equal([new VerseRef(1, 1)], Corpus.Verses.Select(v => v.Ref).Where(r => !covered.Contains(r)).ToList());
+    }
+
+    [Fact]
+    public void A_qalun_verse_knows_the_hafs_verses_and_words_it_is()
+    {
+        var qalun = Corpus.RiwayaVerses.Where(v => v.Riwaya == "qalun").ToDictionary(v => v.VerseKey);
+
+        // «الم» is no verse in Qalun: its 2:1 runs on to «هدى للمتقين», Hafs's 2:1 and 2:2.
+        Assert.Equal([new VerseRef(2, 1), new VerseRef(2, 2)], qalun["2:1"].HafsVerses);
+        // Al-Fatiha's first verse is «الحمد لله رب العالمين»; its sixth and seventh are Hafs's seventh.
+        Assert.Equal([new VerseRef(1, 2)], qalun["1:1"].HafsVerses);
+        Assert.Equal([new VerseRef(1, 7)], qalun["1:6"].HafsVerses);
+        Assert.Equal([new VerseRef(1, 7)], qalun["1:7"].HafsVerses);
+
+        // «مَلِكِ يَوْمِ اِ۬لدِّينِ»: Qalun's «ملك» is the word Hafs reads «مالك».
+        Assert.Equal(new WordLink(new VerseRef(1, 4), 1), qalun["1:3"].Words[0]);
+
+        // Almost every word is linked; the few that are not are where the readings part
+        // («أَوْ أَمِنَ», two words, for Hafs's «أَوَأَمِنَ»).
+        var words = Corpus.RiwayaVerses.SelectMany(v => v.Words).ToList();
+        Assert.True(words.Count(w => w is null) < 20);
+        Assert.Contains(qalun["7:97"].Words, w => w is null);
+    }
+
+    [Fact]
     public void Al_jalalayn_passes_over_some_verses_and_that_is_not_an_error()
     {
         var arabic = Corpus.TafsirEntries.Where(e => e.Edition == "jalalayn-ar").SelectMany(e => e.Verses).ToHashSet();

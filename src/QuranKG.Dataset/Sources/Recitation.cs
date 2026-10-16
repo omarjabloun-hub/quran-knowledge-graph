@@ -75,6 +75,7 @@ public static class RecitationSource
                 AudioUrl       = audio,
                 Duration       = duration,
                 RecordedVerses = recorded.Count,
+                Marks          = marks,
                 Verses         = timed,
             });
         }
@@ -270,7 +271,7 @@ public static class RecitationSource
     /// A text's words in the matching spelling. The King Fahd Complex's Qalun text writes some
     /// yā' as ے and carries marks <see cref="Arabic.MatchTokens"/> does not know (U+08F0–08FF).
     /// </summary>
-    private static List<string> Tokens(string text)
+    public static List<string> Tokens(string text)
     {
         var t = new string((text ?? "").Where(c => c < 'ࣰ' || c > 'ࣿ').Select(c => c == 'ے' ? 'ي' : c).ToArray());
         return Arabic.MatchTokens(t).Select(w => w.Replace("ء", "")).Where(w => w.Length > 0).ToList();

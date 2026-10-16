@@ -290,10 +290,67 @@ public sealed class Recitation
     public required double Duration       { get; init; }
     /// <summary>How many verses the recording's own reading counts in the surah.</summary>
     public required int    RecordedVerses { get; init; }
+    /// <summary>Where each of the recording's own verses starts (seconds), in its numbering: Qalun's verses read in Qalun.</summary>
+    public required IReadOnlyList<double> Marks { get; init; }
     /// <summary>Every verse of the surah in the corpus's numbering, in order.</summary>
     public required IReadOnlyList<RecitedVerse> Verses { get; init; }
     public string Key => $"{Reciter}:{Surah}";
 }
+
+/// <summary>
+/// A reading (riwaya) the Quran is read and shown in: Qalun from Nafi' — the reading of Tunisia and
+/// Libya, the main one here — or Hafs from Asim, the reading of the corpus's own text. Key: "qalun",
+/// "hafs". Each reading counts the verses its own way: Qalun the Madani way (6,214), Hafs the Kufi
+/// way (6,236). The corpus's verses, words, morphology, tafsirs and hadith links are Hafs's; a
+/// reading's verses (<see cref="RiwayaVerse"/>) are linked to them word by word.
+/// </summary>
+public sealed class Riwaya
+{
+    public required string Id          { get; init; }
+    public required string Name        { get; init; }
+    public required string NameArabic  { get; init; }
+    /// <summary>The reader (qari) and his transmitter (rawi): Nafi' al-Madani and Qalun.</summary>
+    public required string Qari        { get; init; }
+    public required string Rawi        { get; init; }
+    /// <summary>How it counts the verses: "Madani", "Kufi".</summary>
+    public required string VerseCount  { get; init; }
+    /// <summary>Where it is read today.</summary>
+    public required string Region      { get; init; }
+    public required string Description { get; init; }
+    public required string Attribution { get; init; }
+    /// <summary>The order a reader is offered it: 1 is the main reading.</summary>
+    public required int    Rank        { get; init; }
+    /// <summary>True when its verses are the corpus's own (Hafs): it has no <see cref="RiwayaVerse"/>.</summary>
+    public bool IsCorpusText { get; init; }
+}
+
+/// <summary>
+/// A verse in a reading's own numbering, with its text and its place in that reading's mushaf, and
+/// each of its words linked to the word of the corpus's (Hafs) text it is — so a word's root and
+/// lemma, and a verse's tafsir and hadith, reach it. Key: "qalun:2:254".
+/// </summary>
+public sealed class RiwayaVerse
+{
+    public required string Riwaya    { get; init; }
+    public required int    Surah     { get; init; }
+    public required int    Ayah      { get; init; }
+    /// <summary>The text with its marks, without the verse number.</summary>
+    public required string Text      { get; init; }
+    /// <summary>The page of its mushaf (1–604) it starts on, the juz (1–30), the lines (1–15) of that page it spans.</summary>
+    public required int    Page      { get; init; }
+    public required int    Juz       { get; init; }
+    public required int    LineStart { get; init; }
+    public required int    LineEnd   { get; init; }
+    /// <summary>One per word of <see cref="Text"/> (a token with a letter), in order: the corpus's word it is, or null.</summary>
+    public required IReadOnlyList<WordLink?> Words { get; init; }
+    /// <summary>The corpus's verses its words are in, in order (Qalun 2:1 «الم ذلك الكتاب…» is Hafs 2:1 and 2:2).</summary>
+    public required IReadOnlyList<VerseRef> HafsVerses { get; init; }
+    public string Key      => $"{Riwaya}:{Surah}:{Ayah}";
+    public string VerseKey => $"{Surah}:{Ayah}";
+}
+
+/// <summary>A word of the corpus: its verse and its position (1-based) in it.</summary>
+public readonly record struct WordLink(VerseRef Verse, int Position);
 
 /// <summary>
 /// Where a verse is in a recording, in seconds. <c>Exact</c>: it starts where a verse of the

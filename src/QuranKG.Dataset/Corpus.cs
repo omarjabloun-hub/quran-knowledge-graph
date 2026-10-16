@@ -22,6 +22,9 @@ public sealed class Corpus
     public required IReadOnlyList<QuranQuote>       QuranQuotes       { get; init; }
     public required IReadOnlyList<Reciter>          Reciters          { get; init; }
     public required IReadOnlyList<Recitation>       Recitations       { get; init; }
+    /// <summary>The readings, the main one (Qalun) first; and the verses of each one that is not the corpus's own text.</summary>
+    public required IReadOnlyList<Riwaya>           Riwayat           { get; init; }
+    public required IReadOnlyList<RiwayaVerse>      RiwayaVerses      { get; init; }
     /// <summary>What the loader cleaned, and the optional sources it did without.</summary>
     public required IReadOnlyList<string>     Notes       { get; init; }
 
@@ -309,6 +312,23 @@ public static class CorpusLoader
                     + $"and {read.Estimated:N0} inside one (timed by the letters before them).");
         }
 
+        // ---- readings: Qalun's verses, each word linked to Hafs's --------------------------------
+        var riwayat      = new List<Riwaya> { RiwayaSource.Hafs };
+        var riwayaVerses = new List<RiwayaVerse>();
+        if (File.Exists(layout.QalunText))
+        {
+            var wordsBySurah = words.GroupBy(w => w.Verse.Surah)
+                                    .ToDictionary(g => g.Key, g => (IReadOnlyList<Word>)g.OrderBy(w => w.Verse.Ayah).ThenBy(w => w.Position).ToList());
+            var read = RiwayaSource.Read(layout.QalunText, RiwayaSource.Qalun, wordsBySurah);
+            problems.AddRange(read.Problems);
+            riwayat.Insert(0, RiwayaSource.Qalun);
+            riwayaVerses.AddRange(read.Verses);
+            var uncovered = verses.Select(v => v.Ref).Except(read.Verses.SelectMany(v => v.HafsVerses)).ToList();
+            notes.Add($"Riwaya {RiwayaSource.Qalun.Name}: {read.Verses.Count:N0} verses, {read.LinkedWords:N0} of its {read.Words:N0} words linked to the corpus's; "
+                    + $"{uncovered.Count} of the corpus's verses in none of its verses{(uncovered.Count > 0 ? " (" + string.Join(", ", uncovered.Take(5)) + ")" : "")}.");
+        }
+        else notes.Add($"Riwaya {RiwayaSource.Qalun.Name} not found at {layout.QalunText} — run `just fetch`; the reader shows Hafs only.");
+
         if (problems.Count > 0) throw new CorpusException(problems);
 
         return new Corpus
@@ -329,6 +349,8 @@ public static class CorpusLoader
             QuranQuotes       = quotes,
             Reciters          = reciters,
             Recitations       = recitations,
+            Riwayat           = riwayat,
+            RiwayaVerses      = riwayaVerses,
             Notes       = notes,
         };
     }
