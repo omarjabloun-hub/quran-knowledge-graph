@@ -15,7 +15,8 @@ does not add up (6,236 verses in every text, every word's verse present, …).
 | **Ali Quli Qara'i** (Tanzil copy, without footnotes) | a second English gloss | as above |
 | **Quranic Arabic Corpus morphology** (v0.4, the `mustafa0x/quran-morphology` Arabic-script fork with root and lemma fixes) | every word's segments, part of speech, features, **root** and **lemma** — the backbone of the lexical layer | GNU GPL (corpus.quran.com) — attribution, verbatim |
 | **QurSim** (Sharaf & Atwell, LREC 2012) | 7,295 verse pairs related by Ibn Kathir's tafsir, graded 0–2 — **the answer key** for similarity | research data; cite the paper |
-| **Tafsir al-Mukhtasar** (Tafsir Center for Quranic Studies), Arabic and its English translation — QUL resources 251 / 266 | one short explanation per verse, the same work in both languages: the default tafsir in the verse panel | free to use with attribution, text unaltered |
+| **Al-Tahrir wa al-Tanwir** by Muhammad al-Tahir ibn Ashur (Tunis, d. 1973), Arabic — QUL resource 25 | the main tafsir, the first one the verse panel opens: language, rhetoric and the order of each passage, the purposes of the law, earlier commentators weighed. About 78 MB, every verse explained (3,923 entries) | published by al-Dar al-Tunisiya lil-Nashr (1984); QUL's terms for it not yet checked — attribute it, and check before any public or commercial use |
+| **Tafsir al-Mukhtasar** (Tafsir Center for Quranic Studies), Arabic and its English translation — QUL resources 251 / 266 | one short explanation per verse, the same work in both languages | free to use with attribution, text unaltered |
 | **Tafsir al-Jalalayn** (al-Mahalli, al-Suyuti), Arabic and Feras Hamza's English — QUL 523 / 573 | a classical gloss of the verse's words, with grammar and readings | Arabic: public domain. English: © Royal Aal al-Bayt Institute (altafsir.com) — non-commercial, with attribution |
 | **Tafsir Ibn Kathir**, Arabic and the abridged English (Darussalam) — QUL 22 / 35 | the classical tafsir by narration, passage by passage. **QurSim was drawn from it**, so it is for people only | Arabic: public domain. English: © Darussalam — non-commercial, with attribution |
 | **Sahih al-Bukhari** and **Sahih Muslim**, Arabic and English ([fawazahmed0/hadith-api](https://github.com/fawazahmed0/hadith-api), pinned to a commit) | 14,940 hadith with their standard numbers (Bukhari 6018; Muslim's Abdul Baqi number, 8a) and books; the English of Muhsin Khan (Bukhari) and Abdul Hamid Siddiqui (Muslim) | hadith-api: Unlicense. The Arabic is in the public domain; the translations are their translators' and publishers' — non-commercial use, with attribution |
@@ -39,10 +40,13 @@ footnotes (so the clean Tanzil copy of Qara'i is used).
   carries a root.
 - QurSim: 28 malformed or out-of-range rows and self-pairs are dropped; pairs are undirected and
   keep the highest degree given to them.
-- Tafsir: the six editions come from QUL through [spa5k/tafsir_api](https://github.com/spa5k/tafsir_api),
+- Tafsir: the seven editions come from QUL through [spa5k/tafsir_api](https://github.com/spa5k/tafsir_api),
   one file per surah, pinned to a commit (the manifest's `parts`: the checksum covers the 114 files
   in order). A commentary repeated over consecutive verses is one entry over that range. The editor's
-  manuscript notes in Ibn Kathir's Arabic (`[[في م، أ: …]]`) are removed. Al-Jalalayn's Arabic passes
+  manuscript notes in Ibn Kathir's Arabic (`[[في م، أ: …]]`) are removed, and so are the printed
+  edition's 19,823 page numbers in Ibn Ashur's («صفحة ١٥٢» on a line of its own): about half fall
+  mid-sentence, whose two halves are joined; after a sentence's end the page turn stays a paragraph
+  break. Al-Jalalayn's Arabic passes
   over 226 verses it holds need no explanation; they have no entry, which the loader reports.
 
 - Hadith: an entry with no text (Muslim's introduction, 203) is skipped; the 306 of Bukhari's that
@@ -81,7 +85,7 @@ an AI tool.
 
 | Dataset | Would add | Notes |
 |---|---|---|
-| More tafsirs — al-Sa'di, al-Tabari, al-Qurtubi, al-Muyassar (QUL, Arabic) | more voices on a verse | the same `parts` source in the manifest and one line in `TafsirSource.Editions` |
+| More tafsirs — al-Sa'di, al-Tabari, al-Qurtubi, al-Muyassar, Ibn Atiyya (QUL, Arabic) | more voices on a verse | the same `parts` source in the manifest and one line in `TafsirSource.Editions` |
 | QUL word-by-word translations | an English gloss per word in the word-by-word view | QUL licence per resource |
 | Asbab al-nuzul (occasions of revelation) | why a verse was revealed — a link from verses to events and people | needs a clean digital edition |
 | Named entities (prophets, places, peoples) — the Quranic Arabic Corpus ontology | `Person` / `Place` nodes linked to verses: the backbone of the stories | the corpus ontology covers ~300 concepts |

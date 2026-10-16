@@ -23,8 +23,8 @@ flowchart LR
     Verse -- HasTopic / InTopicBranch --> Topic[Topic<br/>QUL]
     Topic -- ParentTopic --> Topic
     Verse -- InQurSimPair --> QurSimPair[QurSimPair<br/>7,295 · answer key]
-    Verse -- HasTafsirEntry --> TafsirEntry[TafsirEntry<br/>28,486]
-    TafsirEntry -- EntryOfTafsir --> Tafsir[Tafsir<br/>6 editions]
+    Verse -- HasTafsirEntry --> TafsirEntry[TafsirEntry<br/>32,409]
+    TafsirEntry -- EntryOfTafsir --> Tafsir[Tafsir<br/>7 editions]
     Hadith[Hadith<br/>14,940] -- HasQuranQuote --> QuranQuote[QuranQuote<br/>2,385]
     QuranQuote -- QuoteOfVerse --> Verse
     Hadith -- HadithQuotesVerse --> Verse
@@ -51,7 +51,7 @@ traversal reads in the direction it goes.
 | **Revelation** | `Meccan` / `Medinan` | where a surah was revealed |
 | **Topic** | QUL id | a theme, with its parent; verses link to their topic and every ancestor of it |
 | **QurSimPair** | `a~b` | two verses Ibn Kathir relates, with the degree (0–2). **The answer key** |
-| **Tafsir** | `mukhtasar-ar` … | a tafsir in one language — al-Mukhtasar, al-Jalalayn, Ibn Kathir, each in Arabic and English: names, author, attribution, `Rank` (the order a reader is offered them) |
+| **Tafsir** | `mukhtasar-ar` … | a tafsir in one language — Ibn Ashur (Arabic; `Rank` 1, the main one), al-Mukhtasar, al-Jalalayn, Ibn Kathir, each in Arabic and English: names, author, attribution, `Rank` (the order a reader is offered them) |
 | **TafsirEntry** | `ibn-kathir-ar:2:1-5` | one commentary, on a verse or on the run of verses it explains together (Ibn Kathir: up to 20); linked to **every** verse it covers. For people only: Ibn Kathir's text is what QurSim was drawn from |
 | **HadithCollection** | `bukhari`, `muslim` | the collection: names, compiler, English translator |
 | **HadithBook** | `bukhari:65` | a book (kitab), its English and Arabic names |

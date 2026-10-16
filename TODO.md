@@ -35,6 +35,8 @@ closes it.
       al-Mukhtasar, al-Jalalayn and Ibn Kathir, each in Arabic and English (QUL via spa5k/tafsir_api,
       pinned), as `Tafsir` / `TafsirEntry` nodes linked to every verse they explain. In the verse
       panel and the verse page's Tafsir tab; a long commentary opens whole, Arabic beside English.
+- [x] **Ibn Ashur's al-Tahrir wa al-Tanwir, the main tafsir** (QUL 25, Arabic): every verse, the
+      printed page numbers removed and the sentences they cut joined; offered first, full width.
       Out of the AI's reach (Ibn Kathir is QurSim's source)
 - [x] **Hadith and the Quran** (`HadithSource`, `Text/QuranQuotes.cs`, `HadithIngest`, `qkg/hadith/*`,
       `qkg/verse/hadith`, `Hadith/HadithStudyView.cs`, `HadiThTooLs…`): Bukhari and Muslim in Arabic
@@ -163,7 +165,9 @@ closes it.
 - [ ] Tafsir, next: search inside the tafsirs for people (a full-text index on `TafsirEntry.Text`,
       kept out of Search Records); more works (al-Sa'di, al-Tabari, al-Qurtubi — Arabic only in QUL);
       decide whether al-Mukhtasar may become an AI reader (Ibn Kathir never: QurSim's source); check
-      the English licences (Darussalam, Royal Aal al-Bayt) before a public deployment.
+      the English licences (Darussalam, Royal Aal al-Bayt) and Ibn Ashur's (QUL 25) before a public
+      deployment. Ibn Ashur's verse references are written «[البقرة: ١٦٣]»: link them like «[2:163]».
+      An English rendering of Ibn Ashur, if a usable one is ever published.
 - [ ] Named entities from the Quranic Arabic Corpus ontology (persons, places, peoples) as nodes:
       the backbone of the stories.
 - [ ] Word-by-word English gloss (QUL) in the verse view.

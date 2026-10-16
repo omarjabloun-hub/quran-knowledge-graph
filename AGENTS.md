@@ -59,7 +59,7 @@ in the csproj files: Curiosity.Library 26.10.6546, Curiosity.FrontEnd* 26.10.657
 | `qkg/surah/profile` | one surah: verse texts and lengths in order, parts of speech, top / distinctive roots, lemmas |
 | `qkg/root/profile` | one root: per-surah spread, Meccan / Medinan, lemmas, forms, verses |
 | `qkg/verse/words` | one verse: its words with morphology, roots, lemmas, and its QurSim pairs (**people only**) |
-| `qkg/verse/tafsir` | one verse: every tafsir work, and the chosen one's text in Arabic and English (**people only**) |
+| `qkg/verse/tafsir` | one verse: every tafsir work, and the chosen one's text in Arabic and English — Ibn Ashur's when none is asked for (**people only**) |
 | `qkg/surah/recitation` | one surah: each recitation's audio and every verse's start and end in it (exact, or estimated where the recording counts the verses another way) |
 | `qkg/search/quick` | the home page's search box: what the query names (a verse, a surah, a page, a juz, a hadith), then the verses whose words match |
 | `qkg/verse/hadith` | one verse: the hadith that quote it, and those closest to it in meaning |
