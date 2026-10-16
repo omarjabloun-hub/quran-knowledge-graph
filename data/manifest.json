@@ -80,6 +80,15 @@
       "licence": "QUL resources, per the resource card on qul.tarteel.ai"
     },
     {
+      "name": "tafsir-ibn-ashur-ar",
+      "title": "Tafsir al-Tahrir wa al-Tanwir by Muhammad al-Tahir ibn Ashur (Tunis, d. 1973) — Arabic",
+      "url": "https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/ar-tafseer-tahrir-al-tanwir/{part}.json",
+      "target": "tafsir/ibn-ashur-ar",
+      "parts": 114,
+      "sha256": "b73c1fa2f787253f2fea139598873eb8740ae3cd1a2327aa2bc470ca5578a8af",
+      "licence": "QUL resource 25 (qul.tarteel.ai), via spa5k/tafsir_api. Published by al-Dar al-Tunisiya lil-Nashr (1984). Terms per the QUL resource card, not yet checked: attribute it, and check before any public or commercial use"
+    },
+    {
       "name": "tafsir-mukhtasar-ar",
       "title": "Tafsir: Al-Mukhtasar in Interpreting the Noble Quran (Tafsir Center for Quranic Studies, Riyadh) — Arabic",
       "url": "https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/ar-tafsir-al-mukhtasar/{part}.json",

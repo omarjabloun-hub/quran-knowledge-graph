@@ -154,7 +154,7 @@ public sealed class QurSimPair
 public sealed class TafsirEdition
 {
     public required string Id          { get; init; }
-    /// <summary>The work, shared by its editions: "mukhtasar", "jalalayn", "ibn-kathir".</summary>
+    /// <summary>The work, shared by its editions: "ibn-ashur", "mukhtasar", "jalalayn", "ibn-kathir".</summary>
     public required string Work        { get; init; }
     /// <summary>"ar" or "en".</summary>
     public required string Language    { get; init; }

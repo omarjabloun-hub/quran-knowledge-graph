@@ -120,6 +120,33 @@ public class CorpusTests
     }
 
     [Fact]
+    public void Ibn_ashur_is_offered_first_and_explains_every_verse()
+    {
+        Assert.Equal("ibn-ashur-ar", Corpus.TafsirEditions[0].Id);
+
+        var entries = Corpus.TafsirEntries.Where(e => e.Edition == "ibn-ashur-ar").ToList();
+        Assert.Equal(6_236, entries.Sum(e => e.Verses.Count()));
+        Assert.All(entries, e => Assert.Equal(e.First.Surah, e.Last.Surah));
+        Assert.DoesNotContain(entries, e => e.Text.Contains("صفحة ١"));
+
+        // An-Nas is explained in one piece, its six verses together.
+        var nas = Assert.Single(entries, e => e.First.Surah == 114);
+        Assert.Equal(6, nas.Last.Ayah);
+    }
+
+    [Fact]
+    public void A_sentence_the_printed_page_cut_in_two_is_joined()
+    {
+        var basmala = Corpus.TafsirEntries.Single(e => e.Edition == "ibn-ashur-ar" && e.First.Key == "1:1");
+        Assert.Contains("قالُوا بِعَدَمِ جُزْئِ", basmala.Text);
+
+        // After a sentence's end, the page turn is a paragraph break.
+        Assert.Equal("أوَّلُ الكَلامِ.\n\nثانِيهِ", Sources.TafsirSource.Clean("أوَّلُ الكَلامِ.\n\nصفحة ١٥٣\nثانِيهِ"));
+        Assert.Equal("نِصْفُ جُمْلَةٍ تَتِمُّ", Sources.TafsirSource.Clean("صفحة ١٥٢\nنِصْفُ جُمْلَةٍ\n\nصفحة ١٥٣\nتَتِمُّ"));
+        Assert.Equal("آخِرُ الآيَةِ.\n\n﴿وإذْ قالَ﴾", Sources.TafsirSource.Clean("آخِرُ الآيَةِ.\n\nصفحة ٣٩٤ ﴿وإذْ قالَ﴾"));
+    }
+
+    [Fact]
     public void Al_jalalayn_passes_over_some_verses_and_that_is_not_an_error()
     {
         var arabic = Corpus.TafsirEntries.Where(e => e.Edition == "jalalayn-ar").SelectMany(e => e.Verses).ToHashSet();

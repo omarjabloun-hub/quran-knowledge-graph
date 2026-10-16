@@ -14,13 +14,23 @@ namespace QuranKG.Dataset.Sources;
 /// passes over verses it holds need no explanation.
 ///
 /// Cleaning: the editor's manuscript notes in Ibn Kathir's Arabic (<c>[[في م، أ: …]]</c>) are
-/// removed; runs of blank lines collapse to one paragraph break.
+/// removed, and so are the printed edition's page numbers in Ibn Ashur's (a line «صفحة ١٥٢»
+/// wherever a page turned, often mid-sentence: the two halves of a sentence it cut are joined);
+/// runs of blank lines collapse to one paragraph break.
 /// </summary>
 public static class TafsirSource
 {
-    /// <summary>The editions read, in the order a reader is offered them: the concise first.</summary>
+    /// <summary>
+    /// The editions read, in the order a reader is offered them: Ibn Ashur's first — the main
+    /// tafsir of this workspace — then the concise ones, then Ibn Kathir.
+    /// </summary>
     public static readonly IReadOnlyList<TafsirEdition> Editions =
     [
+        new() { Id = "ibn-ashur-ar", Work = "ibn-ashur", Language = "ar", Directory = "ibn-ashur-ar",
+                Name = "Ibn Ashur", NameArabic = "التحرير والتنوير",
+                Author = "Muhammad al-Tahir ibn Ashur (Tunis, d. 1973)",
+                Description = "Al-Tahrir wa al-Tanwir, the tafsir of the Zaytuna's great scholar: the language, rhetoric and order of each passage, the purposes of the law (maqasid), and the views of the commentators before him weighed.",
+                Attribution = "Muhammad al-Tahir ibn Ashur, al-Tahrir wa al-Tanwir (al-Dar al-Tunisiya lil-Nashr, 1984); QUL resource 25 (qul.tarteel.ai)" },
         new() { Id = "mukhtasar-ar", Work = "mukhtasar", Language = "ar", Directory = "mukhtasar-ar",
                 Name = "Al-Mukhtasar", NameArabic = "المختصر في تفسير القرآن الكريم",
                 Author = "Tafsir Center for Quranic Studies",
@@ -109,11 +119,18 @@ public static class TafsirSource
 
     private static readonly Regex EditorNote = new(@"\s*\[\[.*?\]\]", RegexOptions.Singleline | RegexOptions.Compiled);
     private static readonly Regex BlankLines = new(@"\n\s*\n\s*", RegexOptions.Compiled);
+    // A page number of the printed edition, opening a line (twice the line goes on after it). After a sentence's end it is a
+    // paragraph break; after anything else the page turned mid-sentence, and the two halves join.
+    private static readonly Regex PageTurn = new(@"(?<=(\S))[ \t]*(\n+)[ \t]*صفحة[ \t]*[٠-٩0-9]+[ \t]*(\n|$|(?=\S))[ \t]*", RegexOptions.Compiled);
+    private static readonly Regex PageLine = new(@"(?m)^[ \t]*صفحة[ \t]*[٠-٩0-9]+[ \t]*(\n|$|(?=\S))", RegexOptions.Compiled);
+    private const string SentenceEnds = ".:؟?!]﴾»)”\"";
 
-    private static string Clean(string? text)
+    internal static string Clean(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return "";
         var t = EditorNote.Replace(text.Replace("\r\n", "\n"), "");
+        t = PageTurn.Replace(t, m => SentenceEnds.IndexOf(m.Groups[1].Value[0]) >= 0 ? m.Groups[2].Value : " ");
+        t = PageLine.Replace(t, "");
         return BlankLines.Replace(t, "\n\n").Trim();
     }
 }

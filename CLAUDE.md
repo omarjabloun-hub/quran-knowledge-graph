@@ -132,6 +132,8 @@ just status                     # after an import: "Code compiles", counts as ex
   Al-Fatiha without the Bismillah, «الم» not a verse): never read its verse marks as the corpus's
   ayahs. `RecitationSource` carries them over through the KFGQPC Qalun text; `Recitation.VerseStartsMs`
   is already per corpus verse.
+- The sources' Arabic writes shadda before the short vowel («يَّ» as ي + ّ + َ); a literal typed in a
+  test may hold them the other way round and never match — copy it from the data, or avoid the shadda.
 - A source that is a web page: the manifest's `extract` keeps only the regex's group 1 of each part
   (after unescaping `\"`), and the checksum is over what was kept; `partNames` addresses parts by name.
 - The sandbox has no `query` command on purpose: the query engine emits whole nodes, and a verse
