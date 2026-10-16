@@ -44,6 +44,9 @@ namespace QuranKG.FrontEnd.Api
         internal static Task<QK.SurahRecitationDto> SurahRecitationAsync(UID128 surahUID)
             => Mosaik.API.Endpoints.CallAsync<QK.SurahRecitationDto>(Endpoints.SurahRecitation, new QK.UidRequest { Uid = surahUID }, readOnlyCompatible: true);
 
+        internal static Task<QK.TajweedDto> TajweedRulesAsync(int examples)
+            => Mosaik.API.Endpoints.CallAsync<QK.TajweedDto>(Endpoints.TajweedRules, new QK.TajweedRequest { Examples = examples }, readOnlyCompatible: true);
+
         internal static Task<QK.QuickSearchDto> QuickSearchAsync(string text, int take)
             => Mosaik.API.Endpoints.CallAsync<QK.QuickSearchDto>(Endpoints.QuickSearch, new QK.QuickSearchRequest { Text = text, Take = take }, readOnlyCompatible: true);
 

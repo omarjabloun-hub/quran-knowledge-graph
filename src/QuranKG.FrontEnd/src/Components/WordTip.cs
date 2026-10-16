@@ -36,8 +36,11 @@ namespace QuranKG.FrontEnd.Components
 
             root.addEventListener("mouseover", e =>
             {
-                var target = e.target.As<HTMLElement>();
-                if (target is null || target.classList is null || !target.classList.contains("qkg-w")) return;
+                // A word, or a coloured letter of it (tajweed).
+                var target = e.target.As<HTMLElement>()?.closest(".qkg-w")?.As<HTMLElement>();
+                if (target is null) return;
+                var from = e.As<MouseEvent>().relatedTarget.As<HTMLElement>();
+                if (from is object && target.contains(from)) return;   // from one coloured letter to the next
                 var position = target.getAttribute("data-qkg-p");
                 if (string.IsNullOrEmpty(position)) return;
                 // A word of a reading other than Hafs names its Hafs verse; any other word is its verse's.
@@ -54,8 +57,10 @@ namespace QuranKG.FrontEnd.Components
 
             root.addEventListener("mouseout", e =>
             {
-                var target = e.target.As<HTMLElement>();
-                if (target is null || target.classList is null || !target.classList.contains("qkg-w")) return;
+                var target = e.target.As<HTMLElement>()?.closest(".qkg-w")?.As<HTMLElement>();
+                if (target is null) return;
+                var to = e.As<MouseEvent>().relatedTarget.As<HTMLElement>();
+                if (to is object && target.contains(to)) return;
                 _generation++;
                 ScheduleHide();
             });

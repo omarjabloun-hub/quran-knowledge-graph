@@ -60,11 +60,16 @@ namespace QuranKG.FrontEnd
                 var patterns = new SidebarButton("QKG_PATTERNS", UIcons.ChartHistogram, "Patterns".t())
                     .OnClick(() => Router.Navigate(PatternDashboard.Route));
 
+                var tajweed = new SidebarButton("QKG_TAJWEED", UIcons.Palette, "Tajweed".t())
+                    .OnClick(() => Router.Navigate(TajweedPage.TajweedView.Route));
+
                 refresh.Add(() => read.IsSelected   = QuranView.IsShowing());
                 refresh.Add(() => patterns.IsSelected = PatternDashboard.IsShowing());
                 refresh.Add(() => themes.IsSelected = ThemesView.IsShowing());
                 refresh.Add(() => hadith.IsSelected = HadithStudyView.IsShowing());
+                refresh.Add(() => tajweed.IsSelected = TajweedPage.TajweedView.IsShowing());
                 sidebar.AddContent(read);
+                sidebar.AddContent(tajweed);
                 sidebar.AddContent(themes);
                 sidebar.AddContent(hadith);
                 sidebar.AddContent(patterns);
@@ -77,6 +82,7 @@ namespace QuranKG.FrontEnd
             Router.Register(ThemesView.Route, state => App.ShowDefault(new ThemesView(state)));
             Router.Register(HadithStudyView.Route, state => App.ShowDefault(new HadithStudyView(state)));
             Router.Register(PatternDashboard.Route, state => App.ShowDefault(new PatternDashboard(state)));
+            Router.Register(TajweedPage.TajweedView.Route, state => App.ShowDefault(new TajweedPage.TajweedView(state)));
             QuranView.Register();
         }
     }

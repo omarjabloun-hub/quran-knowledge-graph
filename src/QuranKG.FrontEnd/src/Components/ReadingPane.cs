@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Mosaik;
 using QuranKG.FrontEnd.Api;
 using Tesserae;
 using Transpose;
@@ -280,6 +281,10 @@ namespace QuranKG.FrontEnd.Components
                 toggles.appendChild(Option("Passages".t(), "Mark where the clusters build cuts the text, with each passage's words and theme".t(), _options.Passages, on => _options.Passages = on));
             if (!pages)
                 toggles.appendChild(Option("English".t(), _options.Layout == ReaderOptions.VERSES ? "Saheeh International under each verse".t() : "Saheeh International beside the Arabic, passage by passage".t(), _options.Translation, on => _options.Translation = on));
+            // Tajweed: in a reading whose text carries it (Qalun's), the letters coloured as the mushaf of Tunisia colours them.
+            var hasTajweed = (_text.Sections ?? new QK.ReadingSection[0]).Any(s => (s.Verses ?? new QK.ReadingVerse[0]).Any(v => !string.IsNullOrEmpty(v.Tajweed)));
+            if (hasTajweed)
+                toggles.appendChild(Option("Tajweed".t(), "Colour each letter by its rule of tajweed, as the Dar al-Maarifah mushaf of Qalun does".t(), _options.Tajweed, on => _options.Tajweed = on, tajweed: true));
             if ((_text.Sections ?? new QK.ReadingSection[0]).Any(s => (s.Verses ?? new QK.ReadingVerse[0]).Any(v => (v.Highlights ?? new int[0]).Length > 0)))
                 toggles.appendChild(Option("Key words".t(),
                                _text.Kind == "Surah" ? "Mark each passage's most distinctive words — what sets it apart, and why it was cut there".t()
@@ -307,6 +312,8 @@ namespace QuranKG.FrontEnd.Components
             bar.appendChild(size);
 
             bar.appendChild(Themes());
+
+            if (hasTajweed && _options.Tajweed) bar.appendChild(TajweedKey.Legend(() => Router.Navigate(TajweedPage.TajweedView.Route)));
 
             var keys = _text.KeyLemmas ?? new QK.Counted[0];
             if (keys.Length > 0)
@@ -410,11 +417,11 @@ namespace QuranKG.FrontEnd.Components
         /// <summary>Set by the pane: rebuilds the toolbar and the text when the layout changes.</summary>
         private Action Rebuild;
 
-        private HTMLElement Option(string label, string tooltip, bool on, Action<bool> set, bool marked = false)
+        private HTMLElement Option(string label, string tooltip, bool on, Action<bool> set, bool marked = false, bool tajweed = false)
         {
             var chip = Look.Chip("", null, on);
             chip.setAttribute("aria-pressed", on ? "true" : "false");
-            chip.appendChild(Look.El("span", marked ? "qkg-chip-swatch qkg-chip-mark" : "qkg-chip-swatch"));
+            chip.appendChild(Look.El("span", tajweed ? "qkg-chip-swatch qkg-chip-tajweed" : marked ? "qkg-chip-swatch qkg-chip-mark" : "qkg-chip-swatch"));
             chip.appendChild(Look.El("span", "", label));
             chip.title   = tooltip;
             chip.onclick = _ => { set(!on); Changed(); Rebuild?.Invoke(); };
@@ -444,6 +451,7 @@ namespace QuranKG.FrontEnd.Components
 .qkg-chip.qkg-on .qkg-chip-swatch { background: currentColor; opacity: 1; }
 .qkg-chip-mark { border-color: var(--qkg-mark); }
 .qkg-chip.qkg-on .qkg-chip-mark { background: var(--qkg-mark); }
+.qkg-chip-tajweed { border: 0; opacity: 1; background: conic-gradient(#8b1c1c 0 25%, #12923c 0 50%, #1e9bd7 0 75%, #ef7d00 0); }
 .qkg-swatch { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--qkg-line-2); cursor: pointer; padding: 0; }
 .qkg-swatch.qkg-on { box-shadow: 0 0 0 2px var(--qkg-bg), 0 0 0 4px var(--qkg-teal); }
 .qkg-swatch-light { background: #ffffff; }

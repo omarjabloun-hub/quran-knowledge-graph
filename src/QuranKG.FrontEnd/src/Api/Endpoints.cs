@@ -26,6 +26,7 @@ namespace QuranKG.FrontEnd.Api
         public const string VerseTafsir = "qkg/verse/tafsir";
         public const string SurahRecitation = "qkg/surah/recitation";
         public const string QuickSearch     = "qkg/search/quick";
+        public const string TajweedRules    = "qkg/tajweed/rules";
         public const string VerseHadith    = "qkg/verse/hadith";
         public const string HadithProfile  = "qkg/hadith/profile";
         public const string HadithOverview = "qkg/hadith/overview";

@@ -34,6 +34,8 @@ namespace QuranKG.FrontEnd.Components
         internal bool Passages    { get; set; } = true;
         internal bool Translation { get; set; }
         internal bool KeyWords    { get; set; }
+        /// <summary>The tajweed coloured, letter by letter (a reading whose text carries it: Qalun's).</summary>
+        internal bool Tajweed     { get; set; }
         internal string Layout    { get; set; } = FLOW;
         /// <summary>The page the text is set on: "" follows the workspace, else light, sepia or dark.</summary>
         internal string Theme     { get; set; } = "";
@@ -57,6 +59,7 @@ namespace QuranKG.FrontEnd.Components
                         o.KeyWords    = parts[3] == "1";
                         if (parts.Length >= 5 && (parts[4] == VERSES || parts[4] == PAGES)) o.Layout = parts[4];
                         if (parts.Length >= 6 && (parts[5] == "light" || parts[5] == "sepia" || parts[5] == "dark")) o.Theme = parts[5];
+                        if (parts.Length >= 7) o.Tajweed = parts[6] == "1";
                     }
                 }
             }
@@ -72,9 +75,17 @@ namespace QuranKG.FrontEnd.Components
             o.Save();
         }
 
+        /// <summary>Turns one reader's tajweed colours on before it opens: the Tajweed page's examples.</summary>
+        internal static void RememberTajweed(string key)
+        {
+            var o = Load(key, false);
+            o.Tajweed = true;
+            o.Save();
+        }
+
         internal void Save()
         {
-            try { localStorage.setItem(_key, FontSize + "|" + (Passages ? 1 : 0) + "|" + (Translation ? 1 : 0) + "|" + (KeyWords ? 1 : 0) + "|" + Layout + "|" + Theme); }
+            try { localStorage.setItem(_key, FontSize + "|" + (Passages ? 1 : 0) + "|" + (Translation ? 1 : 0) + "|" + (KeyWords ? 1 : 0) + "|" + Layout + "|" + Theme + "|" + (Tajweed ? 1 : 0)); }
             catch { /* nothing to keep it in */ }
         }
     }
@@ -122,6 +133,7 @@ namespace QuranKG.FrontEnd.Components
         private readonly Dictionary<string, UID128>            _uids     = new Dictionary<string, UID128>();
         private string _selected;
         private string _playing;
+        private bool   _tajweed;
         private readonly List<(HTMLElement Element, QK.ReadingVerse Verse)> _order = new List<(HTMLElement, QK.ReadingVerse)>();
 
         public QuranReader(QK.ReadingDto text, ReaderOptions options, Callbacks callbacks)
@@ -134,6 +146,8 @@ namespace QuranKG.FrontEnd.Components
             var other = (text.Riwayat ?? new QK.RiwayaOption[0]).Any(r => r.Id == text.Riwaya && !r.IsCorpusText);
             _root.style.setProperty("--qkg-size", options.FontSize + "px");
             if (options.KeyWords) _root.classList.add("qkg-keywords");
+            _tajweed = options.Tajweed;
+            if (_tajweed) { TajweedKey.EnsureStyles(); _root.classList.add("qkg-tajweed"); }
 
             var sections = text.Sections ?? new QK.ReadingSection[0];
             var isSurah  = text.Kind == "Surah";
@@ -373,7 +387,7 @@ namespace QuranKG.FrontEnd.Components
             var arabic = Div(Att("qkg-row-ar"));
             arabic.setAttribute("dir", "rtl");
             arabic.setAttribute("lang", "ar");
-            AppendWords(arabic, v);
+            AppendWords(arabic, v, _tajweed);
             arabic.appendChild(Text("span", "qkg-ayah", "۝" + Panels.ArabicDigits(v.Ayah)));
             body.appendChild(arabic);
 
@@ -506,7 +520,7 @@ namespace QuranKG.FrontEnd.Components
         private HTMLElement VerseArabic(QK.ReadingVerse v, QK.ReadingSection s, Callbacks callbacks)
         {
             var span = Span(Att("qkg-v"));
-            AppendWords(span, v);
+            AppendWords(span, v, _tajweed);
 
             var mark = Text("span", "qkg-ayah", "۝" + Panels.ArabicDigits(v.Ayah));
             span.appendChild(mark);
@@ -555,9 +569,12 @@ namespace QuranKG.FrontEnd.Components
         /// are the morphology's words in order once the pause marks (ۚ ۖ ۗ …) and the hizb sign
         /// are skipped; where the counts disagree (four verses, e.g. إِلْ يَاسِينَ) nothing is marked.
         /// </summary>
-        private static void AppendWords(HTMLElement into, QK.ReadingVerse v)
+        private static void AppendWords(HTMLElement into, QK.ReadingVerse v, bool tajweed = false)
         {
             var tokens     = (v.Text ?? "").Split(' ');
+            // The tajweed, by character in the text: each word painted from its own offset.
+            var colours    = tajweed && !string.IsNullOrEmpty(v.Tajweed) ? TajweedKey.Parse(v.Tajweed) : null;
+            var offset     = 0;
             var highlights = v.Highlights ?? new int[0];
             // The positions are the morphology's only when the counts agree; otherwise no word is
             // marked and none carries a position (so no tooltip names the wrong word).
@@ -570,6 +587,8 @@ namespace QuranKG.FrontEnd.Components
             var position = 0;
             foreach (var token in tokens)
             {
+                var start = offset;
+                offset += token.Length + 1;
                 var isWord = IsWord(token);
                 if (!isWord)
                 {
@@ -579,7 +598,8 @@ namespace QuranKG.FrontEnd.Components
 
                 position++;
                 if (plain.Length > 0) { into.appendChild(document.createTextNode(plain.ToString())); plain.Clear(); }
-                var word = Text("span", marks is object && marks.Contains(position) ? "qkg-w qkg-kw" : "qkg-w", token);
+                var word = Text("span", marks is object && marks.Contains(position) ? "qkg-w qkg-kw" : "qkg-w", colours is object ? "" : token);
+                if (colours is object) TajweedKey.Paint(word, token, start, colours);
                 if (aligned && linked)
                 {
                     var at = v.WordVerse[position - 1];
