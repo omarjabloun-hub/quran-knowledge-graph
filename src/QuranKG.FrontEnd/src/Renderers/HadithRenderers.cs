@@ -159,7 +159,7 @@ namespace QuranKG.FrontEnd.Renderers
         }
     }
 
-    /// <summary>A tafsir in one language — al-Mukhtasar, al-Jalalayn, Ibn Kathir, in Arabic or English.</summary>
+    /// <summary>A tafsir in one language — Ibn Ashur, al-Mukhtasar, al-Jalalayn, Ibn Kathir, in Arabic or English.</summary>
     public sealed class TafsirRenderer : QuranRendererBase
     {
         public TafsirRenderer() : base(new SchemaStyleInfo

@@ -12,18 +12,22 @@ using static Transpose.Core.dom;
 namespace QuranKG.FrontEnd.Components
 {
     /// <summary>
-    /// What the tafsirs say on a verse, in Arabic and in English: al-Mukhtasar (the same short
-    /// explanation in both languages), al-Jalalayn and Ibn Kathir, one at a time — the reader's
-    /// choice is kept. A commentary that explains several verses together says so. A long one (Ibn
-    /// Kathir) shows its opening, and opens whole in two columns, the Arabic beside the English.
+    /// What the tafsirs say on a verse, in Arabic and in English: Ibn Ashur's al-Tahrir wa al-Tanwir
+    /// first — the main tafsir, in Arabic only — then al-Mukhtasar (the same short explanation in
+    /// both languages), al-Jalalayn and Ibn Kathir, one at a time; a work the reader picks is kept.
+    /// A commentary that explains several verses together says so. A long one (Ibn Ashur, Ibn
+    /// Kathir) shows its opening, and opens whole — in two columns when it has an English edition,
+    /// the Arabic beside the English.
     ///
     /// <para>For people only: qkg/verse/tafsir is no AI tool (Ibn Kathir's text is where QurSim, the
     /// similarity answer key, was drawn from).</para>
     /// </summary>
     internal static class TafsirView
     {
-        private const string STORAGE_KEY  = "qkg-tafsir-work";
-        private const string DEFAULT_WORK = "mukhtasar";
+        // Kept only when the reader picks a work: the panel used to keep the default too, which held
+        // every reader to al-Mukhtasar after Ibn Ashur became the main tafsir — hence a new key.
+        private const string STORAGE_KEY  = "qkg-tafsir-choice";
+        private const string DEFAULT_WORK = "ibn-ashur";
         /// <summary>Above this many characters in either language, the panel shows the opening and offers the whole.</summary>
         private const int    CLIP_AT      = 1400;
 
@@ -39,14 +43,19 @@ namespace QuranKG.FrontEnd.Components
 
             void Show(string work)
             {
-                Remember(work);
                 host.Clear();
-                host.Add(Defer(async () => Render(await QuranApi.VerseTafsirAsync(verse, work), Show, heading),
+                host.Add(Defer(async () => Render(await QuranApi.VerseTafsirAsync(verse, work), Pick, heading),
                                VStack().WS().Gap(6.px()).Children(Heading(heading), TextBlock("Opening the tafsir…".t()).Small().Secondary())));
             }
 
             Show(Saved());
             return host;
+
+            void Pick(string work)
+            {
+                Remember(work);
+                Show(work);
+            }
         }
 
         // -----------------------------------------------------------------------------------
@@ -87,13 +96,16 @@ namespace QuranKG.FrontEnd.Components
             var english = current.English?.Text ?? "";
             var clip    = arabic.Length > CLIP_AT || english.Length > CLIP_AT;
 
+            // A work in Arabic only (Ibn Ashur) takes the whole width.
+            var both = current.English is object || current.Arabic is null;
             var pair = Look.El("div", "qkg-tafsir-pair");
             pair.appendChild(Block(current.Arabic,  "ar", clip, current.Name));
-            pair.appendChild(Block(current.English, "en", clip, current.Name));
+            if (both) pair.appendChild(Block(current.English, "en", clip, current.Name));
             section.Add(Raw(pair).WS());
 
             if (clip)
-                section.Add(Raw(Look.Button("Read the whole commentary".t(), () => OpenWhole(dto.VerseKey, current), "soft", "☰", "The Arabic and the English side by side".t())));
+                section.Add(Raw(Look.Button("Read the whole commentary".t(), () => OpenWhole(dto.VerseKey, current), "soft", "☰",
+                                            both ? "The Arabic and the English side by side".t() : "The whole commentary, in Arabic".t())));
 
             return section;
         }
@@ -204,7 +216,7 @@ namespace QuranKG.FrontEnd.Components
 
             var columns = Div(Att("qkg-tafsir-columns"));
             columns.appendChild(Column(work.Arabic,  "ar"));
-            columns.appendChild(Column(work.English, "en"));
+            if (work.English is object || work.Arabic is null) columns.appendChild(Column(work.English, "en"));
 
             var modal = Modal(header).Width(92.vw()).Height(88.vh()).LightDismiss().ShowCloseButton();
             modal.Content = VStack().WS().H(76.vh()).Children(Raw(columns).S());

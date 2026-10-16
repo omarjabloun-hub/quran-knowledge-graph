@@ -18,8 +18,8 @@ namespace QuranKG.FrontEnd.Renderers
 {
     /// <summary>
     /// A verse. Its page reads Arabic first: the Uthmani text, then each word with its root, lemma
-    /// and part of speech, and only then the translations. The Tafsir tab gives what al-Mukhtasar,
-    /// al-Jalalayn and Ibn Kathir say on it, in Arabic and English. Two more tabs answer "where else does
+    /// and part of speech, and only then the translations. The Tafsir tab gives what Ibn Ashur (the main
+    /// tafsir), al-Mukhtasar, al-Jalalayn and Ibn Kathir say on it, in Arabic and English. Two more tabs answer "where else does
     /// the Quran say this?" — the similarity ranking, computed from the Arabic, and the verses Ibn
     /// Kathir's tafsir relates to it, which is the reference that ranking is measured against.
     /// </summary>
