@@ -295,6 +295,59 @@ internal static class Nodes
         [Property] public string VerseStartsMs  { get; set; } = "";
         /// <summary>The verses that start inside a verse of the recording, space-separated: their times are estimated from the letters before them.</summary>
         [Property] public string EstimatedAyahs { get; set; } = "";
+        /// <summary>Where each of the recording's OWN verses starts (its reading's numbering: Qalun's 285 in Al-Baqarah), in milliseconds, space-separated — exact, what the Qalun text follows.</summary>
+        [Property] public string RecordedStartsMs { get; set; } = "";
+    }
+
+    /// <summary>
+    /// A reading (riwaya) the Quran is read and shown in: Qalun from Nafi' (Rank 1, the main one) or
+    /// Hafs from Asim (the corpus's own text, whose verses are the Verse nodes). Key: "qalun", "hafs".
+    /// </summary>
+    [Node]
+    internal sealed class Riwaya
+    {
+        [Key]      public string RiwayaId         { get; set; } = "";
+        [Property] public string RiwayaName       { get; set; } = "";
+        [Property] public string RiwayaNameArabic { get; set; } = "";
+        [Property] public string Qari             { get; set; } = "";
+        [Property] public string Rawi             { get; set; } = "";
+        /// <summary>How it counts the verses: "Madani", "Kufi".</summary>
+        [Property] public string VerseCount       { get; set; } = "";
+        [Property] public string Region           { get; set; } = "";
+        [Property] public string Description      { get; set; } = "";
+        [Property] public string Attribution      { get; set; } = "";
+        /// <summary>The order a reader is offered it: 1 = the main reading.</summary>
+        [Property] public int    Rank             { get; set; }
+        /// <summary>True for Hafs: its verses are the corpus's Verse nodes, it has no RiwayaVerse.</summary>
+        [Property] public bool   IsCorpusText     { get; set; }
+    }
+
+    /// <summary>
+    /// A verse of a reading other than Hafs, in its own numbering, with its place in its own mushaf,
+    /// linked to the Hafs verses its words are in. Key: "qalun:2:254". <c>WordLinks</c> carries each
+    /// word's Hafs word, so its root, lemma and the passage marks reach the reading's text.
+    /// </summary>
+    [Node]
+    internal sealed class RiwayaVerse
+    {
+        [Key]      public string RiwayaVerseKey { get; set; } = "";
+        [Property] public string RiwayaId       { get; set; } = "";
+        [Property] public int    SurahNumber    { get; set; }
+        [Property] public int    AyahNumber     { get; set; }
+        /// <summary>"2:254", in the reading's own numbering.</summary>
+        [Property] public string VerseKey       { get; set; } = "";
+        /// <summary>The text with its marks, in the reading's script (the King Fahd Complex's), without the verse number.</summary>
+        [Property] public string Text           { get; set; } = "";
+        [Property] public int    Page           { get; set; }
+        [Property] public int    Juz            { get; set; }
+        /// <summary>The hizb of the Hafs verse it starts in.</summary>
+        [Property] public int    Hizb           { get; set; }
+        [Property] public int    LineStart      { get; set; }
+        [Property] public int    LineEnd        { get; set; }
+        /// <summary>The Hafs verses its words are in, space-separated ("2:1 2:2").</summary>
+        [Property] public string HafsVerseKeys  { get; set; } = "";
+        /// <summary>One per word of Text, space-separated: the Hafs word it is ("2:1:3") or "-".</summary>
+        [Property] public string WordLinks      { get; set; } = "";
     }
 
     /// <summary>

@@ -49,7 +49,7 @@ catch (Exception ex) when (ex is CorpusException or FileNotFoundException or Dir
     return 1;
 }
 
-Console.WriteLine($"corpus: {corpus.Verses.Count:N0} verses, {corpus.Words.Count:N0} words, {corpus.Roots.Count:N0} roots, {corpus.Lemmas.Count:N0} lemmas, {corpus.Topics.Count:N0} topics, {corpus.QurSimPairs.Count:N0} QurSim pairs, {corpus.TafsirEntries.Count:N0} tafsir entries in {corpus.TafsirEditions.Count} editions, {corpus.Hadiths.Count:N0} hadith, {corpus.QuranQuotes.Count:N0} hadith–verse links, {corpus.Recitations.Count} recited surahs");
+Console.WriteLine($"corpus: {corpus.Verses.Count:N0} verses, {corpus.Words.Count:N0} words, {corpus.Roots.Count:N0} roots, {corpus.Lemmas.Count:N0} lemmas, {corpus.Topics.Count:N0} topics, {corpus.QurSimPairs.Count:N0} QurSim pairs, {corpus.TafsirEntries.Count:N0} tafsir entries in {corpus.TafsirEditions.Count} editions, {corpus.Hadiths.Count:N0} hadith, {corpus.QuranQuotes.Count:N0} hadith–verse links, {corpus.Recitations.Count} recited surahs, {corpus.RiwayaVerses.Count:N0} verses of {corpus.Riwayat.Count(r => !r.IsCorpusText)} other readings");
 
 using var loggerFactory = LoggerFactory.Create(f => f.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
@@ -77,6 +77,7 @@ try
     await Step("tafsir",     () => TafsirIngest.RunAsync(ctx));
     await Step("hadith",     () => HadithIngest.RunAsync(ctx));
     await Step("recitation", () => RecitationIngest.RunAsync(ctx));
+    await Step("riwaya",     () => RiwayaIngest.RunAsync(ctx));
 }
 catch (Exception ex)
 {
@@ -129,6 +130,8 @@ static async Task SyncSchemaAsync(Graph graph)
     await graph.CreateNodeSchemaAsync<Nodes.QuranQuote>(overwrite: true);
     await graph.CreateNodeSchemaAsync<Nodes.Reciter>(overwrite: true);
     await graph.CreateNodeSchemaAsync<Nodes.Recitation>(overwrite: true);
+    await graph.CreateNodeSchemaAsync<Nodes.Riwaya>(overwrite: true);
+    await graph.CreateNodeSchemaAsync<Nodes.RiwayaVerse>(overwrite: true);
     await graph.CreateEdgeSchemaAsync(typeof(Edges));
 }
 

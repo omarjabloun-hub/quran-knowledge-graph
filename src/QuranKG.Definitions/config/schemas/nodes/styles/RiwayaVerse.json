@@ -1,0 +1,13 @@
+﻿{
+  "UID": "Vuh83ZT6wCCPeZzWTtqUDW",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "RiwayaVerse",
+  "DisplayName": "RiwayaVerse",
+  "Description": "A verse of a reading other than Hafs (Qalun), in its own numbering and mushaf, linked word by word to Hafs's verses.",
+  "Color": "#b45309",
+  "Icon": "fi-rr-book-quran",
+  "LabelField": "RiwayaVerseKey",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

@@ -364,6 +364,58 @@ internal static class HadithIngest
 /// milliseconds, one per verse of the corpus, in the recitation node itself — a surah's whole
 /// timing is read at once, never a verse alone.
 /// </summary>
+/// <summary>The readings, and the verses of each one that is not the corpus's own text, linked to Hafs's.</summary>
+internal static class RiwayaIngest
+{
+    public static Task RunAsync(ConnectorContext ctx)
+    {
+        var c    = ctx.Corpus;
+        var hizb = c.Verses.ToDictionary(v => v.Ref, v => v.Hizb);
+
+        foreach (var r in c.Riwayat)
+            ctx.Write(new Riwaya
+            {
+                RiwayaId         = r.Id,
+                RiwayaName       = r.Name,
+                RiwayaNameArabic = r.NameArabic,
+                Qari             = r.Qari,
+                Rawi             = r.Rawi,
+                VerseCount       = r.VerseCount,
+                Region           = r.Region,
+                Description      = r.Description,
+                Attribution      = r.Attribution,
+                Rank             = r.Rank,
+                IsCorpusText     = r.IsCorpusText,
+            }, r.Id);
+
+        foreach (var v in c.RiwayaVerses)
+        {
+            var node = ctx.Write(new RiwayaVerse
+            {
+                RiwayaVerseKey = v.Key,
+                RiwayaId       = v.Riwaya,
+                SurahNumber    = v.Surah,
+                AyahNumber     = v.Ayah,
+                VerseKey       = v.VerseKey,
+                Text           = v.Text,
+                Page           = v.Page,
+                Juz            = v.Juz,
+                Hizb           = hizb.GetValueOrDefault(v.HafsVerses[0]),
+                LineStart      = v.LineStart,
+                LineEnd        = v.LineEnd,
+                HafsVerseKeys  = string.Join(' ', v.HafsVerses.Select(h => h.Key)),
+                WordLinks      = string.Join(' ', v.Words.Select(w => w is null ? "-" : $"{w.Value.Verse.Key}:{w.Value.Position}")),
+            }, v.Key);
+            ctx.Link(node, nameof(Riwaya), v.Riwaya, Edges.InRiwaya, Edges.RiwayaHasVerse);
+            ctx.Link(node, nameof(Surah), v.Surah.ToString(CultureInfo.InvariantCulture), Edges.RiwayaVerseInSurah, Edges.SurahHasRiwayaVerse);
+            foreach (var h in v.HafsVerses)
+                ctx.Link(node, nameof(Verse), h.Key, Edges.ReadsVerse, Edges.VerseReadIn);
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 internal static class RecitationIngest
 {
     public static Task RunAsync(ConnectorContext ctx)
@@ -397,6 +449,7 @@ internal static class RecitationIngest
                 RecordedVerses = r.RecordedVerses,
                 VerseStartsMs  = string.Join(' ', r.Verses.Select(v => ((int)Math.Round(v.Start * 1000)).ToString(CultureInfo.InvariantCulture))),
                 EstimatedAyahs = string.Join(' ', r.Verses.Where(v => !v.Exact).Select(v => v.Ayah.ToString(CultureInfo.InvariantCulture))),
+                RecordedStartsMs = string.Join(' ', r.Marks.Select(m => ((int)Math.Round(m * 1000)).ToString(CultureInfo.InvariantCulture))),
             }, r.Key);
             ctx.Link(node, nameof(Surah), r.Surah.ToString(CultureInfo.InvariantCulture), Edges.RecitesSurah, Edges.SurahRecitedIn);
             ctx.Link(node, nameof(Reciter), r.Reciter, Edges.RecitedBy, Edges.ReciterOf);

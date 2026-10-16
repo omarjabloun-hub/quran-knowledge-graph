@@ -8,6 +8,8 @@
 // and ends in it, so the reader can follow the verse being recited. The connector times every
 // verse of the corpus (Recitation.VerseStartsMs); a verse listed in EstimatedAyahs starts inside a
 // verse of the recording — Qalun counts the verses the Madani way — and its time is estimated.
+// The recording's OWN verses (Recitation.RecordedStartsMs) are timed exactly: when its reading is
+// in the graph (Qalun's RiwayaVerse), they are what the Qalun text follows.
 //
 // Not cached: it answers in milliseconds, and a re-ingest must show at once.
 
@@ -20,6 +22,8 @@ if (!Graph.TryGet(uid, out var surah) || surah.Type != N.Surah.Type) return NotF
 var verses = Q().StartAt(uid).Out(N.Verse.Type, E.HasVerse).AsEnumerable()
                 .ToDictionary(v => v.GetInt(N.Verse.AyahNumber), v => v.UID);
 
+var riwayaNodes = Q().StartAt(N.Riwaya.Type).AsEnumerable().ToList();
+
 var recitations = Q().StartAt(uid).Out(N.Recitation.Type, E.SurahRecitedIn).AsEnumerable().Select(r =>
 {
     var reciter   = Q().StartAt(r.UID).Out(N.Reciter.Type, E.RecitedBy).AsEnumerable().FirstOrDefault();
@@ -28,6 +32,15 @@ var recitations = Q().StartAt(uid).Out(N.Recitation.Type, E.SurahRecitedIn).AsEn
                        .Select(x => int.Parse(x, System.Globalization.CultureInfo.InvariantCulture) / 1000.0).ToArray();
     var estimated = new HashSet<int>((r.GetString(N.Recitation.EstimatedAyahs) ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
                        .Select(x => int.Parse(x, System.Globalization.CultureInfo.InvariantCulture)));
+
+    // The recording's reading in the graph (a Reciter names it as a Riwaya does), and its verses of this surah.
+    var riwaya   = riwayaNodes.FirstOrDefault(n => n.GetString(N.Riwaya.RiwayaName) == (reciter?.GetString(N.Reciter.Riwaya) ?? ""));
+    var own      = riwaya is null || riwaya.GetBool(N.Riwaya.IsCorpusText) ? new Dictionary<int, UID128>()
+                 : Q().StartAt(uid).Out(N.RiwayaVerse.Type, E.SurahHasRiwayaVerse).AsEnumerable()
+                      .Where(v => v.GetString(N.RiwayaVerse.RiwayaId) == riwaya.GetString(N.Riwaya.RiwayaId))
+                      .ToDictionary(v => v.GetInt(N.RiwayaVerse.AyahNumber), v => v.UID);
+    var recorded = (r.GetString(N.Recitation.RecordedStartsMs) ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                      .Select(x => int.Parse(x, System.Globalization.CultureInfo.InvariantCulture) / 1000.0).ToArray();
 
     return new QK.RecitationDto
     {
@@ -51,6 +64,15 @@ var recitations = Q().StartAt(uid).Out(N.Recitation.Type, E.SurahRecitedIn).AsEn
             Start = start,
             End   = i + 1 < starts.Length ? starts[i + 1] : duration,
             Exact = !estimated.Contains(i + 1),
+        }).ToArray(),
+        RiwayaId          = riwaya?.GetString(N.Riwaya.RiwayaId) ?? "",
+        RecordedVerseRows = recorded.Select((start, i) => new QK.RecitedVerseRow
+        {
+            Uid   = own.TryGetValue(i + 1, out var v) ? v : default(UID128),
+            Ayah  = i + 1,
+            Start = start,
+            End   = i + 1 < recorded.Length ? recorded[i + 1] : duration,
+            Exact = true,
         }).ToArray(),
     };
 }).OrderBy(r => r.ReciterName, StringComparer.Ordinal).ToArray();

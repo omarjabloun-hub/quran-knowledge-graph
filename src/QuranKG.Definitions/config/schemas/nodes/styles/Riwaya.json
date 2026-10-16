@@ -1,0 +1,13 @@
+﻿{
+  "UID": "5Yan9G5atR72gw6EadaBMq",
+  "Type": "_NodeSchemaStyleSettings",
+  "Name": "Riwaya",
+  "DisplayName": "Riwaya",
+  "Description": "A reading (riwaya) of the Quran: Qalun from Nafi', the main one here, or Hafs from Asim, the text the graph is built on.",
+  "Color": "#b45309",
+  "Icon": "fi-rr-book-open-cover",
+  "LabelField": "RiwayaName|RiwayaId",
+  "Metadata": {},
+  "Shortcuts": [],
+  "ChatFields": []
+}

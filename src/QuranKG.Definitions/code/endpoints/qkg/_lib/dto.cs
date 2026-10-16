@@ -29,6 +29,32 @@ public static class QK
 
     public class UidRequest { public UID128 Uid { get; set; } }
 
+    /// <summary>qkg/read/text: a surah or a cluster, in a reading ("qalun", "hafs"; empty: the main one).</summary>
+    public class ReadingRequest
+    {
+        public UID128 Uid    { get; set; }
+        public string Riwaya { get; set; }
+    }
+
+    /// <summary>A reading the text can be read in, the main one first.</summary>
+    public class RiwayaOption
+    {
+        public UID128 Uid          { get; set; }
+        /// <summary>"qalun", "hafs".</summary>
+        public string Id           { get; set; }
+        public string Name         { get; set; }
+        public string NameArabic   { get; set; }
+        public string Description  { get; set; }
+        public string Attribution  { get; set; }
+        /// <summary>Its verse count across the Quran, counted live (Qalun 6,214, Hafs 6,236).</summary>
+        public int    Verses       { get; set; }
+        /// <summary>Its verse count in each surah, surah 1 first (Al-Baqarah: Qalun 285, Hafs 286).</summary>
+        public int[]  SurahVerses  { get; set; }
+        public bool   IsMain       { get; set; }
+        /// <summary>Hafs: the graph's own verses.</summary>
+        public bool   IsCorpusText { get; set; }
+    }
+
     public class SimilarRequest
     {
         public UID128 Uid   { get; set; }
@@ -459,6 +485,9 @@ public static class QK
         /// <summary>A passage or a theme: the lemmas its verses use far more than the rest of the Quran — the words highlighted.</summary>
         public Counted[]        KeyLemmas     { get; set; }
         public ReadingSection[] Sections      { get; set; }
+        /// <summary>The reading the verses are in ("qalun", "hafs"), and every reading on offer, the main one first.</summary>
+        public string           Riwaya        { get; set; }
+        public RiwayaOption[]   Riwayat       { get; set; }
     }
 
     /// <summary>A run of consecutive verses of one surah: a passage, or the whole surah before the build.</summary>
@@ -505,6 +534,15 @@ public static class QK
         public int    Page        { get; set; }
         public int    Juz         { get; set; }
         public int    Hizb        { get; set; }
+        /// <summary>
+        /// The graph's (Hafs) verses this verse's words are in, in order — itself in Hafs; Qalun 2:1
+        /// is Hafs 2:1 and 2:2. The first is the verse its panel opens on.
+        /// </summary>
+        public UID128[] HafsVerses   { get; set; }
+        public string[] HafsKeys     { get; set; }
+        /// <summary>In a reading other than Hafs, one per word of Text: the index in HafsVerses of the Hafs word it is (-1: none), and that word's position.</summary>
+        public int[]    WordVerse    { get; set; }
+        public int[]    WordPosition { get; set; }
     }
 
     /// <summary>
@@ -757,6 +795,9 @@ public static class QK
         /// <summary>How many verses the recording's own reading counts in the surah (Qalun: 285 in Al-Baqarah).</summary>
         public int    RecordedVerses    { get; set; }
         public RecitedVerseRow[] Verses { get; set; }
+        /// <summary>The recording's reading ("qalun"), and its OWN verses timed exactly — Uid the reading's verse (RiwayaVerse).</summary>
+        public string RiwayaId          { get; set; }
+        public RecitedVerseRow[] RecordedVerseRows { get; set; }
     }
 
     public class SurahRecitationDto

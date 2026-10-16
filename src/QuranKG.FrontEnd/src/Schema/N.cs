@@ -113,6 +113,7 @@ namespace QuranKG.FrontEnd.Schema
             public const string RecordedVerses = "RecordedVerses";
             public const string VerseStartsMs = "VerseStartsMs";
             public const string EstimatedAyahs = "EstimatedAyahs";
+            public const string RecordedStartsMs = "RecordedStartsMs";
         }
 
         public static class Reciter
@@ -134,6 +135,40 @@ namespace QuranKG.FrontEnd.Schema
         {
             public const string Type = "Revelation";
             public const string PlaceName = "PlaceName";
+        }
+
+        public static class Riwaya
+        {
+            public const string Type = "Riwaya";
+            public const string RiwayaId = "RiwayaId";
+            public const string RiwayaName = "RiwayaName";
+            public const string RiwayaNameArabic = "RiwayaNameArabic";
+            public const string Qari = "Qari";
+            public const string Rawi = "Rawi";
+            public const string VerseCount = "VerseCount";
+            public const string Region = "Region";
+            public const string Description = "Description";
+            public const string Attribution = "Attribution";
+            public const string Rank = "Rank";
+            public const string IsCorpusText = "IsCorpusText";
+        }
+
+        public static class RiwayaVerse
+        {
+            public const string Type = "RiwayaVerse";
+            public const string RiwayaVerseKey = "RiwayaVerseKey";
+            public const string RiwayaId = "RiwayaId";
+            public const string SurahNumber = "SurahNumber";
+            public const string AyahNumber = "AyahNumber";
+            public const string VerseKey = "VerseKey";
+            public const string Text = "Text";
+            public const string Page = "Page";
+            public const string Juz = "Juz";
+            public const string Hizb = "Hizb";
+            public const string LineStart = "LineStart";
+            public const string LineEnd = "LineEnd";
+            public const string HafsVerseKeys = "HafsVerseKeys";
+            public const string WordLinks = "WordLinks";
         }
 
         public static class Root
@@ -246,7 +281,7 @@ namespace QuranKG.FrontEnd.Schema
 
     public static class Groups
     {
-        public static readonly string[] AllTypes = { "Cluster", "Hadith", "HadithBook", "HadithCollection", "Juz", "Lemma", "QurSimPair", "QuranQuote", "Recitation", "Reciter", "Revelation", "Root", "Surah", "Tafsir", "TafsirEntry", "Topic", "Verse", "Word" };
+        public static readonly string[] AllTypes = { "Cluster", "Hadith", "HadithBook", "HadithCollection", "Juz", "Lemma", "QurSimPair", "QuranQuote", "Recitation", "Reciter", "Revelation", "Riwaya", "RiwayaVerse", "Root", "Surah", "Tafsir", "TafsirEntry", "Topic", "Verse", "Word" };
     }
 
     public static class E
@@ -303,6 +338,12 @@ namespace QuranKG.FrontEnd.Schema
         public const string SurahRecitedIn = "SurahRecitedIn";
         public const string RecitedBy = "RecitedBy";
         public const string ReciterOf = "ReciterOf";
+        public const string InRiwaya = "InRiwaya";
+        public const string RiwayaHasVerse = "RiwayaHasVerse";
+        public const string RiwayaVerseInSurah = "RiwayaVerseInSurah";
+        public const string SurahHasRiwayaVerse = "SurahHasRiwayaVerse";
+        public const string ReadsVerse = "ReadsVerse";
+        public const string VerseReadIn = "VerseReadIn";
         public const string HasMember = "HasMember";
         public const string InCluster = "InCluster";
         public const string ClusterOfSurah = "ClusterOfSurah";

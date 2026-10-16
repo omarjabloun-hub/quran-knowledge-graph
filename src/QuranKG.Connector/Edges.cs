@@ -97,6 +97,17 @@ internal static class Edges
     public const string RecitedBy           = nameof(RecitedBy);           // Recitation → Reciter
     public const string ReciterOf           = nameof(ReciterOf);           // Reciter → Recitation
 
+    // --- readings ------------------------------------------------------------------------
+    public const string InRiwaya            = nameof(InRiwaya);            // RiwayaVerse → Riwaya
+    public const string RiwayaHasVerse      = nameof(RiwayaHasVerse);      // Riwaya → RiwayaVerse
+
+    public const string RiwayaVerseInSurah  = nameof(RiwayaVerseInSurah);  // RiwayaVerse → Surah
+    public const string SurahHasRiwayaVerse = nameof(SurahHasRiwayaVerse); // Surah → RiwayaVerse
+
+    // Every Hafs verse a reading's verse has words in (Qalun 2:1 → Hafs 2:1 and 2:2).
+    public const string ReadsVerse          = nameof(ReadsVerse);          // RiwayaVerse → Verse
+    public const string VerseReadIn         = nameof(VerseReadIn);         // Verse → RiwayaVerse
+
     // --- clusters: written by the Clusters work inside the workspace, never by the connector --
     public const string HasMember           = nameof(HasMember);           // Cluster → Verse
     public const string InCluster           = nameof(InCluster);           // Verse → Cluster

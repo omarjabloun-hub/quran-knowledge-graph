@@ -12,6 +12,8 @@ public class Recitation
 
     public string ReciterId { get; set; }
 
+    public string RecordedStartsMs { get; set; }
+
     public int RecordedVerses { get; set; }
 
     public int SurahNumber { get; set; }
