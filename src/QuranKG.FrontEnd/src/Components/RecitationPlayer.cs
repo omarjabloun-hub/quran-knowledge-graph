@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using QuranKG.FrontEnd.Api;
 using Tesserae;
@@ -11,10 +12,14 @@ using static Transpose.Core.dom;
 namespace QuranKG.FrontEnd.Components
 {
     /// <summary>
-    /// A surah recited, as a bar under the text: play and pause, the verse before and after, repeat
-    /// a verse, the speed, and whether the text follows. While it plays, it tells the reader which
-    /// verse is being recited (<see cref="Settings.OnVerse"/>) — the reader marks it and keeps it in
-    /// view.
+    /// The recitation, one for the whole app: a bar docked at the foot of the window that stays
+    /// while the reader goes from page to page — the surah being recited is its title (its Arabic
+    /// name, a click back to the verse being recited), then the verse and the time; play and pause,
+    /// the verse before and after, repeat a verse, the speed, and whether the text follows.
+    ///
+    /// <para>A reader showing the surah being recited watches it (<see cref="Watch"/>): it marks the
+    /// verse being recited and keeps it in view — again when the reader comes back to the surah.
+    /// A reader gone from the page is forgotten.</para>
     ///
     /// <para>The recording is streamed from where its source hosts it; where each verse starts in it
     /// comes from qkg/surah/recitation. Read in the recording's own reading (Qalun's text, Sheikh
@@ -23,102 +28,115 @@ namespace QuranKG.FrontEnd.Components
     /// recording counts its own way, the times are carried over to the text's verses, a few of them
     /// estimated (<see cref="QK.RecitedVerseRow.Exact"/>), which the bar says.</para>
     /// </summary>
-    internal sealed class RecitationPlayer : IComponent
+    internal sealed class RecitationPlayer
     {
-        internal sealed class Settings
+        /// <summary>A surah to recite, as a reader shows it: in which reading its verses are numbered.</summary>
+        internal sealed class Track
         {
-            internal UID128 Surah    { get; set; }
-            internal string VerseKeyPrefix { get; set; }
-            /// <summary>The reading the text is in ("qalun", "hafs").</summary>
-            internal string Riwaya   { get; set; }
-            /// <summary>The verse being recited; null when the recitation stops or closes.</summary>
-            internal Action<QK.RecitedVerseRow> OnVerse { get; set; }
+            internal UID128 Surah           { get; set; }
+            internal int    SurahNumber     { get; set; }
+            internal string SurahName       { get; set; }
+            internal string SurahNameArabic { get; set; }
+            /// <summary>"qalun", "hafs": the numbering of the ayahs asked for.</summary>
+            internal string Riwaya          { get; set; }
+        }
+
+        private sealed class Watcher
+        {
+            internal HTMLElement                Owner;
+            internal UID128                     Surah;
+            internal string                     Riwaya;
+            internal Action<QK.RecitedVerseRow> OnVerse;
+            /// <summary>Seen on the page: once gone from it, the reader is forgotten.</summary>
+            internal bool                       Seen;
         }
 
         private static readonly double[] Speeds = { 0.75, 1, 1.25, 1.5 };
         private const string FOLLOW_KEY = "qkg-player-follow";
         private const string SPEED_KEY  = "qkg-player-speed";
 
-        private readonly Settings         _settings;
+        private static RecitationPlayer _instance;
+        /// <summary>The one player; its bar is added to the page the first time it is needed.</summary>
+        internal static RecitationPlayer Instance => _instance ?? (_instance = new RecitationPlayer());
+
+        private readonly List<Watcher>    _watchers = new List<Watcher>();
         private readonly HTMLAudioElement _audio;
-        private readonly Stack            _root;
-        private readonly Stack            _body;
-        private readonly HTMLElement      _progress;
+        private readonly HTMLElement      _root;
+        private readonly HTMLElement      _body;
         private readonly HTMLElement      _progressFill;
 
-        private QK.RecitationDto _recitation;
-        /// <summary>The verses the text shows, timed: the recording's own when the text is in its reading.</summary>
+        private Track                _track;
+        private QK.RecitationDto     _recitation;
+        private string               _rowsRiwaya;
+        /// <summary>The verses timed, in the numbering of the reading followed: the recording's own when the text is in its reading.</summary>
         private QK.RecitedVerseRow[] _rows = new QK.RecitedVerseRow[0];
-        private bool _ownReading;
-        private HTMLElement      _play, _speed, _repeat, _follow;
-        private TextBlock        _where, _time;
-        private int              _current = -1;
-        private int              _generation;
-        private bool             _playing;
-        private bool             _repeatVerse;
-        private int              _speedIndex = 1;
-        private int              _pendingAyah = -1;
+        private bool                 _ownReading;
+        private HTMLElement          _play, _speed, _repeat, _follow, _where, _time, _reciter;
+        private int                  _current = -1;
+        private int                  _generation;
+        private int                  _loading;
+        private bool                 _playing;
+        private bool                 _repeatVerse;
+        private int                  _speedIndex = 1;
 
         internal bool Follow { get; private set; } = true;
         internal bool IsOpen { get; private set; }
 
-        public RecitationPlayer(Settings settings)
+        private RecitationPlayer()
         {
-            _settings = settings;
-            Follow    = Load(FOLLOW_KEY) != "0";
+            EnsureStyles();
+            Arabic.EnsureFonts();
+            Follow = Load(FOLLOW_KEY) != "0";
             if (int.TryParse(Load(SPEED_KEY), out var speed) && speed >= 0 && speed < Speeds.Length) _speedIndex = speed;
 
             _audio = document.createElement("audio").As<HTMLAudioElement>();
             _audio.preload = "metadata";
             _audio.ontimeupdate     = _ => Tick();
             _audio.onended          = _ => { SetPlaying(false); Mark(-1); };
-            _audio.onloadedmetadata = _ =>
-            {
-                _audio.playbackRate = Speeds[_speedIndex];
-                if (_pendingAyah >= 0) { var a = _pendingAyah; _pendingAyah = -1; Seek(a); }
-            };
+            _audio.onloadedmetadata = _ => _audio.playbackRate = Speeds[_speedIndex];
 
-            _progress     = Div(Att("qkg-player-track"));
-            _progressFill = Div(Att("qkg-player-fill"));
-            _progress.appendChild(_progressFill);
-            _progress.onclick = e =>
+            var track = Look.El("div", "qkg-player-track");
+            _progressFill = Look.El("div", "qkg-player-fill");
+            track.appendChild(_progressFill);
+            track.onclick = e =>
             {
                 if (_recitation is null || _recitation.Duration <= 0) return;
-                var rect  = _progress.getBoundingClientRect().As<DOMRect>();
+                var rect  = track.getBoundingClientRect().As<DOMRect>();
                 var share = Math.Max(0, Math.Min(1, (e.As<MouseEvent>().clientX - rect.left) / rect.width));
                 _audio.currentTime = share * _recitation.Duration;
                 Tick();
             };
 
-            _body = HStack().WS().AlignItemsCenter().Gap(10.px()).Wrap();
-            EnsureStyles();
-            _root = VStack().WS().Class("qkg-player").Children(Raw(_progress).WS(), _body.PL(32).PR(32).PT(10).PB(12));
-            _root.Collapse();
+            _body = Look.El("div", "qkg-player-body");
+            _root = Look.El("div", "qkg-ui qkg-player-dock", track, _body);
+            _root.style.display = "none";
+            _root.onmouseenter = _ => Dock();
+            window.addEventListener("resize", (Action<Event>)(_ => Dock()));
+            document.body.appendChild(_root);
         }
 
-        public HTMLElement Render() => _root.Render();
+        // ---- what readers call -------------------------------------------------------------------
 
-        /// <summary>Shows the bar and starts the recitation at the verse given (0: the surah's start, Bismillah included).</summary>
-        internal void PlayFrom(int ayah)
+        /// <summary>Recites <paramref name="track"/> from a verse (in its reading's numbering; 0: the surah's start, Bismillah included).</summary>
+        internal static void Play(Track track, int ayah) => Instance.PlayTrack(track, ayah);
+
+        /// <summary>
+        /// A reader showing a surah: told the verse being recited while that surah plays, until the
+        /// reader leaves the page (<paramref name="owner"/> no longer in it). Reading the surah being
+        /// recited in another reading makes the player follow that reading's verses.
+        /// </summary>
+        internal static void Watch(HTMLElement owner, UID128 surah, string riwaya, Action<QK.RecitedVerseRow> onVerse)
         {
-            if (!IsOpen) Open();
-            if (_recitation is null) { _pendingAyah = Math.Max(ayah, 0); _autoplay = true; return; }
-            Seek(ayah);
-            Play();
-        }
+            var p = Instance;
+            p._watchers.RemoveAll(w => w.Owner == owner || (w.Seen && !w.Owner.isConnected));
+            p._watchers.Add(new Watcher { Owner = owner, Surah = surah, Riwaya = riwaya, OnVerse = onVerse });
 
-        private bool _autoplay;
-
-        internal void Open()
-        {
-            if (IsOpen) return;
-            IsOpen = true;
-            _root.Show();
-            if (_recitation is object) return;
-
-            _body.Clear();
-            _body.Add(TextBlock("Loading the recitation…".t()).Small().Secondary());
-            Load().FireAndForget();
+            if (p.IsOpen && p._track is object && p._track.Surah == surah)
+            {
+                if (riwaya != p._rowsRiwaya) p.UseReading(riwaya);
+                var row = p._current >= 0 && p._current < p._rows.Length ? p._rows[p._current] : null;
+                if (row is object) window.setTimeout(_ => onVerse(row), 200);
+            }
         }
 
         internal void Close()
@@ -127,26 +145,123 @@ namespace QuranKG.FrontEnd.Components
             SetPlaying(false);
             Mark(-1);
             IsOpen = false;
-            _root.Collapse();
+            _root.style.display = "none";
+            document.body.classList.remove("qkg-player-on");
         }
 
-        // -----------------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------------
 
-        private async System.Threading.Tasks.Task Load()
+        private void PlayTrack(Track track, int ayah)
         {
-            var dto = await QuranApi.SurahRecitationAsync(_settings.Surah);
-            _recitation = (dto?.Recitations ?? new QK.RecitationDto[0]).FirstOrDefault();
-            _ownReading = _recitation is object && !string.IsNullOrEmpty(_recitation.RiwayaId) && _recitation.RiwayaId == _settings.Riwaya
-                       && (_recitation.RecordedVerseRows ?? new QK.RecitedVerseRow[0]).Length > 0;
-            _rows       = _recitation is null ? new QK.RecitedVerseRow[0] : (_ownReading ? _recitation.RecordedVerseRows : _recitation.Verses) ?? new QK.RecitedVerseRow[0];
-
-            _body.Clear();
-            if (_recitation is null)
+            Open();
+            if (_track is object && _recitation is object && _track.Surah == track.Surah)
             {
-                _body.Add(TextBlock("No recitation of this surah in the graph yet.".t()).Small().Secondary().Grow());
-                _body.Add(Button().SetIcon(UIcons.Cross).Compact().Tooltip("Close".t()).OnClick(Close));
+                _track = track;
+                if (track.Riwaya != _rowsRiwaya) UseReading(track.Riwaya);
+                Seek(ayah);
+                Play();
                 return;
             }
+
+            _audio.pause();
+            SetPlaying(false);
+            Mark(-1);
+            _track      = track;
+            _recitation = null;
+            _rows       = new QK.RecitedVerseRow[0];
+            DrawLoading();
+            LoadAndPlay(track, ayah, ++_loading).FireAndForget();
+        }
+
+        private void Open()
+        {
+            Dock();
+            if (IsOpen) return;
+            IsOpen = true;
+            _root.style.display = "";
+            document.body.classList.add("qkg-player-on");
+        }
+
+        private async System.Threading.Tasks.Task LoadAndPlay(Track track, int ayah, int loading)
+        {
+            var dto = await QuranApi.SurahRecitationAsync(track.Surah);
+            if (loading != _loading) return;   // another surah asked for meanwhile
+
+            _recitation = (dto?.Recitations ?? new QK.RecitationDto[0]).FirstOrDefault();
+            if (_recitation is null) { DrawMissing(); return; }
+
+            UseReading(track.Riwaya);
+            Draw();
+            _audio.src = _recitation.AudioUrl;
+            _audio.playbackRate = Speeds[_speedIndex];
+
+            // Seek once the recording can be: before its metadata, currentTime is not kept.
+            void Start()
+            {
+                Seek(ayah);
+                Play();
+            }
+            if (_audio.readyState >= 1) Start();
+            else
+            {
+                Action<Event> once = null;
+                once = _ => { _audio.removeEventListener("loadedmetadata", once); Start(); };
+                _audio.addEventListener("loadedmetadata", once);
+            }
+        }
+
+        /// <summary>The verses followed: the recording's own when the reading is its own, else carried over to the reading's.</summary>
+        private void UseReading(string riwaya)
+        {
+            _rowsRiwaya = riwaya;
+            if (_recitation is null) return;
+            _ownReading = !string.IsNullOrEmpty(_recitation.RiwayaId) && _recitation.RiwayaId == riwaya
+                       && (_recitation.RecordedVerseRows ?? new QK.RecitedVerseRow[0]).Length > 0;
+            _rows    = (_ownReading ? _recitation.RecordedVerseRows : _recitation.Verses) ?? new QK.RecitedVerseRow[0];
+            _current = -2;   // forces the next tick to tell the readers
+            if (_reciter is object) _reciter.title = About();
+            Tick();
+        }
+
+        // ---- the bar ------------------------------------------------------------------------------
+
+        private void DrawLoading()
+        {
+            _body.innerHTML = "";
+            _body.appendChild(Title());
+            _body.appendChild(Look.El("span", "qkg-note", "Loading the recitation…".t()));
+            _body.appendChild(Look.El("span", "qkg-toolbar-spacer"));
+            _body.appendChild(Look.IconButton("✕", "Close".t(), Close));
+        }
+
+        private void DrawMissing()
+        {
+            _body.innerHTML = "";
+            _body.appendChild(Title());
+            _body.appendChild(Look.El("span", "qkg-note", "No recitation of this surah in the graph yet.".t()));
+            _body.appendChild(Look.El("span", "qkg-toolbar-spacer"));
+            _body.appendChild(Look.IconButton("✕", "Close".t(), Close));
+        }
+
+        /// <summary>The surah: its Arabic name first, then its number and name, then the verse and the time.</summary>
+        private HTMLElement Title()
+        {
+            var title = Look.El("div", "qkg-player-title");
+            var name  = Look.El("div", "qkg-player-name");
+            name.appendChild(Look.Ar(_track?.SurahNameArabic ?? "", "qkg-arw qkg-player-name-ar"));
+            name.appendChild(Look.El("span", "qkg-player-name-en", (_track?.SurahNumber ?? 0) + " · " + (_track?.SurahName ?? "")));
+            name.title = "Back to the verse being recited".t();
+            title.appendChild(Look.OnClick(name, GoToVerse));
+
+            _where = Look.El("span", "qkg-player-where", "");
+            _time  = Look.El("span", "qkg-player-time", "");
+            title.appendChild(Look.El("div", "qkg-player-sub", _where, _time));
+            return title;
+        }
+
+        private void Draw()
+        {
+            _body.innerHTML = "";
 
             _play = Look.IconButton("", "Play / pause".t(), Toggle);
             _play.classList.add("qkg-on");
@@ -157,7 +272,8 @@ namespace QuranKG.FrontEnd.Components
 
             _repeat = Look.IconButton("", "Repeat the verse being recited".t(), null);
             _repeat.appendChild(Icon(UIcons.ArrowsRepeat).Render());
-            _repeat.setAttribute("aria-pressed", "false");
+            _repeat.setAttribute("aria-pressed", _repeatVerse ? "true" : "false");
+            if (_repeatVerse) _repeat.classList.add("qkg-on");
             _repeat.onclick = _ =>
             {
                 _repeatVerse = !_repeatVerse;
@@ -185,30 +301,16 @@ namespace QuranKG.FrontEnd.Components
                 Save(SPEED_KEY, _speedIndex.ToString());
             };
 
-            _where = TextBlock("").SemiBold().Small();
-            _time  = TextBlock("").Tiny().Secondary();
+            _reciter = Look.El("div", "qkg-player-reciter",
+                Look.Ar(_recitation.ReciterNameArabic, "qkg-arw qkg-player-reciter-ar"),
+                Look.El("span", "qkg-player-reciter-en", _recitation.ReciterName + " · " + _recitation.Riwaya));
+            _reciter.title = About();
 
-            var reciter = HStack().AlignItemsCenter().Gap(10.px()).Children(
-                Arabic.Inline(_recitation.ReciterNameArabic, 18),
-                VStack().Children(
-                    TextBlock(_recitation.ReciterName).Small(),
-                    TextBlock(_recitation.Riwaya + " · " + _recitation.Country).Tiny().Secondary()))
-               .Tooltip(About());
-
-            var transport = Look.El("div", "qkg-player-transport", previous, _play, next);
-            _body.Add(Raw(transport));
-            _body.Add(VStack().Children(_where, _time).W(150.px()));
-            _body.Add(reciter.Grow());
-            _body.Add(Raw(Look.El("div", "qkg-player-tools", _speed, _repeat, _follow, Look.IconButton("✕", "Stop and close".t(), Close))));
-
-            _audio.src = _recitation.AudioUrl;
-            Show(-1);
-
-            if (_autoplay)
-            {
-                _autoplay = false;
-                Play();
-            }
+            _body.appendChild(Title());
+            _body.appendChild(Look.El("div", "qkg-player-transport", previous, _play, next));
+            _body.appendChild(_reciter);
+            _body.appendChild(Look.El("div", "qkg-player-tools", _speed, _repeat, _follow, Look.IconButton("✕", "Stop and close".t(), Close)));
+            Show(_current);
         }
 
         private string About()
@@ -219,6 +321,24 @@ namespace QuranKG.FrontEnd.Components
                                _recitation.ReciterName, _recitation.Riwaya, _recitation.RiwayaArabic, _recitation.RecordedVerses, _recitation.Verses?.Length ?? 0, _recitation.Attribution);
 
         private string SpeedLabel() => Speeds[_speedIndex].ToString("0.##") + "×";
+
+        /// <summary>The surah's name, clicked: the Quran View at the verse being recited (its Hafs verse, as every link).</summary>
+        private void GoToVerse()
+        {
+            if (_track is null) return;
+            var row = _current >= 0 && _current < _rows.Length ? _rows[_current] : null;
+            QuranLinks.Go(_track.SurahNumber, row?.HafsAyah ?? 0);
+        }
+
+        /// <summary>The bar beside the sidebar, whatever its width.</summary>
+        private void Dock()
+        {
+            var sidebar = document.querySelector(".tss-sidebar");
+            var left    = sidebar is null ? 0 : sidebar.As<HTMLElement>().getBoundingClientRect().As<DOMRect>().right;
+            _root.style.setProperty("--qkg-dock-left", Math.Round(left) + "px");
+        }
+
+        // ---- playing --------------------------------------------------------------------------------
 
         private void Toggle()
         {
@@ -259,18 +379,16 @@ namespace QuranKG.FrontEnd.Components
 
         private void Step(int delta)
         {
-            var verses = _rows;
-            if (verses.Length == 0) return;
-            var target = Math.Max(0, Math.Min(verses.Length - 1, (_current < 0 ? 0 : _current) + delta));
-            Seek(verses[target].Ayah);
+            if (_rows.Length == 0) return;
+            var target = Math.Max(0, Math.Min(_rows.Length - 1, (_current < 0 ? 0 : _current) + delta));
+            Seek(_rows[target].Ayah);
             if (!_playing) Play();
         }
 
-        /// <summary>To the start of a verse; 0 is the start of the recording (the Bismillah, recited before verse 1).</summary>
+        /// <summary>To the start of a verse; 0 or 1 is the start of the recording (the Bismillah, recited before verse 1).</summary>
         private void Seek(int ayah)
         {
-            var verses = _rows;
-            var row    = verses.FirstOrDefault(v => v.Ayah == ayah);
+            var row = _rows.FirstOrDefault(v => v.Ayah == ayah);
             _audio.currentTime = ayah <= 1 || row is null ? 0 : row.Start;
             Tick();
         }
@@ -278,19 +396,18 @@ namespace QuranKG.FrontEnd.Components
         private void Tick()
         {
             if (_recitation is null) return;
-            var t      = _audio.currentTime;
-            var verses = _rows;
+            var t = _audio.currentTime;
 
             var index = -1;
-            for (var i = 0; i < verses.Length; i++)
+            for (var i = 0; i < _rows.Length; i++)
             {
-                if (verses[i].Start <= t) index = i;
+                if (_rows[i].Start <= t) index = i;
                 else break;
             }
 
-            if (_repeatVerse && _playing && _current >= 0 && _current < verses.Length && t >= verses[_current].End - 0.05)
+            if (_repeatVerse && _playing && _current >= 0 && _current < _rows.Length && t >= _rows[_current].End - 0.05)
             {
-                _audio.currentTime = verses[_current].Start;
+                _audio.currentTime = _rows[_current].Start;
                 return;
             }
 
@@ -301,26 +418,29 @@ namespace QuranKG.FrontEnd.Components
             _progressFill.style.width = (100 * Math.Min(1, t / duration)).ToString("0.###") + "%";
         }
 
+        /// <summary>The verse being recited, told to every reader of the surah still on the page.</summary>
         private void Mark(int index)
         {
             _current = index;
-            var verses = _rows;
-            _settings.OnVerse?.Invoke(index >= 0 && index < verses.Length ? verses[index] : null);
+            var row = index >= 0 && index < _rows.Length ? _rows[index] : null;
+            foreach (var w in _watchers) if (w.Owner.isConnected) w.Seen = true;
+            _watchers.RemoveAll(w => w.Seen && !w.Owner.isConnected);
+            foreach (var w in _watchers.ToArray())
+                if (_track is object && w.Surah == _track.Surah && w.Owner.isConnected && w.Riwaya == _rowsRiwaya) w.OnVerse(row);
         }
 
         private void Show(int index)
         {
-            if (_where is null) return;
-            var verses = _rows;
-            if (index >= 0 && index < verses.Length)
+            if (_where is null || _recitation is null) return;
+            if (index >= 0 && index < _rows.Length)
             {
-                var v = verses[index];
-                _where.Text = (v.Exact ? "" : "≈ ") + string.Format("Verse {0}{1}".t(), _settings.VerseKeyPrefix ?? "", v.Ayah);
-                _where.Tooltip(v.Exact ? "" : "This verse starts inside one of the recording's verses (its reading counts the verses another way): its start is estimated from the letters before it.".t());
+                var v = _rows[index];
+                _where.textContent = (v.Exact ? "" : "≈ ") + string.Format("Verse {0}:{1}".t(), _track?.SurahNumber ?? 0, v.Ayah);
+                _where.title = v.Exact ? "" : "This verse starts inside one of the recording's verses (its reading counts the verses another way): its start is estimated from the letters before it.".t();
             }
-            else _where.Text = _audio.currentTime > 0 ? "Bismillah".t() : "";
+            else _where.textContent = _audio.currentTime > 0 ? "Bismillah".t() : "";
 
-            _time.Text = Clock(_audio.currentTime) + " / " + Clock(_recitation.Duration);
+            _time.textContent = Clock(_audio.currentTime) + " / " + Clock(_recitation.Duration);
         }
 
         private static string Clock(double seconds)
@@ -334,6 +454,11 @@ namespace QuranKG.FrontEnd.Components
             try { return localStorage.getItem(key) ?? ""; } catch { return ""; }
         }
 
+        private static void Save(string key, string value)
+        {
+            try { localStorage.setItem(key, value); } catch { /* nothing to keep it in */ }
+        }
+
         private static bool _styled;
 
         private static void EnsureStyles()
@@ -342,20 +467,33 @@ namespace QuranKG.FrontEnd.Components
             _styled = true;
             Look.EnsureStyles();
             var style = document.createElement("style");
+            // Docked over the page, beside the sidebar; the pages leave room for it while it is open.
             style.textContent = @"
-.qkg-player { background: var(--qkg-raised); border-top: 1px solid var(--qkg-line); color: var(--qkg-ink); }
+.qkg-player-dock { position: fixed; z-index: 900; bottom: 14px; left: calc(var(--qkg-dock-left, 0px) + 16px); right: 16px; max-width: 1080px; margin: 0 auto;
+                   background: var(--qkg-raised); color: var(--qkg-ink); border: 1px solid var(--qkg-line); border-radius: 18px; overflow: hidden;
+                   box-shadow: 0 10px 30px rgba(15, 23, 42, .16), 0 2px 6px rgba(15, 23, 42, .08); }
 .qkg-player-track { height: 4px; background: var(--qkg-surface-2); cursor: pointer; }
 .qkg-player-track:hover { height: 6px; }
 .qkg-player-fill { height: 100%; width: 0; background: var(--qkg-teal); }
+.qkg-player-body { display: flex; align-items: center; gap: 14px 18px; flex-wrap: wrap; padding: 10px 18px 12px 18px; }
+.qkg-player-title { display: flex; flex-direction: column; gap: 2px; min-width: 200px; flex: 1 1 220px; }
+.qkg-player-name { display: flex; align-items: baseline; gap: 10px; cursor: pointer; }
+.qkg-player-name:hover .qkg-player-name-en { text-decoration: underline; }
+.qkg-player-name-ar { font-size: 26px; line-height: 1.3; color: var(--qkg-teal-strong); }
+.qkg-player-name-en { font-size: 15px; font-weight: 600; color: var(--qkg-ink); }
+.qkg-player-sub { display: flex; gap: 10px; font-size: 12px; color: var(--qkg-ink-3); }
+.qkg-player-where { font-weight: 600; color: var(--qkg-ink-2); }
 .qkg-player-transport, .qkg-player-tools { display: inline-flex; align-items: center; gap: 6px; }
 .qkg-player-play { width: 44px; height: 44px; font-size: 16px; }
+.qkg-player-reciter { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; flex: 0 1 auto; min-width: 0; }
+.qkg-player-reciter-ar { font-size: 16px; color: var(--qkg-ink-2); }
+.qkg-player-reciter-en { font-size: 11px; color: var(--qkg-ink-3); white-space: nowrap; }
+body.qkg-player-on .qkg-column { padding-bottom: 120px; }
+body.qkg-player-on .qkg-reader { padding-bottom: 180px; }
+body.qkg-player-on .qkg-study-body { padding-bottom: 110px; }
+@media (max-width: 760px) { .qkg-player-reciter { display: none; } .qkg-player-dock { left: 8px; right: 8px; bottom: 8px; } }
 ";
             document.head.appendChild(style);
-        }
-
-        private static void Save(string key, string value)
-        {
-            try { localStorage.setItem(key, value); } catch { /* nothing to keep it in */ }
         }
     }
 }

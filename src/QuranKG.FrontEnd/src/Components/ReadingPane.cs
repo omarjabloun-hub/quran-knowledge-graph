@@ -18,8 +18,9 @@ namespace QuranKG.FrontEnd.Components
     /// out — flowing, verse by verse, or as the mushaf's pages —, passages, English, key words, and
     /// where the reader is: page, juz, hizb), a strip of the passages to jump between them, the text
     /// itself (<see cref="QuranReader"/>), the panel a clicked verse opens on the right
-    /// (<see cref="VerseDetails"/>) and, for a surah, its recitation (<see cref="RecitationPlayer"/>),
-    /// which marks the verse being recited and keeps it in view. The Quran View, a surah's Read tab,
+    /// (<see cref="VerseDetails"/>) and, for a surah, its recitation — the app's one player
+    /// (<see cref="RecitationPlayer"/>), docked at the foot of the window, which this text watches to
+    /// mark the verse being recited and keep it in view. The Quran View, a surah's Read tab,
     /// a passage and a theme all read through it, so they read alike.
     ///
     /// <para>In a READING (riwaya): Qalun, the main one, or Hafs, one switch away (<see cref="Riwayat"/>).
@@ -61,7 +62,8 @@ namespace QuranKG.FrontEnd.Components
         private QuranReader   _reader;
         private UID128        _selected;
         private UID128        _playing;
-        private RecitationPlayer _player;
+        /// <summary>The surah, to recite (null for a passage or a theme).</summary>
+        private RecitationPlayer.Track _track;
         private TextBlock     _location;
 
         public ReadingPane(Settings settings)
@@ -100,14 +102,18 @@ namespace QuranKG.FrontEnd.Components
                     foreach (var verse in section.Verses ?? new QK.ReadingVerse[0])
                         _byUid[verse.Uid.ToString()] = (verse, section);
 
-                if (_text.Kind == "Surah")
-                    _player = new RecitationPlayer(new RecitationPlayer.Settings
-                    {
-                        Surah          = settings.Uid,
-                        VerseKeyPrefix = (_text.Sections ?? new QK.ReadingSection[0]).Select(x => x.SurahNumber + ":").FirstOrDefault() ?? "",
-                        Riwaya         = _text.Riwaya,
-                        OnVerse        = Recited,
-                    });
+                var first = (_text.Sections ?? new QK.ReadingSection[0]).FirstOrDefault();
+                _track = _text.Kind == "Surah" && first is object
+                    ? new RecitationPlayer.Track
+                      {
+                          Surah           = settings.Uid,
+                          SurahNumber     = first.SurahNumber,
+                          SurahName       = first.SurahName,
+                          SurahNameArabic = first.SurahNameArabic,
+                          Riwaya          = _text.Riwaya,
+                      }
+                    : null;
+                if (_track is object) RecitationPlayer.Watch(_scroll, settings.Uid, _text.Riwaya, Recited);
 
                 var left = VStack().S().Grow().Class("qkg-ui").Style(s => s.setProperty("min-width", "0"));
                 if (settings.Header is object) left.Add(settings.Header(_text));
@@ -126,7 +132,6 @@ namespace QuranKG.FrontEnd.Components
                 left.Add(toolbar);
                 left.Add(strip);
                 left.Add(Raw(_scroll));
-                if (_player is object) left.Add(_player);
 
                 _scroll.onscroll = _ => Locate();
 
@@ -137,7 +142,7 @@ namespace QuranKG.FrontEnd.Components
                 var found = key is null ? default((QK.ReadingVerse Verse, QK.ReadingSection Section))
                                         : _byUid.Values.FirstOrDefault(x => (x.Verse.HafsKeys ?? new string[0]).Contains(key));
 
-                if (listen && _player is object) _player.PlayFrom(found.Verse?.Ayah ?? 0);
+                if (listen && _track is object) RecitationPlayer.Play(_track, found.Verse?.Ayah ?? 0);
 
                 if (found.Verse is object)
                     DomObserver.WhenMounted(_scroll, () => window.setTimeout(_ => Select(found.Verse.Uid, scroll: true), 150));
@@ -154,7 +159,6 @@ namespace QuranKG.FrontEnd.Components
             var key   = here is null ? null : Riwayat.HafsKey(here);
 
             Riwayat.Save(riwaya);
-            _player?.Close();
             _byUid.Clear();
             _selected = default(UID128);
             _playing  = default(UID128);
@@ -183,14 +187,14 @@ namespace QuranKG.FrontEnd.Components
         internal bool Contains(UID128 verse) => _byUid.ContainsKey(verse.ToString());
 
         /// <summary>Starts the surah's recitation at a verse (0: from the start) — a surah's text only.</summary>
-        internal void Listen(int ayah) => _player?.PlayFrom(ayah);
+        internal void Listen(int ayah) { if (_track is object) RecitationPlayer.Play(_track, ayah); }
 
         /// <summary>The verse being recited: marked in the text and, if the player follows, brought into view.</summary>
         private void Recited(QK.RecitedVerseRow row)
         {
             _playing = row is null ? default(UID128) : row.Uid;
             _reader?.MarkPlaying(_playing);
-            if (row is null || _player is null || !_player.Follow) return;
+            if (row is null || !RecitationPlayer.Instance.Follow) return;
 
             var el = _reader?.ElementOf(row.Uid);
             if (el is null) return;
@@ -217,7 +221,7 @@ namespace QuranKG.FrontEnd.Components
             _reader = new QuranReader(_text, _options, new QuranReader.Callbacks
             {
                 OnVerse = (v, _) => Select(v.Uid, scroll: false),
-                OnListen = _player is null ? null : (Action<QK.ReadingVerse>)(v => _player.PlayFrom(v.Ayah)),
+                OnListen = _track is null ? null : (Action<QK.ReadingVerse>)(v => RecitationPlayer.Play(_track, v.Ayah)),
                 OnSurah = _text.Kind == "Surah" ? null : (Action<QK.ReadingSection>)(s => QuranLinks.Go(s.SurahNumber, (s.Verses ?? new QK.ReadingVerse[0]).Select(x => x.Ayah).FirstOrDefault())),
             });
             _scroll.appendChild(_reader.Render());
@@ -238,7 +242,7 @@ namespace QuranKG.FrontEnd.Components
         private void ShowDetails(QK.ReadingVerse v, QK.ReadingSection s)
         {
             _details.Clear();
-            _details.Add(VerseDetails.Create(v, s, CloseDetails, GoToVerse, _settings.ReadInQuran, _player is null ? null : (Action<QK.ReadingVerse>)(x => _player.PlayFrom(x.Ayah)),
+            _details.Add(VerseDetails.Create(v, s, CloseDetails, GoToVerse, _settings.ReadInQuran, _track is null ? null : (Action<QK.ReadingVerse>)(x => RecitationPlayer.Play(_track, x.Ayah)),
                                              Riwayat.IsOther(_text) ? _text.Riwaya : null));
             _details.Show();
             _settings.OnSelected?.Invoke(v);
@@ -299,11 +303,11 @@ namespace QuranKG.FrontEnd.Components
             bar.appendChild(_location.Tooltip(Riwayat.IsOther(_text) ? string.Format("Where the top of the text is in the mushaf of {0} (King Fahd Complex)".t(), Riwayat.Of(_text)?.Name)
                                                                       : "Where the top of the text is in the Madinah mushaf".t()).Render());
 
-            if (_player is object)
+            if (_track is object)
                 bar.appendChild(Look.Button("Listen".t(), () =>
                 {
                     var from = UID128.IsNotNull(_selected) && _byUid.TryGetValue(_selected.ToString(), out var sel) ? sel.Verse.Ayah : 0;
-                    _player.PlayFrom(from);
+                    RecitationPlayer.Play(_track, from);
                 }, "soft", "▶", "The surah recited, the verse being recited marked and followed — from the verse selected, or from the start".t()));
 
             var size = Look.El("div", "qkg-toolbar-group qkg-toolbar-size");
