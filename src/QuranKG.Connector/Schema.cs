@@ -348,6 +348,8 @@ internal static class Nodes
         [Property] public string HafsVerseKeys  { get; set; } = "";
         /// <summary>One per word of Text, space-separated: the Hafs word it is ("2:1:3") or "-".</summary>
         [Property] public string WordLinks      { get; set; } = "";
+        /// <summary>Its tajweed, space-separated "rule:start-end" (UTF-16 positions in Text): "lazim:3-6 tafkhim:40-42".</summary>
+        [Property] public string Tajweed        { get; set; } = "";
     }
 
     /// <summary>

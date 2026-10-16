@@ -174,6 +174,7 @@ QK.ReadingVerse[] RiwayaLines(List<ReadOnlyNode> verses, Dictionary<string, List
             HafsKeys     = keys,
             WordVerse    = verse,
             WordPosition = pos,
+            Tajweed      = r.GetString(N.RiwayaVerse.Tajweed) ?? "",
         };
     }).ToArray();
 }

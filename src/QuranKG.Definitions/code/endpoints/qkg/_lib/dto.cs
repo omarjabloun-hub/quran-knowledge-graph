@@ -543,6 +543,8 @@ public static class QK
         /// <summary>In a reading other than Hafs, one per word of Text: the index in HafsVerses of the Hafs word it is (-1: none), and that word's position.</summary>
         public int[]    WordVerse    { get; set; }
         public int[]    WordPosition { get; set; }
+        /// <summary>Its tajweed (Qalun's text), "rule:start-end …" in Text; empty in Hafs.</summary>
+        public string   Tajweed      { get; set; }
     }
 
     /// <summary>
@@ -805,6 +807,50 @@ public static class QK
         public UID128          SurahUid    { get; set; }
         public int             SurahNumber { get; set; }
         public RecitationDto[] Recitations { get; set; }
+    }
+
+    // --- tajweed (qkg/tajweed/rules) -----------------------------------------------------------
+
+    public class TajweedRequest
+    {
+        /// <summary>Examples per rule (default 6, at most 24).</summary>
+        public int Examples { get; set; }
+    }
+
+    /// <summary>The tajweed of a reading's text, rule by rule, counted live, with examples.</summary>
+    public class TajweedDto
+    {
+        public string             Riwaya      { get; set; }
+        public string             RiwayaName  { get; set; }
+        public string             RiwayaNameArabic { get; set; }
+        /// <summary>The verses read for it.</summary>
+        public int                Verses      { get; set; }
+        public TajweedRuleStats[] Rules       { get; set; }
+    }
+
+    public class TajweedRuleStats
+    {
+        /// <summary>"lazim", "ikhfa", "tafkhim" … (QuranKG.Dataset.Text.Tajweed.Rules).</summary>
+        public string            Rule     { get; set; }
+        /// <summary>The letters it is on, and the verses they are in.</summary>
+        public int               Count    { get; set; }
+        public int               Verses   { get; set; }
+        public TajweedExample[]  Examples { get; set; }
+    }
+
+    /// <summary>A word where a rule applies: the word, the letters the rule is on in it, its verse.</summary>
+    public class TajweedExample
+    {
+        /// <summary>The reading's verse (a RiwayaVerse).</summary>
+        public UID128 Uid         { get; set; }
+        public string VerseKey    { get; set; }
+        public string HafsKey     { get; set; }
+        public int    SurahNumber { get; set; }
+        public string Word        { get; set; }
+        public int    MarkStart   { get; set; }
+        public int    MarkEnd     { get; set; }
+        /// <summary>Every rule on the word, "rule:start-end …" relative to Word.</summary>
+        public string Tajweed     { get; set; }
     }
 
     // --- the home page's search (qkg/search/quick) -----------------------------------------

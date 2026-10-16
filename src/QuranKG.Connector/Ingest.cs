@@ -405,6 +405,7 @@ internal static class RiwayaIngest
                 LineEnd        = v.LineEnd,
                 HafsVerseKeys  = string.Join(' ', v.HafsVerses.Select(h => h.Key)),
                 WordLinks      = string.Join(' ', v.Words.Select(w => w is null ? "-" : $"{w.Value.Verse.Key}:{w.Value.Position}")),
+                Tajweed        = string.Join(' ', v.Tajweed.Select(m => $"{m.Rule}:{m.Start}-{m.End}")),
             }, v.Key);
             ctx.Link(node, nameof(Riwaya), v.Riwaya, Edges.InRiwaya, Edges.RiwayaHasVerse);
             ctx.Link(node, nameof(Surah), v.Surah.ToString(CultureInfo.InvariantCulture), Edges.RiwayaVerseInSurah, Edges.SurahHasRiwayaVerse);

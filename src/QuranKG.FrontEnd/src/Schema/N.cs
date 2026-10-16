@@ -169,6 +169,7 @@ namespace QuranKG.FrontEnd.Schema
             public const string LineEnd = "LineEnd";
             public const string HafsVerseKeys = "HafsVerseKeys";
             public const string WordLinks = "WordLinks";
+            public const string Tajweed = "Tajweed";
         }
 
         public static class Root
