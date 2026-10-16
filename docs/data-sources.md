@@ -87,6 +87,15 @@ no AI tool, no index the AI can query and no document handed to a model may read
 endpoint that returns QurSim pairs (`qkg/verse/words`, for the verse page) must never be exposed as
 an AI tool.
 
+## Reference, not data
+
+- **Dar al-Maarifah, «مصحف التجويد برواية قالون عن نافع»** (the colour-coded Qalun mushaf of Tunisia
+  and Libya; scans on [archive.org](https://archive.org/details/taha_356)): the colours of the
+  tajweed and their key («مد 6 حركات لزوماً» … «قلقلة»). Nothing is taken from it but the key; the
+  rules are found in the King Fahd Complex's Qalun text by `QuranKG.Dataset.Text.Tajweed`, and
+  checked against its printed pages (Al-Fatiha, Al-Baqarah 1–16): the madd before a hamza
+  (badal), the separated madd and the name of God's lām are left black there, so here.
+
 ## Worth adding next
 
 | Dataset | Would add | Notes |

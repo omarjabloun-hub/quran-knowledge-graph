@@ -62,14 +62,25 @@ closes it.
       the place kept; each Qalun word linked to its Hafs word (77,422 of 77,430), so the word tip,
       the key words and the verse panel (Hafs's translations, tafsir, hadith) reach it; the
       recitation follows Qalun's own verse marks exactly; verse counts per reading
+- [x] **Tajweed** (`Text/Tajweed.cs`, `RiwayaVerse.Tajweed`, `qkg/tajweed/rules`,
+      `Components/TajweedKey.cs`, `#/tajweed`): the Qalun text coloured letter by letter in the
+      eight colours of the Dar al-Maarifah Qalun mushaf (and Qalun's own eased hamzas and light
+      vowels, underlined), a switch in the reader with the key under it; a page explaining each
+      rule, counted live, with words to read and hear
+- [ ] **Tajweed, next**:
+  - a Qalun teacher to review the colours (checked so far against Al-Fatiha and Al-Baqarah 1–16
+    of the printed mushaf), then more printed pages compared;
+  - the stops inside a verse: a verse is read as ending on a stop, but the madd before a pause
+    mark, its qalqala and its rā' are not coloured as at a stop;
+  - the colours in the verse panel and on the verse page, not only in the reader;
+  - Hafs's tajweed when reading in Hafs: cpfair/quran-tajweed (CC-BY 4.0) gives every rule's place
+    in the Tanzil Uthmani text;
+  - follow the word being recited, the letters lit as the Sheikh reaches them (needs word timings).
 - [ ] **Qalun, next**:
   - the rest of the app still shows Hafs's text: the verse page (`VerseRenderer`), the home
     search's verses, a hadith's quoted verse, the chat's verse cards — show the reading's text
     there too (`VerseReadIn` gives a Hafs verse's Qalun verses);
   - search the Qalun text (the home search matches Hafs's Simple-Clean and English);
-  - tajweed colours on the Qalun text, and a page explaining the rules (research done: no
-    coloured Qalun data exists; the KFGQPC text marks what the rules need — open tanwin, iqlab's
-    small mim, madd sign, wasl dot; Dar al-Maarifah's legend; a Qalun teacher to review);
   - more readings from the same KFGQPC repository (Warsh — the rest of the Maghreb —, Shu'ba,
     al-Duri, al-Susi, al-Bazzi, Qunbul) through the same `RiwayaSource`;
   - the Qalun mushaf's hizb and thumun marks (۞ in the text: 440) instead of Hafs's hizb;

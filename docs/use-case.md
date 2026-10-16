@@ -19,6 +19,7 @@ the questions below are answered from the Arabic, with translations as reading a
 | Where is this verse — 2:255, Al-Kahf, page 50? Which verses say «الرحمن», or "mercy"? | the search box on the home page |
 | How does this surah sound? Follow the text while it is recited | the Quran View's Listen: Sheikh Latrech, Qalun from Nafi', the verse being recited marked |
 | Read the Quran as it is read in Tunisia | the Quran View in Qalun from Nafi' — its text, numbering and mushaf pages — with Hafs one click away, the place kept; Sheikh Latrech's recitation following Qalun's own verses exactly |
+| How do I recite this correctly? | the Tajweed switch in the reader: every letter in the colour of its rule, as the Dar al-Maarifah Qalun mushaf prints it; the Tajweed page: each rule explained, counted and shown in words to read and hear |
 | What does this verse mean? | the verse panel and the verse page: Ibn Ashur's *al-Tahrir wa al-Tanwir* first, then al-Mukhtasar, al-Jalalayn and Ibn Kathir, each in Arabic and English |
 | Which hadith quote this verse, or speak to it? Is this hadith backed by the Quran? | the verse's Hadith tab; a hadith's page (the verses it quotes, the closest verses); the assistant argues the relation verse by verse |
 | Where else does the Quran say this? | the verse page: Similar verses (Arabic meaning + shared lemmas + roots), Ibn Kathir links (QurSim) |
