@@ -186,6 +186,78 @@ public class CorpusTests
         Assert.Contains(qalun["7:97"].Words, w => w is null);
     }
 
+    // ---- tajweed: what the Dar al-Maarifah Qalun mushaf colours on its first pages -------------------
+
+    // Typed Arabic and the data's may order a letter's marks differently (shadda before or after the
+    // vowel): words are compared in Unicode's canonical order.
+    private static string C(string text) => text.Normalize(System.Text.NormalizationForm.FormD);
+
+    private static void Is(string expected, string actual) => Assert.Equal(C(expected), C(actual));
+
+    /// <summary>The rules on a phrase of a Qalun verse — whole words — as "rule:letters,…".</summary>
+    private string RuleOn(string verse, string phrase)
+    {
+        var v      = Corpus.RiwayaVerses.Single(x => x.Riwaya == "qalun" && x.VerseKey == verse);
+        var tokens = new List<(int Start, int End)>();
+        for (int k = 0, start = 0; k <= v.Text.Length; k++)
+            if (k == v.Text.Length || v.Text[k] == ' ') { if (k > start) tokens.Add((start, k)); start = k + 1; }
+
+        var want = phrase.Split(' ').Select(C).ToArray();
+        for (var t = 0; t + want.Length <= tokens.Count; t++)
+        {
+            if (!want.Select((w, n) => C(v.Text[tokens[t + n].Start..tokens[t + n].End]).StartsWith(w, StringComparison.Ordinal)
+                                       && C(v.Text[tokens[t + n].Start..tokens[t + n].End]).Length - w.Length <= 1).All(x => x)) continue;
+            var from = tokens[t].Start;
+            var to   = tokens[t + want.Length - 1].End;
+            return string.Join(",", v.Tajweed.Where(m => m.Start >= from && m.Start < to)
+                                             .Select(m => m.Rule + ":" + v.Text.Substring(m.Start, m.End - m.Start)));
+        }
+        Assert.Fail($"{phrase} is not in {verse}");
+        return "";
+    }
+
+    [Fact]
+    public void Tajweed_marks_the_madds_as_the_mushaf_does()
+    {
+        Is("lazim:لَٓ,lazim:مِّٓ", RuleOn("2:1", "أَلَٓمِّٓ"));                 // the opening letters: 6
+        Is("lazim:آ", RuleOn("1:7", "اَ۬لضَّآلِّينَ").Split(',')[1]);                // before a doubled letter: 6
+        Is("silent:وْ,muttasil:لَٰٓ", RuleOn("2:4", "أُوْلَٰٓئِكَ"));             // a hamza after it: 4
+        Is("small_alif:ذَٰ", RuleOn("2:1", "ذَٰلِكَ"));                          // the small alif: 2
+        Is("arid:و", RuleOn("2:2", "يُنفِقُونَ").Split(',')[1]);                  // before the stop: 2, 4 or 6
+        Is("silent:اْ", RuleOn("2:8", "ءَامَنُواْ"));                               // badal: short in Qalun, black
+        Is("", RuleOn("2:3", "بِمَا"));                                         // separated: short in this mushaf
+    }
+
+    [Fact]
+    public void Tajweed_marks_the_nun_and_mim_as_the_mushaf_does()
+    {
+        Is("ghunna:مَّ", RuleOn("2:2", "وَمِمَّا"));
+        Is("ikhfa:ن,qalqala:بْ", RuleOn("2:3", "مِن قَبْلِكَ"));
+        Is("idgham:ن", RuleOn("2:4", "مِّن").Split(',')[1]);                     // مِّن رَّبِّهِمْ: no ghunna
+        Is("idgham:نْ,idgham_ghunna:يَّ", RuleOn("2:7", "مَنْ يَّقُولُ").Replace(",tafkhim", ""));
+        Is("idgham_ghunna:وَ", RuleOn("2:6", "وَلَهُمْ"));                       // غِشَٰوَةٞ وَلَهُمْ
+        Is("iqlab:مُۢ", RuleOn("2:9", "أَلِيمُۢ"));
+        Is("ikhfa_shafawi:م", RuleOn("2:7", "هُم"));                              // هُم بِمُؤْمِنِينَ
+        Is("", RuleOn("2:9", "قُلُوبِهِم"));                                     // into a doubled mīm: black
+    }
+
+    [Fact]
+    public void Tajweed_marks_the_ra_the_qalqala_and_the_silent_letters()
+    {
+        Is("tafkhim:رَ", RuleOn("2:2", "رَزَقْنَٰهُمْ").Split(',')[0]);
+        Assert.Contains(C("qalqala:قْ"), C(RuleOn("2:2", "رَزَقْنَٰهُمْ")));
+        Is("qalqala:دْ,tafkhim:رِ", RuleOn("97:1", "اِ۬لْقَدْرِ").Replace("lam_shamsiyya:ل,", ""));
+        Assert.DoesNotContain("tafkhim", RuleOn("2:5", "تُنذِرْهُمْ"));                    // after a kasra: light
+        Is("silent:اْ", RuleOn("2:5", "كَفَرُواْ").Split(',')[1]);
+        Is("lam_shamsiyya:ل,ghunna:نَّ", RuleOn("2:7", "اَ۬لنَّاسِ"));
+        Is("", RuleOn("2:6", "اَ۬للَّهُ"));                                       // the name of God: black
+        Assert.Contains(C("tashil:ا۬"), C(RuleOn("2:5", "ءَٰا۬نذَرْتَهُمْ")));                // Qalun: the second hamza eased
+        Assert.Contains(C("hamzatan:آ۟"), C(RuleOn("2:30", "هَٰؤُلَآ۟ إِن")));              // Qalun: two hamzas across words
+        Is("qalqala:دُۢ", RuleOn("112:4", "أَحَدُۢۖ"));                                    // the verse ends on a stop: no iqlab
+        Is("muttasil:يَٓٔ", RuleOn("98:6", "اُ۬لْبَرِيَٓٔةِۖ"));                                // the hamza written on the madd letter
+        Assert.Contains("muttasil:", RuleOn("3:21", "اَ۬لنَّبِيٓـِٕۧنَ"));                       // Qalun's «النبيئين»: a hamza on a tatweel
+    }
+
     [Fact]
     public void Al_jalalayn_passes_over_some_verses_and_that_is_not_an_error()
     {

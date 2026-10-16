@@ -345,6 +345,8 @@ public sealed class RiwayaVerse
     public required IReadOnlyList<WordLink?> Words { get; init; }
     /// <summary>The corpus's verses its words are in, in order (Qalun 2:1 «الم ذلك الكتاب…» is Hafs 2:1 and 2:2).</summary>
     public required IReadOnlyList<VerseRef> HafsVerses { get; init; }
+    /// <summary>Its tajweed, letter by letter (<see cref="Text.Tajweed"/>): the rule on each run of <see cref="Text"/>.</summary>
+    public IReadOnlyList<Text.TajweedMark> Tajweed { get; init; } = [];
     public string Key      => $"{Riwaya}:{Surah}:{Ayah}";
     public string VerseKey => $"{Surah}:{Ayah}";
 }

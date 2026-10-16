@@ -102,6 +102,8 @@ public static class RiwayaSource
                     LineEnd    = ordered[i].LineEnd,
                     Words      = mine,
                     HafsVerses = covered,
+                    // The rules read the King Fahd Complex's marks (its Madani dabt), which every text from there carries.
+                    Tajweed    = Text.Tajweed.Annotate(texts[i]),
                 });
             }
         }

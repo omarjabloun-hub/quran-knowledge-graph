@@ -138,6 +138,12 @@ just status                     # after an import: "Code compiles", counts as ex
   morphology, tafsirs, hadith links, passages, QurSim — stays on Hafs's `Verse` and `Word`. A Qalun
   verse reaches it only through `ReadsVerse` / `WordLinks`; never hang new knowledge on a
   `RiwayaVerse`, and keep URLs and the last verse read in Hafs keys (`#/read/2/255` opens Qalun 2:253).
+- Tajweed is found in the King Fahd Complex's marks (`Text/Tajweed.cs`): a nūn with no mark is hidden
+  or merged, an open tanwin (U+0656/0657/065E) too, U+06E2 is iqlab, U+0653 marks every long madd, an
+  alif or wāw with sukūn is silent, the dots U+06EC/06EA are hamzat al-wasl (on an initial alif),
+  tas-hil (an alif after a hamza) or ikhtilas (any other letter). Change a rule only with a page of
+  the printed Dar al-Maarifah mushaf in front of you; the rule ids are mirrored in
+  `Components/TajweedKey.cs`.
 - `dotnet build src/QuranKG.FrontEnd` (Debug) only compiles the C#; the JavaScript bundle is built by
   `-c Release` (what `just upload-frontend` runs) — a transpile error shows only there.
 - A source that is a web page: the manifest's `extract` keeps only the regex's group 1 of each part
