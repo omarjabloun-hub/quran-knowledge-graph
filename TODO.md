@@ -67,6 +67,10 @@ closes it.
       eight colours of the Dar al-Maarifah Qalun mushaf (and Qalun's own eased hamzas and light
       vowels, underlined), a switch in the reader with the key under it; a page explaining each
       rule, counted live, with words to read and hear
+- [x] **One player for the app** (`Components/RecitationPlayer.cs`): the recitation keeps playing
+      from page to page in a bar docked at the foot of the window, the surah's name its title and a
+      link back to the verse being recited; a reader of that surah — in Qalun or Hafs — marks and
+      follows it whenever it is on screen
 - [ ] **Tajweed, next**:
   - a Qalun teacher to review the colours (checked so far against Al-Fatiha and Al-Baqarah 1–16
     of the printed mushaf), then more printed pages compared;

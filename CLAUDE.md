@@ -144,6 +144,10 @@ just status                     # after an import: "Code compiles", counts as ex
   tas-hil (an alif after a hamza) or ikhtilas (any other letter). Change a rule only with a page of
   the printed Dar al-Maarifah mushaf in front of you; the rule ids are mirrored in
   `Components/TajweedKey.cs`.
+- The recitation is one player for the whole app (`RecitationPlayer.Instance`), its bar appended to
+  `document.body` so a page change does not remove it. A reader never owns it: it calls
+  `RecitationPlayer.Play(track, ayah)` and `Watch(owner, surah, riwaya, onVerse)`; a watcher whose
+  element has left the page is dropped.
 - `dotnet build src/QuranKG.FrontEnd` (Debug) only compiles the C#; the JavaScript bundle is built by
   `-c Release` (what `just upload-frontend` runs) — a transpile error shows only there.
 - A source that is a web page: the manifest's `extract` keeps only the regex's group 1 of each part
