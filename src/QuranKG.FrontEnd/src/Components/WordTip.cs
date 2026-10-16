@@ -40,9 +40,11 @@ namespace QuranKG.FrontEnd.Components
                 if (target is null || target.classList is null || !target.classList.contains("qkg-w")) return;
                 var position = target.getAttribute("data-qkg-p");
                 if (string.IsNullOrEmpty(position)) return;
+                // A word of a reading other than Hafs names its Hafs verse; any other word is its verse's.
+                var own     = target.getAttribute("data-qkg-v");
                 var verseEl = target.closest("[data-qkg-verse]");
-                if (verseEl is null) return;
-                var uid = resolve(verseEl.getAttribute("data-qkg-verse"));
+                if (string.IsNullOrEmpty(own) && verseEl is null) return;
+                var uid = resolve(string.IsNullOrEmpty(own) ? verseEl.getAttribute("data-qkg-verse") : own);
                 if (UID128.IsNull(uid)) return;
 
                 window.clearTimeout(_hideTimer);

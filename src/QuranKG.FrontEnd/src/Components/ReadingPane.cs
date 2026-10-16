@@ -20,6 +20,11 @@ namespace QuranKG.FrontEnd.Components
     /// (<see cref="VerseDetails"/>) and, for a surah, its recitation (<see cref="RecitationPlayer"/>),
     /// which marks the verse being recited and keeps it in view. The Quran View, a surah's Read tab,
     /// a passage and a theme all read through it, so they read alike.
+    ///
+    /// <para>In a READING (riwaya): Qalun, the main one, or Hafs, one switch away (<see cref="Riwayat"/>).
+    /// In Qalun the verses are Qalun's own — its numbering, its mushaf's pages — and each opens the
+    /// panel on the Hafs verse its words are in, where the graph's knowledge sits. Switching keeps the
+    /// reader's place: the verse at the top is found again through its Hafs verse.</para>
     /// </summary>
     internal sealed class ReadingPane : IComponent
     {
@@ -46,7 +51,7 @@ namespace QuranKG.FrontEnd.Components
 
         private readonly Settings      _settings;
         private readonly ReaderOptions _options;
-        private readonly IComponent    _content;
+        private readonly Stack         _content;
         private readonly HTMLElement   _scroll;
         private readonly Stack         _details;
         private readonly Dictionary<string, (QK.ReadingVerse Verse, QK.ReadingSection Section)> _byUid = new Dictionary<string, (QK.ReadingVerse, QK.ReadingSection)>();
@@ -76,9 +81,20 @@ namespace QuranKG.FrontEnd.Components
                                .Style(s => s.setProperty("border-left", "1px solid var(--qkg-line)"));
             _details.Collapse();
 
-            _content = Defer(async () =>
+            _content = VStack().S();
+            _content.Add(Build(text => settings.InitialAyah > 0 && text.Kind == "Surah"
+                                           ? (text.Sections ?? new QK.ReadingSection[0]).Select(x => x.SurahNumber).FirstOrDefault() + ":" + settings.InitialAyah
+                                           : null,
+                               settings.ListenOnOpen));
+        }
+
+        /// <summary>The text in the reading chosen, opened on the verse holding <paramref name="target"/> (a Hafs key; null for the top).</summary>
+        private IComponent Build(Func<QK.ReadingDto, string> target, bool listen)
+        {
+            var settings = _settings;
+            return Defer(async () =>
             {
-                _text = await QuranApi.ReadTextAsync(settings.Uid);
+                _text = await QuranApi.ReadTextAsync(settings.Uid, Riwayat.Saved());
                 foreach (var section in _text.Sections ?? new QK.ReadingSection[0])
                     foreach (var verse in section.Verses ?? new QK.ReadingVerse[0])
                         _byUid[verse.Uid.ToString()] = (verse, section);
@@ -88,6 +104,7 @@ namespace QuranKG.FrontEnd.Components
                     {
                         Surah          = settings.Uid,
                         VerseKeyPrefix = (_text.Sections ?? new QK.ReadingSection[0]).Select(x => x.SurahNumber + ":").FirstOrDefault() ?? "",
+                        Riwaya         = _text.Riwaya,
                         OnVerse        = Recited,
                     });
 
@@ -114,17 +131,38 @@ namespace QuranKG.FrontEnd.Components
 
                 Draw();
 
-                if (settings.ListenOnOpen && _player is object) _player.PlayFrom(settings.InitialAyah);
+                // The verse to open on: the one of this reading holding the Hafs verse asked for.
+                var key   = target(_text);
+                var found = key is null ? default((QK.ReadingVerse Verse, QK.ReadingSection Section))
+                                        : _byUid.Values.FirstOrDefault(x => (x.Verse.HafsKeys ?? new string[0]).Contains(key));
 
-                if (settings.InitialAyah > 0)
-                {
-                    var target = _byUid.Values.FirstOrDefault(x => x.Verse.Ayah == settings.InitialAyah);
-                    if (target.Verse is object)
-                        DomObserver.WhenMounted(_scroll, () => window.setTimeout(_ => Select(target.Verse.Uid, scroll: true), 150));
-                }
+                if (listen && _player is object) _player.PlayFrom(found.Verse?.Ayah ?? 0);
+
+                if (found.Verse is object)
+                    DomObserver.WhenMounted(_scroll, () => window.setTimeout(_ => Select(found.Verse.Uid, scroll: true), 150));
 
                 return HStack().S().Children(left, _details);
             }, TextBlock("Opening the text…".t()).Secondary().P(24)).S();
+        }
+
+        /// <summary>Reads the text again in another reading, where the reader was.</summary>
+        private void SwitchTo(string riwaya)
+        {
+            var view  = _scroll.getBoundingClientRect().As<DOMRect>();
+            var here  = UID128.IsNotNull(_selected) && _byUid.TryGetValue(_selected.ToString(), out var sel) ? sel.Verse : _reader?.VerseAt(view.top + 24);
+            var key   = here is null ? null : Riwayat.HafsKey(here);
+
+            Riwayat.Save(riwaya);
+            _player?.Close();
+            _byUid.Clear();
+            _selected = default(UID128);
+            _playing  = default(UID128);
+            _details.Clear();
+            _details.Collapse();
+            _settings.OnSelected?.Invoke(null);
+
+            _content.Clear();
+            _content.Add(Build(_ => key, listen: false));
         }
 
         public HTMLElement Render() => _content.Render();
@@ -199,7 +237,8 @@ namespace QuranKG.FrontEnd.Components
         private void ShowDetails(QK.ReadingVerse v, QK.ReadingSection s)
         {
             _details.Clear();
-            _details.Add(VerseDetails.Create(v, s, CloseDetails, GoToVerse, _settings.ReadInQuran, _player is null ? null : (Action<QK.ReadingVerse>)(x => _player.PlayFrom(x.Ayah))));
+            _details.Add(VerseDetails.Create(v, s, CloseDetails, GoToVerse, _settings.ReadInQuran, _player is null ? null : (Action<QK.ReadingVerse>)(x => _player.PlayFrom(x.Ayah)),
+                                             Riwayat.IsOther(_text) ? _text.Riwaya : null));
             _details.Show();
             _settings.OnSelected?.Invoke(v);
         }
@@ -233,6 +272,8 @@ namespace QuranKG.FrontEnd.Components
             var pages = _options.Layout == ReaderOptions.PAGES;
 
             bar.appendChild(Layouts());
+            var readings = Readings();
+            if (readings is object) bar.appendChild(readings);
 
             var toggles = Look.El("div", "qkg-toolbar-group");
             if (_text.PassagesBuilt && !pages)
@@ -250,7 +291,8 @@ namespace QuranKG.FrontEnd.Components
             bar.appendChild(spacer);
 
             _location = TextBlock("").Small().NoWrap().Class("qkg-toolbar-where");
-            bar.appendChild(_location.Tooltip("Where the top of the text is in the Madinah mushaf".t()).Render());
+            bar.appendChild(_location.Tooltip(Riwayat.IsOther(_text) ? string.Format("Where the top of the text is in the mushaf of {0} (King Fahd Complex)".t(), Riwayat.Of(_text)?.Name)
+                                                                      : "Where the top of the text is in the Madinah mushaf".t()).Render());
 
             if (_player is object)
                 bar.appendChild(Look.Button("Listen".t(), () =>
@@ -302,10 +344,30 @@ namespace QuranKG.FrontEnd.Components
             {
                 "One verse to a row, with its key — and its translation if English is on".t(),
                 "The verses flowing one after another, passage by passage".t(),
-                "The pages of the Madinah mushaf (604), each closed by its number".t(),
+                Riwayat.IsOther(_text) ? string.Format("The pages of the mushaf of {0} (604), each closed by its number".t(), Riwayat.Of(_text)?.Name)
+                                       : "The pages of the Madinah mushaf (604), each closed by its number".t(),
             };
             var buttons = seg.querySelectorAll("button");
             for (var i = 0; i < buttons.length; i++) buttons[i].As<HTMLElement>().title = tips[i];
+            return seg;
+        }
+
+        /// <summary>The readings the text can be read in, as a segmented switch, the main one first; null with only one.</summary>
+        private HTMLElement Readings()
+        {
+            var riwayat = _text.Riwayat ?? new QK.RiwayaOption[0];
+            if (riwayat.Length < 2) return null;
+            var current = Array.FindIndex(riwayat, r => r.Id == _text.Riwaya);
+            var seg = Look.Segmented(riwayat.Select(Riwayat.Short).ToArray(), current, i =>
+            {
+                if (riwayat[i].Id == _text.Riwaya) return;
+                SwitchTo(riwayat[i].IsMain ? "" : riwayat[i].Id);
+            }, "Reading".t());
+            seg.classList.add("qkg-readings");
+            var buttons = seg.querySelectorAll("button");
+            for (var i = 0; i < buttons.length && i < riwayat.Length; i++)
+                buttons[i].As<HTMLElement>().title = riwayat[i].NameArabic + " — " + riwayat[i].Name + " · " + string.Format("{0:N0} verses".t(), riwayat[i].Verses)
+                                                   + (riwayat[i].IsMain ? " · " + "the main reading".t() : "") + "\n" + riwayat[i].Description;
             return seg;
         }
 
@@ -376,6 +438,7 @@ namespace QuranKG.FrontEnd.Components
 .qkg-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 32px 12px 32px; }
 .qkg-toolbar-group { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .qkg-toolbar-where { color: var(--qkg-ink-3); }
+.qkg-readings button { font-family: {FONT}; font-size: 17px; }
 .qkg-toolbar-size .qkg-iconbtn { width: 32px; height: 32px; font-size: 13px; font-weight: 600; }
 .qkg-chip-swatch { width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid currentColor; box-sizing: border-box; opacity: .7; }
 .qkg-chip.qkg-on .qkg-chip-swatch { background: currentColor; opacity: 1; }
@@ -393,7 +456,7 @@ namespace QuranKG.FrontEnd.Components
 .qkg-reader-header-ar { font-size: 28px; color: var(--qkg-teal-strong); }
 .qkg-study { background: var(--qkg-bg); }
 @media (max-width: 700px) { .qkg-toolbar, .qkg-reader-header { padding-left: 16px; padding-right: 16px; } }
-";
+".Replace("{FONT}", Arabic.FONT_FAMILY);
             document.head.appendChild(style);
         }
 

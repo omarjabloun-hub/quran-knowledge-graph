@@ -28,23 +28,86 @@ namespace QuranKG.FrontEnd.Components
         /// <param name="goToVerse">Where a related verse leads: in the Quran View, to the verse in the text; elsewhere, to its page.</param>
         /// <param name="readInQuran">Whether to offer to read the verse in its surah (not in the Quran View itself).</param>
         /// <param name="listen">Listen to the surah's recitation from this verse; null when there is none (a passage, a theme).</param>
-        internal static IComponent Create(QK.ReadingVerse v, QK.ReadingSection s, Action close, Action<UID128, string> goToVerse, bool readInQuran, Action<QK.ReadingVerse> listen = null)
+        /// <param name="riwaya">
+        /// The reading <paramref name="v"/> is in when it is not Hafs ("qalun"), else null. Its text
+        /// is shown; what the graph knows — translations, words, tafsir, hadith, related verses — is
+        /// read on the Hafs verse its words are in, one at a time when they are in two (Qalun 2:1 is
+        /// Hafs 2:1 and 2:2).
+        /// </param>
+        internal static IComponent Create(QK.ReadingVerse v, QK.ReadingSection s, Action close, Action<UID128, string> goToVerse, bool readInQuran, Action<QK.ReadingVerse> listen = null, string riwaya = null)
         {
             Look.EnsureStyles();
             EnsureStyles();
             goToVerse = goToVerse ?? ((uid, _) => Lists.Open(uid));
 
+            var root = VStack().WS();
+            void Fill(int index)
+            {
+                root.Clear();
+                root.Add(Panel(v, Study(v, riwaya, index), index, s, close, goToVerse, readInQuran, listen, riwaya, Fill));
+            }
+            Fill(0);
+            return root;
+        }
+
+        /// <summary>The Hafs verse the panel reads the graph on: <paramref name="v"/> itself in Hafs; in another reading, its <paramref name="index"/>th Hafs verse, with the reading's text.</summary>
+        private static QK.ReadingVerse Study(QK.ReadingVerse v, string riwaya, int index)
+        {
+            if (riwaya is null || v.HafsVerses is null || v.HafsVerses.Length == 0 || v.HafsKeys is null) return v;
+            index = Math.Max(0, Math.Min(index, v.HafsVerses.Length - 1));
+            var key   = v.HafsKeys[index];
+            var colon = key.IndexOf(':');
+            return new QK.ReadingVerse
+            {
+                Uid         = v.HafsVerses[index],
+                VerseKey    = key,
+                Ayah        = colon > 0 && int.TryParse(key.Substring(colon + 1), out var a) ? a : v.Ayah,
+                Text        = v.Text,
+                Translation = "",
+                Words       = v.Words,
+                Highlights  = v.Highlights,
+                Sajda       = v.Sajda,
+                Page        = v.Page,
+                Juz         = v.Juz,
+                Hizb        = v.Hizb,
+                HafsVerses  = new[] { v.HafsVerses[index] },
+                HafsKeys    = new[] { key },
+            };
+        }
+
+        private static IComponent Panel(QK.ReadingVerse v, QK.ReadingVerse study, int index, QK.ReadingSection s, Action close, Action<UID128, string> goToVerse,
+                                        bool readInQuran, Action<QK.ReadingVerse> listen, string riwaya, Action<int> refill)
+        {
+            var shown   = v;   // the verse as read (Qalun's), kept: v becomes the Hafs verse studied below
             var actions = Look.El("div", "qkg-study-actions");
-            if (listen is object) actions.appendChild(Look.IconButton("▶", "Listen from this verse".t(), () => listen(v)));
-            if (readInQuran) actions.appendChild(Look.IconButton("☰", "Read it in its surah".t(), () => QuranLinks.Go(v.VerseKey)));
-            actions.appendChild(Look.IconButton("↗", "Open the verse's page".t(), () => Lists.Open(v.Uid)));
+            if (listen is object) actions.appendChild(Look.IconButton("▶", "Listen from this verse".t(), () => listen(shown)));
+            if (readInQuran) actions.appendChild(Look.IconButton("☰", "Read it in its surah".t(), () => QuranLinks.Go(study.VerseKey)));
+            actions.appendChild(Look.IconButton("↗", "Open the verse's page".t(), () => Lists.Open(study.Uid)));
             actions.appendChild(Look.IconButton("✕", "Close".t(), () => close()));
 
-            var head = Look.El("div", "qkg-study-head");
-            head.appendChild(Look.El("div", "qkg-study-title",
+            var head  = Look.El("div", "qkg-study-head");
+            var title = Look.El("div", "qkg-study-title",
                 Look.El("h2", "qkg-h2", v.VerseKey),
-                Look.El("span", "qkg-note", s.SurahNumber + " · " + s.SurahName + (v.Page > 0 ? " · " + string.Format("Juz {0} · page {1}".t(), v.Juz, v.Page) : ""))));
+                Look.El("span", "qkg-note", s.SurahNumber + " · " + s.SurahName + (v.Page > 0 ? " · " + string.Format("Juz {0} · page {1}".t(), v.Juz, v.Page) : "")));
+            if (riwaya is object && v.HafsKeys is object && v.HafsKeys.Length > 0)
+            {
+                // The Hafs verse(s) behind it: where the translations, the tafsir and the hadith are.
+                var hafs = Look.El("div", "qkg-study-hafs");
+                hafs.appendChild(Look.El("span", "qkg-note", v.HafsKeys.Length > 1 ? "In Hafs, verses".t() : "In Hafs, verse".t()));
+                for (var i = 0; i < v.HafsKeys.Length; i++)
+                {
+                    var captured = i;
+                    var chip = Look.Chip(v.HafsKeys[i], v.HafsKeys.Length > 1 ? (Action)(() => refill(captured)) : null, i == index);
+                    chip.title = v.HafsKeys.Length > 1 ? "Read what the graph holds on this Hafs verse: its translations, words, tafsir and hadith".t()
+                                                       : "The graph's translations, words, tafsir and hadith are on the Hafs verse".t();
+                    hafs.appendChild(chip);
+                }
+                title.appendChild(hafs);
+            }
+            head.appendChild(title);
             head.appendChild(actions);
+
+            v = study;
 
             var body = VStack().WS().Gap(22.px()).Class("qkg-study-body");
             var tabs = new[] { "Verse".t(), "Tafsir".t(), "Hadith".t(), "Related".t() };
@@ -57,7 +120,7 @@ namespace QuranKG.FrontEnd.Components
                     case 1: body.Add(TafsirView.Create(v.Uid, heading: false)); break;
                     case 2: body.Add(HadithPart(v)); break;
                     case 3: body.Add(RelatedPart(v, goToVerse)); break;
-                    default: body.Add(VersePart(v, s)); break;
+                    default: body.Add(VersePart(v, s, riwaya)); break;
                 }
             }
             var tabBar = Look.Segmented(tabs, Saved(), Show, "About this verse".t());
@@ -73,11 +136,11 @@ namespace QuranKG.FrontEnd.Components
         // -----------------------------------------------------------------------------------
 
         /// <summary>The verse: the Arabic, its translations, its passage and theme, its words.</summary>
-        private static IComponent VersePart(QK.ReadingVerse v, QK.ReadingSection s)
+        private static IComponent VersePart(QK.ReadingVerse v, QK.ReadingSection s, string riwaya)
         {
             var part = VStack().WS().Gap(20.px());
 
-            part.Add(Raw(Look.El("p", "qkg-study-ar", v.Text)).Style(st => { st.setProperty("direction", "rtl"); }));
+            part.Add(Raw(Look.El("p", "qkg-study-ar", v.Text)).Style(st => { st.setProperty("direction", "rtl"); if (riwaya is object) st.setProperty("font-family", Arabic.FontFor(riwaya)); }));
 
             part.Add(Defer(async () =>
             {
@@ -282,7 +345,9 @@ namespace QuranKG.FrontEnd.Components
             if (_styled) return;
             _styled = true;
             var style = document.createElement("style");
-            style.textContent = CSS.Replace("{FONT}", Arabic.FONT_FAMILY);
+            style.textContent = CSS.Replace("{FONT}", Arabic.FONT_FAMILY) + @"
+.qkg-study-hafs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+";
             document.head.appendChild(style);
         }
 

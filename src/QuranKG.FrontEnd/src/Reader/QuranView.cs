@@ -59,8 +59,9 @@ namespace QuranKG.FrontEnd.Reader
                     OnSelected         = v =>
                     {
                         if (index is object) { if (v is object) index.Collapse(); else index.Show(); }
-                        window.history.replaceState(null, "", QuranLinks.For(_surah, v?.Ayah ?? 0));
-                        if (v is object) QuranLinks.Remember(_surah, v.Ayah);
+                        // Links and the last verse read name the Hafs verse, whatever the reading: #/read/2/255.
+                        window.history.replaceState(null, "", QuranLinks.For(_surah, Riwayat.HafsAyah(v)));
+                        if (v is object) QuranLinks.Remember(_surah, Riwayat.HafsAyah(v));
                     },
                 });
 
@@ -91,12 +92,29 @@ namespace QuranKG.FrontEnd.Reader
                 Look.El("span", "qkg-note", s.NameEnglish)));
             header.appendChild(next);
             header.appendChild(Look.PlaceBadge(s.Place));
-            header.appendChild(Look.Badge(string.Format("{0} verses".t(), s.Verses)));
+            // The verses as the reading counts them (Qalun's Al-Baqarah: 285), Hafs's count beside when it differs.
+            var reading = Riwayat.Of(text);
+            var count   = reading?.SurahVerses is object && reading.SurahVerses.Length >= _surah ? reading.SurahVerses[_surah - 1] : s.Verses;
+            var badge   = Look.Badge(string.Format("{0} verses".t(), count));
+            if (reading is object && !reading.IsCorpusText)
+                badge.title = string.Format("{0} verses in {1}, which counts them the Madani way; {2} in Hafs".t(), count, reading.Name, s.Verses);
+            header.appendChild(badge);
+            UpdateIndex(reading);
             if (passages > 0) header.appendChild(Look.Badge(string.Format("{0} passages".t(), passages)));
             header.appendChild(Look.Badge(string.Format("revealed #{0}".t(), s.RevelationOrder)));
             header.appendChild(Look.El("span", "qkg-toolbar-spacer"));
             header.appendChild(Look.Button("Surah page".t(), () => Lists.Open(s.Uid), "ghost", "↗", "Its profile, passages and similar surahs".t()));
             return Raw(header).WS();
+        }
+
+        private readonly System.Collections.Generic.List<(int Number, HTMLElement Meta)> _indexMeta = new System.Collections.Generic.List<(int, HTMLElement)>();
+
+        /// <summary>The index's verse counts, as the reading being read counts them.</summary>
+        private void UpdateIndex(QK.RiwayaOption reading)
+        {
+            if (reading?.SurahVerses is null) return;
+            foreach (var item in _indexMeta)
+                if (item.Number >= 1 && item.Number <= reading.SurahVerses.Length) item.Meta.textContent = string.Format("{0} verses".t(), reading.SurahVerses[item.Number - 1]);
         }
 
         /// <summary>The 114 surahs, filterable by number, name or Arabic name; the one being read lit and in view.</summary>
@@ -107,9 +125,11 @@ namespace QuranKG.FrontEnd.Reader
             {
                 var row = Look.El("div", "qkg-index-row" + (s.Number == _surah ? " qkg-on" : ""));
                 row.appendChild(Look.El("span", "qkg-index-n", s.Number.ToString()));
+                var meta = Look.El("span", "qkg-index-meta", string.Format("{0} verses".t(), s.Verses));
+                _indexMeta.Add((s.Number, meta));
                 row.appendChild(Look.El("span", "qkg-index-text",
                     Look.El("span", "qkg-index-name", s.Name),
-                    Look.El("span", "qkg-index-meta", string.Format("{0} verses".t(), s.Verses))));
+                    meta));
                 var ar = Look.Ar(s.NameArabic, "qkg-arw qkg-index-ar");
                 ar.style.color = s.Place == QK.MEDINAN ? "var(--qkg-medinan)" : "var(--qkg-meccan)";
                 row.appendChild(ar);

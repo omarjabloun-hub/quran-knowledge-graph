@@ -78,7 +78,8 @@ namespace QuranKG.FrontEnd.Api
             => Mosaik.API.Endpoints.CallAsync<QK.ClusterMapDto>(Endpoints.ClustersMap, readOnlyCompatible: true);
 
         /// <summary>A Surah or a Cluster (a passage or a theme) as text to read.</summary>
-        internal static Task<QK.ReadingDto> ReadTextAsync(UID128 surahOrClusterUID)
-            => Mosaik.API.Endpoints.CallAsync<QK.ReadingDto>(Endpoints.ReadText, new QK.UidRequest { Uid = surahOrClusterUID }, readOnlyCompatible: true);
+        /// <param name="riwaya">The reading ("qalun", "hafs"); empty for the main one.</param>
+        internal static Task<QK.ReadingDto> ReadTextAsync(UID128 surahOrClusterUID, string riwaya = "")
+            => Mosaik.API.Endpoints.CallAsync<QK.ReadingDto>(Endpoints.ReadText, new QK.ReadingRequest { Uid = surahOrClusterUID, Riwaya = riwaya ?? "" }, readOnlyCompatible: true);
     }
 }

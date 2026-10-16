@@ -102,6 +102,8 @@ namespace QuranKG.FrontEnd.Components
     internal sealed class QuranReader : IComponent
     {
         private const string BISMILLAH = "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ";
+        // The Bismillah as the King Fahd Complex writes Qalun (its Maghrebi wasl marks).
+        private const string BISMILLAH_QALUN = "بِسْمِ اِ۬للَّهِ اِ۬لرَّحْمَٰنِ اِ۬لرَّحِيمِ";
 
         internal sealed class Callbacks
         {
@@ -127,7 +129,9 @@ namespace QuranKG.FrontEnd.Components
             EnsureStyles();
             Arabic.EnsureFonts();
 
-            _root = Div(Att("qkg-reader qkg-layout-" + options.Layout));
+            _root = Div(Att("qkg-reader qkg-layout-" + options.Layout + " qkg-riwaya-" + (text.Riwaya ?? "hafs")));
+            // A reading other than Hafs: its verses are its own, each word linked to Hafs's.
+            var other = (text.Riwayat ?? new QK.RiwayaOption[0]).Any(r => r.Id == text.Riwaya && !r.IsCorpusText);
             _root.style.setProperty("--qkg-size", options.FontSize + "px");
             if (options.KeyWords) _root.classList.add("qkg-keywords");
 
@@ -145,7 +149,9 @@ namespace QuranKG.FrontEnd.Components
                 title.appendChild(name);
                 // Tanzil prefixes the Bismillah to verse 1 of every surah but 1 (where it IS verse 1)
                 // and 9 (which has none); the connector strips it, so it is drawn here as the heading.
-                if (s.SurahNumber != 1 && s.SurahNumber != 9) title.appendChild(Text("div", "qkg-bismillah", BISMILLAH, rtl: true));
+                // Qalun counts no Bismillah as a verse, Al-Fatiha's included: it heads every surah but 9.
+                if (s.SurahNumber != 9 && (other || s.SurahNumber != 1))
+                    title.appendChild(Text("div", "qkg-bismillah", text.Riwaya == "qalun" ? BISMILLAH_QALUN : BISMILLAH, rtl: true));
                 _root.appendChild(title);
             }
 
@@ -537,6 +543,8 @@ namespace QuranKG.FrontEnd.Components
             els.Add(span);
 
             span.title        = v.VerseKey;
+            // The words of a reading other than Hafs name their Hafs verse: the word tip resolves it here.
+            foreach (var h in v.HafsVerses ?? new UID128[0]) _uids[h.ToString()] = h;
             span.onclick      = _ => callbacks.OnVerse?.Invoke(v, s);
             span.onmouseenter = _ => { foreach (var el in els) el.classList.add("qkg-hover"); };
             span.onmouseleave = _ => { foreach (var el in els) el.classList.remove("qkg-hover"); };
@@ -554,6 +562,8 @@ namespace QuranKG.FrontEnd.Components
             // The positions are the morphology's only when the counts agree; otherwise no word is
             // marked and none carries a position (so no tooltip names the wrong word).
             var aligned    = tokens.Count(IsWord) == v.Words;
+            // A reading other than Hafs: each word's own Hafs word (verse, position), not its place here.
+            var linked     = v.WordVerse is object && v.WordPosition is object && v.WordVerse.Length == v.Words && v.HafsVerses is object;
             var marks      = highlights.Length > 0 && aligned ? new HashSet<int>(highlights) : null;
 
             var plain    = new StringBuilder();
@@ -570,7 +580,16 @@ namespace QuranKG.FrontEnd.Components
                 position++;
                 if (plain.Length > 0) { into.appendChild(document.createTextNode(plain.ToString())); plain.Clear(); }
                 var word = Text("span", marks is object && marks.Contains(position) ? "qkg-w qkg-kw" : "qkg-w", token);
-                if (aligned) word.setAttribute("data-qkg-p", position.ToString());
+                if (aligned && linked)
+                {
+                    var at = v.WordVerse[position - 1];
+                    if (at >= 0 && at < v.HafsVerses.Length)
+                    {
+                        word.setAttribute("data-qkg-v", v.HafsVerses[at].ToString());
+                        word.setAttribute("data-qkg-p", v.WordPosition[position - 1].ToString());
+                    }
+                }
+                else if (aligned) word.setAttribute("data-qkg-p", position.ToString());
                 into.appendChild(word);
                 plain.Append(' ');
             }
@@ -614,7 +633,7 @@ namespace QuranKG.FrontEnd.Components
             _styled = true;
 
             var style = document.createElement("style");
-            style.textContent = CSS.Replace("{FONT}", Arabic.FONT_FAMILY);
+            style.textContent = CSS.Replace("{QALUN}", Arabic.QALUN_FONT_FAMILY).Replace("{FONT}", Arabic.FONT_FAMILY);
             document.head.appendChild(style);
         }
 
@@ -675,6 +694,7 @@ namespace QuranKG.FrontEnd.Components
 .qkg-row-sajda { color: var(--qkg-gold); font-size: 18px; }
 .qkg-row-body { min-width: 0; }
 .qkg-row-ar { font-family: {FONT}; font-size: var(--qkg-size); line-height: 2.1; text-align: right; color: var(--qkg-ink); }
+.qkg-riwaya-qalun .qkg-ar, .qkg-riwaya-qalun .qkg-row-ar, .qkg-riwaya-qalun .qkg-bismillah { font-family: {QALUN}; }
 .qkg-row-en { font-size: 17px; line-height: 1.65; color: var(--qkg-ink-2); margin-top: 12px; }
 .qkg-row-src { font-size: 12px; color: var(--qkg-ink-3); margin-top: 6px; }
 .qkg-row.qkg-hover { background-color: var(--qkg-surface); }

@@ -22,6 +22,14 @@ namespace QuranKG.FrontEnd.Components
 
         private static bool _fontsRequested;
 
+        /// <summary>
+        /// The King Fahd Complex's font for the Qalun text: its marks (the Maghrebi dot of hamzat
+        /// al-wasl, the open tanwin written as U+0656/0657/065E, ے for a final yā') draw only in it.
+        /// Pinned to the commit of the text in data/manifest.json.
+        /// </summary>
+        internal const string QALUN_FONT_FAMILY = "'KFGQPC Qalun', " + FONT_FAMILY;
+        private  const string QALUN_FONT_URL    = "https://cdn.jsdelivr.net/gh/thetruetruth/quran-data-kfgqpc@281dbbe8eed1370daa5a023b6cd81655cbfd6473/qaloon/font/qaloon.10.woff2";
+
         internal static void EnsureFonts()
         {
             if (_fontsRequested) return;
@@ -31,7 +39,14 @@ namespace QuranKG.FrontEnd.Components
             link.setAttribute("rel", "stylesheet");
             link.setAttribute("href", FONTS_URL);
             document.head.appendChild(link);
+
+            var qalun = document.createElement("style");
+            qalun.textContent = "@font-face { font-family: 'KFGQPC Qalun'; src: url('" + QALUN_FONT_URL + "') format('woff2'); font-display: swap; }";
+            document.head.appendChild(qalun);
         }
+
+        /// <summary>The font family a reading's text is drawn in: Qalun's own, else the Uthmani text's.</summary>
+        internal static string FontFor(string riwaya) => riwaya == "qalun" ? QALUN_FONT_FAMILY : FONT_FAMILY;
 
         /// <summary>A block of Quranic text — a verse, a surah being read.</summary>
         internal static TextBlock Text(string text, int pixelSize = 24)

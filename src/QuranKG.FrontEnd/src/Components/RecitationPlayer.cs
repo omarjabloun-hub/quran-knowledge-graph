@@ -17,9 +17,11 @@ namespace QuranKG.FrontEnd.Components
     /// view.
     ///
     /// <para>The recording is streamed from where its source hosts it; where each verse starts in it
-    /// comes from qkg/surah/recitation. A recitation in another reading counts its verses its own
-    /// way (Qalun: 285 verses in Al-Baqarah): the times are already the corpus's verses, a few of
-    /// them estimated (<see cref="QK.RecitedVerseRow.Exact"/>), which the bar says.</para>
+    /// comes from qkg/surah/recitation. Read in the recording's own reading (Qalun's text, Sheikh
+    /// Latrech's Qalun), the text follows the recording's own verses, every one timed exactly
+    /// (<see cref="QK.RecitationDto.RecordedVerseRows"/>). Read in another (Hafs), whose verses the
+    /// recording counts its own way, the times are carried over to the text's verses, a few of them
+    /// estimated (<see cref="QK.RecitedVerseRow.Exact"/>), which the bar says.</para>
     /// </summary>
     internal sealed class RecitationPlayer : IComponent
     {
@@ -27,6 +29,8 @@ namespace QuranKG.FrontEnd.Components
         {
             internal UID128 Surah    { get; set; }
             internal string VerseKeyPrefix { get; set; }
+            /// <summary>The reading the text is in ("qalun", "hafs").</summary>
+            internal string Riwaya   { get; set; }
             /// <summary>The verse being recited; null when the recitation stops or closes.</summary>
             internal Action<QK.RecitedVerseRow> OnVerse { get; set; }
         }
@@ -43,6 +47,9 @@ namespace QuranKG.FrontEnd.Components
         private readonly HTMLElement      _progressFill;
 
         private QK.RecitationDto _recitation;
+        /// <summary>The verses the text shows, timed: the recording's own when the text is in its reading.</summary>
+        private QK.RecitedVerseRow[] _rows = new QK.RecitedVerseRow[0];
+        private bool _ownReading;
         private HTMLElement      _play, _speed, _repeat, _follow;
         private TextBlock        _where, _time;
         private int              _current = -1;
@@ -129,6 +136,9 @@ namespace QuranKG.FrontEnd.Components
         {
             var dto = await QuranApi.SurahRecitationAsync(_settings.Surah);
             _recitation = (dto?.Recitations ?? new QK.RecitationDto[0]).FirstOrDefault();
+            _ownReading = _recitation is object && !string.IsNullOrEmpty(_recitation.RiwayaId) && _recitation.RiwayaId == _settings.Riwaya
+                       && (_recitation.RecordedVerseRows ?? new QK.RecitedVerseRow[0]).Length > 0;
+            _rows       = _recitation is null ? new QK.RecitedVerseRow[0] : (_ownReading ? _recitation.RecordedVerseRows : _recitation.Verses) ?? new QK.RecitedVerseRow[0];
 
             _body.Clear();
             if (_recitation is null)
@@ -202,8 +212,11 @@ namespace QuranKG.FrontEnd.Components
         }
 
         private string About()
-            => string.Format("Sheikh {0} recites in the reading of {1} ({2}). The text shown is Hafs's, so a few words are read differently, and {1} counts the verses its own way: {3} in this surah, {4} in the text. A verse that starts inside one of the recording's verses is marked ≈ — its start is estimated. {5}".t(),
-                             _recitation.ReciterName, _recitation.Riwaya, _recitation.RiwayaArabic, _recitation.RecordedVerses, _recitation.Verses?.Length ?? 0, _recitation.Attribution);
+            => _ownReading
+               ? string.Format("Sheikh {0} recites in the reading of {1} ({2}), the reading of the text: each of its {3} verses here is followed where the recording itself marks it. {4}".t(),
+                               _recitation.ReciterName, _recitation.Riwaya, _recitation.RiwayaArabic, _recitation.RecordedVerses, _recitation.Attribution)
+               : string.Format("Sheikh {0} recites in the reading of {1} ({2}). The text shown is in another reading, so a few words are read differently, and {1} counts the verses its own way: {3} in this surah, {4} in the text. A verse that starts inside one of the recording's verses is marked ≈ — its start is estimated. {5}".t(),
+                               _recitation.ReciterName, _recitation.Riwaya, _recitation.RiwayaArabic, _recitation.RecordedVerses, _recitation.Verses?.Length ?? 0, _recitation.Attribution);
 
         private string SpeedLabel() => Speeds[_speedIndex].ToString("0.##") + "×";
 
@@ -246,7 +259,7 @@ namespace QuranKG.FrontEnd.Components
 
         private void Step(int delta)
         {
-            var verses = _recitation?.Verses ?? new QK.RecitedVerseRow[0];
+            var verses = _rows;
             if (verses.Length == 0) return;
             var target = Math.Max(0, Math.Min(verses.Length - 1, (_current < 0 ? 0 : _current) + delta));
             Seek(verses[target].Ayah);
@@ -256,7 +269,7 @@ namespace QuranKG.FrontEnd.Components
         /// <summary>To the start of a verse; 0 is the start of the recording (the Bismillah, recited before verse 1).</summary>
         private void Seek(int ayah)
         {
-            var verses = _recitation?.Verses ?? new QK.RecitedVerseRow[0];
+            var verses = _rows;
             var row    = verses.FirstOrDefault(v => v.Ayah == ayah);
             _audio.currentTime = ayah <= 1 || row is null ? 0 : row.Start;
             Tick();
@@ -266,7 +279,7 @@ namespace QuranKG.FrontEnd.Components
         {
             if (_recitation is null) return;
             var t      = _audio.currentTime;
-            var verses = _recitation.Verses ?? new QK.RecitedVerseRow[0];
+            var verses = _rows;
 
             var index = -1;
             for (var i = 0; i < verses.Length; i++)
@@ -291,14 +304,14 @@ namespace QuranKG.FrontEnd.Components
         private void Mark(int index)
         {
             _current = index;
-            var verses = _recitation?.Verses ?? new QK.RecitedVerseRow[0];
+            var verses = _rows;
             _settings.OnVerse?.Invoke(index >= 0 && index < verses.Length ? verses[index] : null);
         }
 
         private void Show(int index)
         {
             if (_where is null) return;
-            var verses = _recitation.Verses ?? new QK.RecitedVerseRow[0];
+            var verses = _rows;
             if (index >= 0 && index < verses.Length)
             {
                 var v = verses[index];
