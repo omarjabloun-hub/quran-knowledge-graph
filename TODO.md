@@ -56,11 +56,27 @@ closes it.
       with listen / copy / study, passages in the margin, mushaf pages two by two, a word's root and
       lemma on hover; the verse panel in tabs; every page and node tab redrawn on one set of tokens
       (dark mode included)
+- [x] **Qalun, the main reading** (`RiwayaSource`, `Riwaya` / `RiwayaVerse`, `qkg/read/text`'s
+      `Riwaya`, `Components/Riwayat.cs`): the reader in Qalun from Nafi' by default — its 6,214
+      verses, numbering, mushaf pages, the King Fahd Complex's Qalun font — and Hafs at a click,
+      the place kept; each Qalun word linked to its Hafs word (77,422 of 77,430), so the word tip,
+      the key words and the verse panel (Hafs's translations, tafsir, hadith) reach it; the
+      recitation follows Qalun's own verse marks exactly; verse counts per reading
+- [ ] **Qalun, next**:
+  - the rest of the app still shows Hafs's text: the verse page (`VerseRenderer`), the home
+    search's verses, a hadith's quoted verse, the chat's verse cards — show the reading's text
+    there too (`VerseReadIn` gives a Hafs verse's Qalun verses);
+  - search the Qalun text (the home search matches Hafs's Simple-Clean and English);
+  - tajweed colours on the Qalun text, and a page explaining the rules (research done: no
+    coloured Qalun data exists; the KFGQPC text marks what the rules need — open tanwin, iqlab's
+    small mim, madd sign, wasl dot; Dar al-Maarifah's legend; a Qalun teacher to review);
+  - more readings from the same KFGQPC repository (Warsh — the rest of the Maghreb —, Shu'ba,
+    al-Duri, al-Susi, al-Bazzi, Qunbul) through the same `RiwayaSource`;
+  - the Qalun mushaf's hizb and thumun marks (۞ in the text: 440) instead of Hafs's hizb;
+  - check the King Fahd Complex's terms for the Qalun text and font before a public deployment.
 - [ ] **Recitation, next**:
   - the 80 estimated starts snapped to the nearest pause in the audio (the marks sit at the
     pauses; a pause within ±1.5 s of an estimate is very likely the verse's start);
-  - the Qalun text shown beside the recording (KFGQPC, already fetched; needs its font), so the
-    words heard are the words read («ملك يوم الدين», not «مالك»);
   - a Hafs reciter with timings (QUL publishes surah-level segments for several), and a choice of
     reciter in the player;
   - word by word: follow the word being recited, not only the verse (QUL word segments);

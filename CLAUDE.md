@@ -134,6 +134,12 @@ just status                     # after an import: "Code compiles", counts as ex
   is already per corpus verse.
 - The sources' Arabic writes shadda before the short vowel («يَّ» as ي + ّ + َ); a literal typed in a
   test may hold them the other way round and never match — copy it from the data, or avoid the shadda.
+- The reader's main text is Qalun (`RiwayaVerse`, Rank 1), but the graph's knowledge — words,
+  morphology, tafsirs, hadith links, passages, QurSim — stays on Hafs's `Verse` and `Word`. A Qalun
+  verse reaches it only through `ReadsVerse` / `WordLinks`; never hang new knowledge on a
+  `RiwayaVerse`, and keep URLs and the last verse read in Hafs keys (`#/read/2/255` opens Qalun 2:253).
+- `dotnet build src/QuranKG.FrontEnd` (Debug) only compiles the C#; the JavaScript bundle is built by
+  `-c Release` (what `just upload-frontend` runs) — a transpile error shows only there.
 - A source that is a web page: the manifest's `extract` keeps only the regex's group 1 of each part
   (after unescaping `\"`), and the checksum is over what was kept; `partNames` addresses parts by name.
 - The sandbox has no `query` command on purpose: the query engine emits whole nodes, and a verse

@@ -22,7 +22,7 @@ does not add up (6,236 verses in every text, every word's verse present, …).
 | **Sahih al-Bukhari** and **Sahih Muslim**, Arabic and English ([fawazahmed0/hadith-api](https://github.com/fawazahmed0/hadith-api), pinned to a commit) | 14,940 hadith with their standard numbers (Bukhari 6018; Muslim's Abdul Baqi number, 8a) and books; the English of Muhsin Khan (Bukhari) and Abdul Hamid Siddiqui (Muslim) | hadith-api: Unlicense. The Arabic is in the public domain; the translations are their translators' and publishers' — non-commercial use, with attribution |
 | **The books' Arabic names** ([AhmedBaset/hadith-json](https://github.com/AhmedBaset/hadith-json) v1.2.0, from sunnah.com) | كتاب الإيمان … for the 154 books (only the names are read; its hadith numbering is not the standard one) | sunnah.com content |
 | **Sheikh Mohamed (Hamadi) Latrech's recitation**, Qalun from Nafi' ([qaloun.app](https://qaloun.app/en/reciters/mohamed-latrech)) | each surah's recording (streamed from the site's host, never copied) and where each of its verses starts — the fetcher keeps only those marks from each page | qaloun.app: sharing and quoting with attribution, no commercial use without permission — ask before a public deployment |
-| **The Qalun text** (King Fahd Glorious Quran Printing Complex, v10, via [thetruetruth/quran-data-kfgqpc](https://github.com/thetruetruth/quran-data-kfgqpc), pinned) | the Quran in Qalun's reading with its own verse numbering (6,214, the Madani count) — read only to carry a Qalun recording's verse marks over to the corpus's verses | KFGQPC: free to use, text unaltered |
+| **The Qalun text** (King Fahd Glorious Quran Printing Complex, v10, via [thetruetruth/quran-data-kfgqpc](https://github.com/thetruetruth/quran-data-kfgqpc), pinned) | the Quran in Qalun's reading — **the main text of the reader** — with its own verse numbering (6,214, the Madani count) and the pages, juz and lines of its mushaf; its words are linked one by one to the corpus's (Hafs) words, and its verse marks carry a Qalun recording over to Hafs's verses. Its font (qaloon.10.woff2, same commit) is loaded from jsDelivr | KFGQPC: free to use, text unaltered |
 | **QUL ayah topics** (Tarteel) — *manual download* | ~2,500 topics in a hierarchy, including the stories — the reference for clustering | per the resource card on qul.tarteel.ai |
 
 The Kaggle dataset was the starting point; it is kept for what only it has (names, revelation
@@ -70,6 +70,12 @@ footnotes (so the clean Tanzil copy of Qara'i is used).
   verse is placed by the letters recited before it (80 — `Recitation.EstimatedAyahs`). Checked on
   the audio: the quietest moment of the recitation falls about half a second after each mark —
   the pause between two verses.
+- Qalun's verses (`RiwayaSource`): each of the 77,430 words of the Qalun text is linked to the
+  corpus's word it is — the longest runs the two texts share first, then the words between two runs
+  paired in order by spelling (351 of them: «مَلِكِ»/«مَٰلِكِ», «نَحْشُرُهُمْ»/«يَحْشُرُهُمْ»). 8 stay
+  unlinked, where the readings part («أَوْ أَمِنَ», two words, for Hafs's «أَوَأَمِنَ»; «ءَالِ يَاسِينَ»
+  for «إِلْ يَاسِينَ»). Every Hafs verse is in a Qalun verse but Al-Fatiha's Bismillah, no verse in Qalun.
+  The verse numbers ending each line of the text are dropped; a verse over two pages keeps its first.
 
 ## Answer keys stay out of the AI's reach
 
